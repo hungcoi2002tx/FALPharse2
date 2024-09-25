@@ -1,4 +1,3 @@
-
 using Amazon.Rekognition;
 using Amazon.S3;
 using FAL.Services;
