@@ -1,6 +1,7 @@
 ﻿using Amazon.S3.Transfer;
 using Amazon.S3;
 using FAL.Services.IServices;
+using Share.SystemModel;
 
 namespace FAL.Services
 {
@@ -17,7 +18,7 @@ namespace FAL.Services
             _service = service;
         }
 
-        public async Task<bool> AddFileToS3Async(IFormFile file, string fileName, string bucketName)
+        public async Task<bool> AddFileToS3Async(IFormFile file, string fileName, string bucketName, TypeOfRequest type)
         {
             try
             {
@@ -33,7 +34,17 @@ namespace FAL.Services
                     if (file.Length < _divideSize)
                     {
                         // Upload file nhỏ hơn TransferUtility.MinimumPartSize (5MB mặc định)
-                        await fileTransferUtility.UploadAsync(stream, bucketName, fileName);
+                        var uploadRequest = new TransferUtilityUploadRequest
+                        {
+                            InputStream = stream,
+                            Key = fileName,
+                            BucketName = bucketName,
+                            StorageClass = S3StorageClass.Standard
+                        };
+
+                        // Thêm metadata nếu có
+                        uploadRequest.Metadata.Add(nameof(TypeOfRequest), nameof(type));
+                        await fileTransferUtility.UploadAsync(uploadRequest);
                     }
                     else
                     {
@@ -46,7 +57,8 @@ namespace FAL.Services
                             PartSize = _partSize, // Multipart upload với phần lớn hơn (500 MB)
                             StorageClass = S3StorageClass.Standard, // Có thể điều chỉnh storage class
                         };
-
+                        // Thêm metadata nếu có
+                        uploadRequest.Metadata.Add(nameof(TypeOfRequest), nameof(type));
                         await fileTransferUtility.UploadAsync(uploadRequest);
                     }
                 }
