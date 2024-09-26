@@ -21,7 +21,7 @@ namespace FAL
             builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
             builder.Services.AddAWSService<IAmazonS3>();
             builder.Services.AddAWSService<IAmazonRekognition>();
-            builder.Services.AddSingleton<CustomLog>(new CustomLog("E:\\DoAn\\Log.txt"));
+            builder.Services.AddSingleton<CustomLog>(new CustomLog(Path.Combine(Directory.GetCurrentDirectory(), "bin","ProgramLogs","Log.txt")));
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
             builder.Services.AddSingleton<IS3Service, S3Service>();
 
