@@ -41,7 +41,7 @@ namespace FAL.Controllers
             }
         }
 
-        [HttpPost("user/upload")]
+        [HttpPost("train/upload")]
         public async Task<IActionResult> UploadFileAsync(IFormFile file, string key)
         {
             try
@@ -51,9 +51,9 @@ namespace FAL.Controllers
                 var bucketExists = await _s3Service.IsExistBudget(SystermId);
                 if (!bucketExists) return NotFound($"Bucket {SystermId} does not exist.");
 
-                await _s3Service.AddFileToS3Async(file, key, SystermId);
+                await _s3Service.AddFileToS3Async(file, key, SystermId, TypeOfRequest.Training);
 
-                await TrainAsync(key);
+                //await TrainAsync(key);
 
                 return Content("Train succesfully");
             }
