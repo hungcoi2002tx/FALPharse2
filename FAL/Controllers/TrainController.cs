@@ -16,7 +16,7 @@ namespace FAL.Controllers
         private readonly IS3Service _s3Service;
         private readonly ICollectionService _collectionService;
         private readonly CustomLog _logger;
-        private readonly string SystermId = "FUALUMNI";
+        private readonly string SystermId = GlobalVarians.SystermId;
 
         public TrainController(IAmazonS3 s3Client, CustomLog logger, ICollectionService collectionService, IS3Service s3Service)
         {
@@ -42,16 +42,16 @@ namespace FAL.Controllers
         }
 
         [HttpPost("train/upload")]
-        public async Task<IActionResult> UploadFileAsync(IFormFile file, string key)
+        public async Task<IActionResult> UploadFileAsync(IFormFile file, string userId)
         {
             try
             {
                 await ValidateFileWithRekognitionAsync(file);
 
-                var bucketExists = await _s3Service.IsExistBudget(SystermId);
+                var bucketExists = await _s3Service.AddBudgetAsync(SystermId);
                 if (!bucketExists) return NotFound($"Bucket {SystermId} does not exist.");
-
-                await _s3Service.AddFileToS3Async(file, key, SystermId, TypeOfRequest.Training);
+                string key = Guid.NewGuid().ToString();
+                await _s3Service.AddFileToS3Async(file, key, SystermId, TypeOfRequest.Training, userId);
 
                 //await TrainAsync(key);
 

@@ -1,6 +1,7 @@
 ﻿using FAL.Services.IServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Share.SystemModel;
 
 namespace FAL.Controllers
 {
@@ -10,7 +11,7 @@ namespace FAL.Controllers
     {
         private readonly IS3Service _s3Service;
         private readonly ICollectionService _collectionService;
-        private readonly string SystermId = "FUALUMNI";
+        private readonly string SystermId = GlobalVarians.SystermId;
 
         public CollectionController(IS3Service s3Service, ICollectionService collectionService)
         {

@@ -15,7 +15,7 @@ namespace FAL.Controllers
         private readonly IS3Service _s3Service;
         private readonly ICollectionService _collectionService;
         private readonly CustomLog _logger;
-        private readonly string SystermId = "FUALUMNI";
+        private readonly string SystermId = GlobalVarians.SystermId;
 
         public DetectController(IAmazonS3 s3Client, CustomLog logger, ICollectionService collectionService, IS3Service s3Service)
         {
@@ -34,7 +34,7 @@ namespace FAL.Controllers
                 file.ValidFile();
                 #endregion
                 //add s3
-                var bucketExists = await _s3Service.IsExistBudget(SystermId);
+                var bucketExists = await _s3Service.AddBudgetAsync(SystermId);
                 if (!bucketExists) return NotFound($"Bucket {SystermId} does not exist.");
                 var fileName = Guid.NewGuid().ToString();
                 var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, SystermId, TypeOfRequest.Tagging);
