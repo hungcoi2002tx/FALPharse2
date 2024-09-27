@@ -2,15 +2,16 @@
 using Amazon.S3;
 using FAL.Services.IServices;
 using Share.SystemModel;
+using Share.Data;
 
 namespace FAL.Services
 {
     public class S3Service : IS3Service
     {
         private readonly IAmazonS3 _service;
-        private const long _maxFileSize = 15L * 1024 * 1024 * 1024; // 15 GB, có thể tùy chỉnh
-        private const long _partSize = 500 * 1024 * 1024; // 500 MB - Part size lớn cho multipart upload
-        private const long _divideSize = 500 * 1024 * 1024; // 500 MB - Part size lớn cho multipart upload
+        private readonly long _maxFileSize = GlobalVarians.MAXFILESIZE; // 15 GB, có thể tùy chỉnh
+        private readonly long _partSize = 500 * 1024 * 1024; // 500 MB - Part size lớn cho multipart upload
+        private readonly long _divideSize = 500 * 1024 * 1024; // 500 MB - Part size lớn cho multipart upload
 
 
         public S3Service(IAmazonS3 service)
@@ -18,7 +19,7 @@ namespace FAL.Services
             _service = service;
         }
 
-        public async Task<bool> AddFileToS3Async(IFormFile file, string fileName, string bucketName, TypeOfRequest type)
+        public async Task<bool> AddFileToS3Async(IFormFile file, string fileName, string bucketName, TypeOfRequest type, string userId = null)
         {
             try
             {
@@ -43,7 +44,7 @@ namespace FAL.Services
                         };
 
                         // Thêm metadata nếu có
-                        uploadRequest.Metadata.Add(nameof(TypeOfRequest), nameof(type));
+                        uploadRequest = GetMetaData(uploadRequest,type,userId); 
                         await fileTransferUtility.UploadAsync(uploadRequest);
                     }
                     else
@@ -58,7 +59,7 @@ namespace FAL.Services
                             StorageClass = S3StorageClass.Standard, // Có thể điều chỉnh storage class
                         };
                         // Thêm metadata nếu có
-                        uploadRequest.Metadata.Add(nameof(TypeOfRequest), nameof(type));
+                        uploadRequest = GetMetaData(uploadRequest, type, userId);
                         await fileTransferUtility.UploadAsync(uploadRequest);
                     }
                 }
@@ -70,11 +71,38 @@ namespace FAL.Services
             }
         }
 
-        public async Task<bool> IsExistBudget(string bucketName)
+        private TransferUtilityUploadRequest GetMetaData(TransferUtilityUploadRequest request, TypeOfRequest type, string userId)
+        {
+            try
+            {
+                request.Metadata.Add(nameof(TypeOfRequest), nameof(type));
+                request.Metadata.Add(nameof(FaceInformation.UserId), userId);
+                return request;
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> IsExistBudgetAsync(string bucketName)
         {
             try
             {
                 return await _service.DoesS3BucketExistAsync(bucketName);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> AddBudgetAsync(string budgetName)
+        {
+            try
+            {
+                
+                return true;
             }
             catch (Exception)
             {

@@ -11,6 +11,8 @@ namespace Share.Data
         public string UserId { get; set; }
         public string FaceId { get; set; }
         public string ImageId { get; set; }
+        //Truong nay luu gia tri key cua anh trong s3 nhe
+        public string ExternalImageId { get; set; }
         public DateTime CreateDate { get; set; }
     }
 }
