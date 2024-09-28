@@ -153,8 +153,6 @@ public class Function
                 break;
             }
 
-            await Task.Delay(5000);
-
         } while (faceSearchResponse.JobStatus == VideoJobStatus.IN_PROGRESS);
 
 
