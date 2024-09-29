@@ -344,5 +344,57 @@ namespace FAL.Services
                 throw;
             }
         }
+
+        public async Task<List<string>> GetCollectionAsync(string systermId)
+        {
+            try
+            {
+                int limit = 10;
+                List<string> result = new List<string>();
+                ListCollectionsResponse listCollectionsResponse = null;
+                String paginationToken = null;
+                do
+                {
+                    if (listCollectionsResponse != null)
+                        paginationToken = listCollectionsResponse.NextToken;
+
+                    ListCollectionsRequest listCollectionsRequest = new ListCollectionsRequest()
+                    {
+                        MaxResults = limit,
+                        NextToken = paginationToken
+                    };
+
+                    listCollectionsResponse = await _rekognitionClient.ListCollectionsAsync(listCollectionsRequest);
+
+                    foreach (String resultId in listCollectionsResponse.CollectionIds)
+                        result.Add(resultId);
+                } while (listCollectionsResponse != null && listCollectionsResponse.NextToken != null);
+                return result;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> CreateCollectionByIdAsync(string collectionId)
+        {
+            try
+            {
+                var response = await _rekognitionClient.CreateCollectionAsync(new CreateCollectionRequest
+                {
+                    CollectionId = collectionId
+                });
+                if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    throw new Exception(message: $"Create Collection fail");
+                }
+                return true;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
     }
 }
