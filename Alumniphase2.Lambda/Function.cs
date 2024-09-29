@@ -23,8 +23,6 @@ public class Function
     public const string VIDEO = "video";
     public const string IMAGE = "image";
 
-    public const string COLLECTION_ATTRIBUTE = "Collection";
-    public const string DYNAMODB_ATTRIBUTE = "DynamoDB";
     public const string USER_ID_ATTRIBUTE = "UserId";
 
     public const string USER_ID_ATTRIBUTE_DYNAMODB = "UserId";
@@ -88,8 +86,8 @@ public class Function
 
     private async Task TrainImageProcess(string bucket, string key, GetObjectMetadataResponse metadataResponse)
     {
-        var collectionName = metadataResponse.Metadata[COLLECTION_ATTRIBUTE];
-        var dynamoDbName = metadataResponse.Metadata[DYNAMODB_ATTRIBUTE];
+        var collectionName = bucket;
+        var dynamoDbName = bucket;
         var userId = metadataResponse.Metadata[USER_ID_ATTRIBUTE];
 
         var response = await IndexFaces(bucket, key, collectionName);
@@ -101,14 +99,24 @@ public class Function
                 var faceId = faceRecord.Face.FaceId;
                 var imageId = faceRecord.Face.ImageId;
 
-                await CreateUser(userId, collectionName);
-                await AssociateUser(userId, faceId, collectionName);
+                var itemResponse = await GetRecordByUserId(userId, dynamoDbName);
 
-                var metadata = metadataResponse.Metadata;
-
-                if (metadata != null && metadata.Count > 0)
+                if (itemResponse == null)
                 {
-                    await UpdateIndex(dynamoDbName, userId, imageId, faceId);
+                    await CreateUser(userId, collectionName);
+
+                    await AssociateUser(userId, faceId, collectionName);
+
+                    var metadata = metadataResponse.Metadata;
+
+                    if (metadata != null && metadata.Count > 0)
+                    {
+                        await CreateNewRecord(dynamoDbName, userId, imageId, faceId);
+                    }
+                }
+                else
+                {
+                    throw new Exception("User Id is duplicate!");
                 }
             }
         }
@@ -120,8 +128,8 @@ public class Function
 
     private async Task DetectImageProcess(string bucket, string key, GetObjectMetadataResponse metadataResponse)
     {
-        var collectionName = metadataResponse.Metadata[COLLECTION_ATTRIBUTE];
-        var dynamoDbName = metadataResponse.Metadata[DYNAMODB_ATTRIBUTE];
+        var collectionName = bucket;
+        var dynamoDbName = bucket;
 
 
         var indexFacesResponse = await IndexFaces(bucket, key, collectionName);
@@ -130,7 +138,7 @@ public class Function
         await AssociateUser(responseUserFaceId.Item1, collectionName);
         foreach (var (userId, faceId, imageId) in responseUserFaceId.Item1)
         {
-            await UpdateIndex(dynamoDbName, userId, imageId, faceId);
+            await CreateNewRecord(dynamoDbName, userId, imageId, faceId);
         }
 
         SearchFacesResponse searchFacesResponse = null!;
@@ -155,19 +163,37 @@ public class Function
 
                 foreach (var user in userResponse.UserMatches)
                 {
-                    var getItemRequest = new GetItemRequest
-                    {
-                        TableName = dynamoDbName,
-                        Key = new Dictionary<string, AttributeValue>
-                            {
-                                { USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue { S = user.User.UserId } }
-                            }
-                    };
+                    var itemResponse = await GetRecordByUserId(user.User.UserId, dynamoDbName);
 
-                    var getItemResponse = await _dynamoDbClient.GetItemAsync(getItemRequest);
+                    if (itemResponse != null)
+                    {
+
+                    }
+                    else
+                    {
+                        throw new Exception("Cannot detect anyone");
+                    }
                 }
             }
         }
+    }
+
+    private async Task<GetItemResponse> GetRecordByUserId(string userId, string dynamoDbName)
+    {
+        var getItemRequest = new GetItemRequest
+        {
+            TableName = dynamoDbName,
+            Key = new Dictionary<string, AttributeValue>
+            {
+                {
+                    USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue {
+                        S = userId
+                    }
+                }
+            }
+        };
+
+        return await _dynamoDbClient.GetItemAsync(getItemRequest);
     }
 
     private async Task DeleteFaceId(List<string> faceIds, string collectionName)
@@ -180,7 +206,7 @@ public class Function
     }
 
 
-    private async Task UpdateIndex(string tableName, string userId, string imageId, string faceId)
+    private async Task CreateNewRecord(string tableName, string userId, string imageId, string faceId)
     {
         var request = new PutItemRequest
         {
@@ -276,11 +302,11 @@ public class Function
     {
         var contentType = metadataResponse.Headers.ContentType;
 
-        if (contentType == VIDEO)
+        if (contentType.Contains(VIDEO))
         {
             return true;
         }
-        else if (contentType == IMAGE)
+        else if (contentType.Contains(IMAGE))
         {
             return false;
         }
