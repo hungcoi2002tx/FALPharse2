@@ -135,7 +135,12 @@ public class Function
 
         var indexFacesResponse = await IndexFaces(bucket, key, collectionName);
         var responseUserFaceId = await FindUserIdByFaceId(indexFacesResponse.FaceRecords, collectionName);
-        await DeleteFaceId(responseUserFaceId.Item2, collectionName);
+        var faceIdsDelete = responseUserFaceId.Item2;
+
+        if (faceIdsDelete != null && faceIdsDelete.Count > 0)
+        {
+            await DeleteFaceId(faceIdsDelete, collectionName);
+        }
         await AssociateUser(responseUserFaceId.Item1, collectionName);
         foreach (var (userId, faceId, imageId) in responseUserFaceId.Item1)
         {
