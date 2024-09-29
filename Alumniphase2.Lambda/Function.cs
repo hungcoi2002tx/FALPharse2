@@ -19,6 +19,7 @@ public class Function
     public const string TRAIN_PROCESS = "Training";
     public const string DETECT_PROCESS = "Tagging";
     public const string TYPE_OF_REQUEST = "TypeOfRequest";
+    public const string CONTENT_TYPE = "ContentType";
 
     public const string VIDEO = "video";
     public const string IMAGE = "image";
@@ -167,7 +168,7 @@ public class Function
 
                     if (itemResponse != null)
                     {
-
+                        Console.WriteLine(itemResponse.ToString);
                     }
                     else
                     {
@@ -178,22 +179,35 @@ public class Function
         }
     }
 
-    private async Task<GetItemResponse> GetRecordByUserId(string userId, string dynamoDbName)
+    private async Task<QueryResponse> GetRecordByUserId(string userId, string dynamoDbName)
     {
-        var getItemRequest = new GetItemRequest
+        //var getItemRequest = new GetItemRequest
+        //{
+        //    TableName = dynamoDbName,
+        //    Key = new Dictionary<string, AttributeValue>
+        //    {
+        //        {
+        //            USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue {
+        //                S = userId
+        //            }
+        //        }
+        //    }
+        //};
+
+
+        var queryRequest = new QueryRequest
         {
             TableName = dynamoDbName,
-            Key = new Dictionary<string, AttributeValue>
-            {
-                {
-                    USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue {
-                        S = userId
-                    }
-                }
-            }
+            KeyConditionExpression = "UserId = :v_userId",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+        {
+            { ":v_userId", new AttributeValue { S = userId } }
+        },
+          
+            Limit = 1 
         };
 
-        return await _dynamoDbClient.GetItemAsync(getItemRequest);
+        return await _dynamoDbClient.QueryAsync(queryRequest);
     }
 
     private async Task DeleteFaceId(List<string> faceIds, string collectionName)
@@ -300,7 +314,7 @@ public class Function
     }
     private bool CheckContentType(GetObjectMetadataResponse metadataResponse)
     {
-        var contentType = metadataResponse.Headers.ContentType;
+        var contentType = metadataResponse.Metadata[CONTENT_TYPE];
 
         if (contentType.Contains(VIDEO))
         {
