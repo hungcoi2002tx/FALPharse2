@@ -46,5 +46,33 @@ namespace FAL.Controllers
                 throw;
             }
         }
+
+        [HttpGet("getList")]
+        public async Task<IActionResult> GetListCollectionAsync()
+        {
+            try
+            {
+                var result = await _collectionService.GetCollectionAsync(SystermId);
+                return Ok(result);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateCollectionAsync([FromBody] string collectionId)
+        {
+            try
+            {
+                var result = await _collectionService.CreateCollectionByIdAsync(collectionId);
+                return Ok(result);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
     }
 }

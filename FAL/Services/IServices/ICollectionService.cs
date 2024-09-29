@@ -16,5 +16,7 @@ namespace FAL.Services.IServices
         Task<bool> CreateNewUserAsync(string systermId, string userId);
         Task<SearchUsersResponse> SearchUserByFaceIdsAsync(string systermId, string faceId);
         Task<List<Face>> GetFacesAsync(string systermId);
+        Task<List<string>> GetCollectionAsync(string systermId);
+        Task<bool> CreateCollectionByIdAsync(string collectionId);
     }
 }
