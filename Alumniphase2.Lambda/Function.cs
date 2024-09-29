@@ -23,8 +23,6 @@ public class Function
     public const string VIDEO = "video";
     public const string IMAGE = "image";
 
-    public const string COLLECTION_ATTRIBUTE = "Collection";
-    public const string DYNAMODB_ATTRIBUTE = "DynamoDB";
     public const string USER_ID_ATTRIBUTE = "UserId";
 
     public const string USER_ID_ATTRIBUTE_DYNAMODB = "UserId";
@@ -88,8 +86,8 @@ public class Function
 
     private async Task TrainImageProcess(string bucket, string key, GetObjectMetadataResponse metadataResponse)
     {
-        var collectionName = metadataResponse.Metadata[COLLECTION_ATTRIBUTE];
-        var dynamoDbName = metadataResponse.Metadata[DYNAMODB_ATTRIBUTE];
+        var collectionName = bucket;
+        var dynamoDbName = bucket;
         var userId = metadataResponse.Metadata[USER_ID_ATTRIBUTE];
 
         var response = await IndexFaces(bucket, key, collectionName);
@@ -120,8 +118,8 @@ public class Function
 
     private async Task DetectImageProcess(string bucket, string key, GetObjectMetadataResponse metadataResponse)
     {
-        var collectionName = metadataResponse.Metadata[COLLECTION_ATTRIBUTE];
-        var dynamoDbName = metadataResponse.Metadata[DYNAMODB_ATTRIBUTE];
+        var collectionName = bucket;
+        var dynamoDbName = bucket;
 
 
         var indexFacesResponse = await IndexFaces(bucket, key, collectionName);
@@ -276,11 +274,11 @@ public class Function
     {
         var contentType = metadataResponse.Headers.ContentType;
 
-        if (contentType == VIDEO)
+        if (contentType.Contains(VIDEO))
         {
             return true;
         }
-        else if (contentType == IMAGE)
+        else if (contentType.Contains(IMAGE))
         {
             return false;
         }
