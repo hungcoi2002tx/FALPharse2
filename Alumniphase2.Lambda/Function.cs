@@ -54,16 +54,16 @@ public class Function
                 switch ((contentType, process))
                 {
                     case (true, true):
-                        
+
                         break;
                     case (false, true):
-               
+
                         break;
                     case (false, false):
 
                         break;
                     case (true, false):
-
+                        List<string> userIdList = await DetectVideoProcess("", bucket, key);
                         break;
                 }
             }
@@ -72,6 +72,125 @@ public class Function
         {
 
         }
+    }
+
+    private async Task<List<string>> DetectVideoProcess(string collectionId,string bucket, string key)
+    {
+        string jobId = await StartFaceSearch(collectionId, bucket, key);
+
+        List<string> userIdList = await GetFaceSearchResults(jobId, collectionId);
+        return userIdList;
+    }
+
+    private async Task<string> StartFaceSearch(string collectionId, string s3BucketName, string videoFileName)
+    {
+        var startFaceSearchRequest = new StartFaceSearchRequest
+        {
+            CollectionId = collectionId,
+            Video = new Video
+            {
+                S3Object = new Amazon.Rekognition.Model.S3Object
+                {
+                    Bucket = s3BucketName,
+                    Name = videoFileName
+                }
+            },
+            FaceMatchThreshold = 80
+        };
+
+        var startFaceSearchResponse = await _rekognitionClient.StartFaceSearchAsync(startFaceSearchRequest);
+
+        return startFaceSearchResponse.JobId;
+    }
+
+    private async Task<List<string>> GetFaceSearchResults(string jobId, string collectionId)
+    {
+        GetFaceSearchRequest getFaceSearchRequest = new GetFaceSearchRequest
+        {
+            JobId = jobId
+        };
+
+        GetFaceSearchResponse faceSearchResponse;
+
+        Dictionary<string, (double Confidence, long Timestamp)> faceIdDict = new Dictionary<string, (double, long)>();
+
+        do
+        {
+            faceSearchResponse = await _rekognitionClient.GetFaceSearchAsync(getFaceSearchRequest);
+
+            if (faceSearchResponse.JobStatus == VideoJobStatus.SUCCEEDED)
+            {
+                foreach (var personMatch in faceSearchResponse.Persons)
+                {
+                    if (personMatch.FaceMatches != null && personMatch.FaceMatches.Count > 0)
+                    {
+                        foreach (var faceMatch in personMatch.FaceMatches)
+                        {
+                            string faceId = faceMatch.Face.FaceId;
+                            double confidence = faceMatch.Similarity;
+                            long timestamp = personMatch.Timestamp;
+
+                            if (faceIdDict.ContainsKey(faceId))
+                            {
+                                if (confidence > faceIdDict[faceId].Confidence)
+                                {
+                                    faceIdDict[faceId] = (confidence, timestamp);
+                                }
+                            }
+                            else
+                            {
+
+                                faceIdDict[faceId] = (confidence, timestamp);
+                            }
+
+                        }
+                    }
+                }
+            }
+            else if (faceSearchResponse.JobStatus == VideoJobStatus.FAILED)
+            {
+                Console.WriteLine("Face search job failed.");
+                break;
+            }
+
+        } while (faceSearchResponse.JobStatus == VideoJobStatus.IN_PROGRESS);
+
+
+
+        HashSet<string> userIds = new HashSet<string>();
+
+        foreach (var entry in faceIdDict)
+        {
+            string userId = await SearchUserByFaceId(entry.Key, collectionId);
+            if (!string.IsNullOrEmpty(userId))
+            {
+                userIds.Add(userId);
+            }
+        }
+
+        return userIds.ToList();
+    }
+
+    private async Task<string> SearchUserByFaceId(string faceId, string collectionId)
+    {
+        var response = await _rekognitionClient.SearchUsersAsync(new SearchUsersRequest
+        {
+            CollectionId = collectionId,
+            MaxUsers = 1,
+            FaceId = faceId,
+            UserMatchThreshold = 80
+        });
+
+        string faceModelVersion = response.FaceModelVersion;
+        SearchedUser searchedUser = response.SearchedUser;
+        List<UserMatch> userMatches = response.UserMatches;
+
+        if (userMatches.Count == 1)
+        {
+            return userMatches.First().User.UserId;
+        }
+        Console.WriteLine("No user found");
+        return "";
     }
 
     private async Task TrainImageProcess(string bucket, string key)
