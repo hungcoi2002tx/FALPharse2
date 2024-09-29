@@ -3,6 +3,7 @@ using Amazon.S3;
 using FAL.Services.IServices;
 using Share.SystemModel;
 using Share.Data;
+using FAL.Utils;
 
 namespace FAL.Services
 {
@@ -44,7 +45,7 @@ namespace FAL.Services
                         };
 
                         // Thêm metadata nếu có
-                        uploadRequest = GetMetaData(uploadRequest,type,userId); 
+                        uploadRequest = GetMetaData(uploadRequest,type,userId,file); 
                         await fileTransferUtility.UploadAsync(uploadRequest);
                     }
                     else
@@ -59,7 +60,7 @@ namespace FAL.Services
                             StorageClass = S3StorageClass.Standard, // Có thể điều chỉnh storage class
                         };
                         // Thêm metadata nếu có
-                        uploadRequest = GetMetaData(uploadRequest, type, userId);
+                        uploadRequest = GetMetaData(uploadRequest, type, userId, file);
                         await fileTransferUtility.UploadAsync(uploadRequest);
                     }
                 }
@@ -71,15 +72,59 @@ namespace FAL.Services
             }
         }
 
-        private TransferUtilityUploadRequest GetMetaData(TransferUtilityUploadRequest request, TypeOfRequest type, string userId)
+        private TransferUtilityUploadRequest GetMetaData(TransferUtilityUploadRequest request, TypeOfRequest type, string userId, IFormFile file)
         {
             try
             {
                 request.Metadata.Add(nameof(TypeOfRequest), type.ToString());
                 request.Metadata.Add(nameof(FaceInformation.UserId), userId);
+                if (IsVideo(file))
+                {
+                    request.Metadata.Add(nameof(ContentType), ContentType.Video.ToString());
+                }
+                else if (IsImage(file))
+                {
+                    request.Metadata.Add(nameof(ContentType), ContentType.Image.ToString());
+                }
                 return request;
             }
             catch(Exception ex)
+            {
+                throw;
+            }
+        }
+
+        private bool IsImage(IFormFile file)
+        {
+            try
+            {
+                // Lấy loại file (đuôi file)
+                string fileExtension = Path.GetExtension(file.FileName).ToLower();
+                if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png")
+                {
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        private bool IsVideo(IFormFile file)
+        {
+            try
+            {
+                // Lấy loại file (đuôi file)
+                string fileExtension = Path.GetExtension(file.FileName).ToLower();
+                if (fileExtension == ".mp4" || fileExtension == ".mov" || fileExtension == ".avi")
+                {
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception)
             {
                 throw;
             }

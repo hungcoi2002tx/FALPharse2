@@ -11,4 +11,10 @@ namespace Share.SystemModel
         Training = 0,
         Tagging = 1,    
     }
+
+    public enum ContentType
+    {
+        Image = 0,
+        Video = 1,
+    }
 }
