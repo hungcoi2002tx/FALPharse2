@@ -75,7 +75,7 @@ namespace FAL.Services
         {
             try
             {
-                request.Metadata.Add(nameof(TypeOfRequest), nameof(type));
+                request.Metadata.Add(nameof(TypeOfRequest), type.ToString());
                 request.Metadata.Add(nameof(FaceInformation.UserId), userId);
                 return request;
             }
