@@ -21,15 +21,15 @@ public class Function
     public const string TYPE_OF_REQUEST = "TypeOfRequest";
     public const string CONTENT_TYPE = "ContentType";
 
-    public const string VIDEO = "video";
-    public const string IMAGE = "image";
+    public const string VIDEO = "Video";
+    public const string IMAGE = "Image";
 
     public const string USER_ID_ATTRIBUTE = "UserId";
 
     public const string USER_ID_ATTRIBUTE_DYNAMODB = "UserId";
     public const string FACE_ID_ATTRIBUTE_DYNAMODB = "FaceId";
     public const string UPLOAD_DATE_ATTRIBUTE_DYNAMODB = "UploadDate";
-    public const string IMAGE_ID_ATTRIBUTE_DYNAMODB = "UploadDate";
+    public const string IMAGE_ID_ATTRIBUTE_DYNAMODB = "ImageId";
 
     private readonly IAmazonS3 _s3Client;
     private readonly IAmazonRekognition _rekognitionClient;
@@ -102,7 +102,11 @@ public class Function
 
                 var itemResponse = await GetRecordByUserId(userId, dynamoDbName);
 
-                if (itemResponse == null)
+                if (itemResponse.Items.Count > 0)
+                {
+                    throw new Exception("User Id is duplicate!");
+                }
+                else
                 {
                     await CreateUser(userId, collectionName);
 
@@ -114,10 +118,6 @@ public class Function
                     {
                         await CreateNewRecord(dynamoDbName, userId, imageId, faceId);
                     }
-                }
-                else
-                {
-                    throw new Exception("User Id is duplicate!");
                 }
             }
         }
@@ -168,7 +168,12 @@ public class Function
 
                     if (itemResponse != null)
                     {
-                        Console.WriteLine(itemResponse.ToString);
+                        var item = itemResponse.Items[0]; 
+
+                        string faceId = item["FaceId"].S;
+                        string imageId = item["ImageId"].S;
+
+                        Console.WriteLine($"FaceId: {faceId}, ImageId: {imageId}");
                     }
                     else
                     {
@@ -200,11 +205,10 @@ public class Function
             TableName = dynamoDbName,
             KeyConditionExpression = "UserId = :v_userId",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-        {
-            { ":v_userId", new AttributeValue { S = userId } }
-        },
-          
-            Limit = 1 
+            {
+                { ":v_userId", new AttributeValue { S = userId } }
+            },
+            Limit = 1
         };
 
         return await _dynamoDbClient.QueryAsync(queryRequest);
@@ -256,8 +260,10 @@ public class Function
 
         await _dynamoDbClient.PutItemAsync(request);
     }
+
     private async Task<string> CreateUser(string userId, string collectionName)
     {
+        Console.WriteLine(userId);
         var response = await _rekognitionClient.CreateUserAsync(new CreateUserRequest
         {
             CollectionId = collectionName,
