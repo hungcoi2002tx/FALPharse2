@@ -396,5 +396,36 @@ namespace FAL.Services
                 throw;
             }
         }
+
+        public async Task<IndexFacesResponse> IndexFaceByFileAsync(Image file, string systermId, string key = null)
+        {
+            try
+            {
+                var request = new IndexFacesRequest()
+                {
+                    CollectionId = systermId,
+                    Image = file,
+                    ExternalImageId = key,
+                };
+                var response = await _rekognitionClient.IndexFacesAsync(request);
+                if(response.HttpStatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    throw new Exception(message: "Error went request to Rekognition Server");
+                }
+                return response;
+            }
+            catch (InvalidS3ObjectException ex)
+            {
+                throw new Exception(message: "S3 object does not exist.");
+            }
+            catch (ResourceNotFoundException ex)
+            {
+                throw new Exception(message: "The resource specified in the request cannot be found.");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
     }
 }
