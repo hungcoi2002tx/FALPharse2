@@ -1,4 +1,6 @@
-﻿namespace FAL.Utils
+﻿using Amazon.Rekognition.Model;
+
+namespace FAL.Utils
 {
     public static class FileValidationExtention
     {

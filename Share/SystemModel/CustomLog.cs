@@ -21,6 +21,7 @@ namespace Share.SystemModel
             string logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {exceptionType}: {ex.Message}" +
                                 $"\nStack Trace: {ex.StackTrace}\n";
             WriteLog(logMessage);
+            Console.WriteLine(logMessage);
         }
 
         // Ghi log thông tin khác
@@ -28,6 +29,7 @@ namespace Share.SystemModel
         {
             string logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] INFO: {message}\n";
             WriteLog(logMessage);
+            Console.WriteLine(logMessage);
         }
 
         // Ghi nội dung vào file log
@@ -36,6 +38,7 @@ namespace Share.SystemModel
             using (StreamWriter writer = new StreamWriter(logFilePath, true))
             {
                 writer.WriteLine(message);
+                Console.WriteLine(message);
             }
         }
     }

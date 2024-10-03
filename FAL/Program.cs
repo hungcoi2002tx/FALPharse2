@@ -1,4 +1,5 @@
-﻿using Amazon.Rekognition;
+using Amazon.DynamoDBv2;
+using Amazon.Rekognition;
 using Amazon.S3;
 using FAL.Services;
 using FAL.Services.IServices;
@@ -56,6 +57,7 @@ namespace FAL
             builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
             builder.Services.AddAWSService<IAmazonS3>();
             builder.Services.AddAWSService<IAmazonRekognition>();
+            builder.Services.AddAWSService<IAmazonDynamoDB>();
             builder.Services.AddSingleton<CustomLog>(new CustomLog(Path.Combine(Directory.GetCurrentDirectory(), "bin", "ProgramLogs", "Log.txt")));
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
             builder.Services.AddSingleton<IS3Service, S3Service>();
@@ -85,6 +87,7 @@ namespace FAL
                 };
             });
 
+            builder.Services.AddSingleton<IDynamoDBService, DynamoDBService>();
 
             var app = builder.Build();
 

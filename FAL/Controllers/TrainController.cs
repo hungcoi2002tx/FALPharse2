@@ -2,6 +2,7 @@
 using Amazon.S3;
 using FAL.Services.IServices;
 using FAL.Utils;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.SystemModel;
@@ -15,14 +16,20 @@ namespace FAL.Controllers
     {
         private readonly IS3Service _s3Service;
         private readonly ICollectionService _collectionService;
+        private readonly IDynamoDBService _dynamoService;
         private readonly CustomLog _logger;
         private readonly string SystermId = GlobalVarians.SystermId;
 
-        public TrainController(IAmazonS3 s3Client, CustomLog logger, ICollectionService collectionService, IS3Service s3Service)
+        public TrainController(IAmazonS3 s3Client,
+            CustomLog logger,
+            ICollectionService collectionService,
+            IS3Service s3Service, IDynamoDBService
+            dynamoService)
         {
             _logger = logger;
             _collectionService = collectionService;
             _s3Service = s3Service;
+            _dynamoService = dynamoService;
         }
 
         [HttpDelete("delete")]
@@ -41,20 +48,14 @@ namespace FAL.Controllers
             }
         }
 
-        [HttpPost("train/upload")]
+        [HttpPost("upload")]
         public async Task<IActionResult> UploadFileAsync(IFormFile file, string userId)
         {
             try
             {
                 await ValidateFileWithRekognitionAsync(file);
-
-                var bucketExists = await _s3Service.AddBudgetAsync(SystermId);
-                if (!bucketExists) return NotFound($"Bucket {SystermId} does not exist.");
-                string key = Guid.NewGuid().ToString();
-                await _s3Service.AddFileToS3Async(file, key, SystermId, TypeOfRequest.Training, userId);
-
-                //await TrainAsync(key);
-
+                var image = await GetImageAsync(file);
+                await TrainAsync(image, userId);
                 return Content("Train succesfully");
             }
             catch (Exception ex)
@@ -81,7 +82,7 @@ namespace FAL.Controllers
             }
         }
 
-        private async Task TrainAsync(string key)
+        private async Task TrainAsync(Image file, string userId)
         {
             try
             {
@@ -93,14 +94,45 @@ namespace FAL.Controllers
                 {
                     await _collectionService.CreateCollectionAsync(SystermId);
                 }
+
                 #region index face
-                var indexResponse = await _collectionService.IndexFaceAsync(SystermId, SystermId, key);
+                var indexResponse = await _collectionService.IndexFaceByFileAsync(file, SystermId, userId);
                 #endregion
+
+                #region check exit UserId
+                var isExitUser = await _dynamoService.IsExitUserAsync(SystermId, userId);
+                #endregion
+
+                if (!isExitUser)
+                {
+                    await _collectionService.CreateNewUserAsync(SystermId, userId);
+                }
+
                 #region Add user 
-                await AssosiateFaceWithUserAsync(indexResponse.FaceRecords[0].Face, key);
+                //await AssosiateFaceWithUserAsync(indexResponse.FaceRecords[0].Face, userId);
+                await _collectionService.AssociateFacesAsync(SystermId, new List<string>() { indexResponse.FaceRecords[0].Face.FaceId }, userId);
+                await _dynamoService.CreateUserInformationAsync(SystermId, userId, indexResponse.FaceRecords[0].Face.FaceId);
                 #endregion
+
             }
             catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        private async Task<Image> GetImageAsync(IFormFile file)
+        {
+            try
+            {
+                using var memoryStream = new MemoryStream();
+                await file.CopyToAsync(memoryStream);
+                return new Image
+                {
+                    Bytes = memoryStream
+                };
+            }
+            catch (Exception)
             {
                 throw;
             }
