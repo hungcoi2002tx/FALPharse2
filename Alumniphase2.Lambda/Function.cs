@@ -1,4 +1,5 @@
-﻿using Amazon.DynamoDBv2;
+﻿using Alumniphase2.Lambda.Models;
+using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.S3Events;
@@ -79,12 +80,10 @@ public class Function
 
     private async Task DetectVideoProcess(string bucket, string key)
     {
-        List<(string, string)> listUserIds = new List<(string, string)>();
+        List<ResponseObj> listUserIds = new List<ResponseObj>();
         string jobId = await StartFaceSearch(bucket, key);
 
         listUserIds = await GetFaceSearchResults(jobId, bucket);
-        // Convert the list of tuples to a formatted string
-        var formattedResult = string.Join(", ", listUserIds.Select(tuple => $"({tuple.Item1}, {tuple.Item2})"));
     }
     private async Task DetectImageProcess(string bucket, string key, GetObjectMetadataResponse metadataResponse)
     {
@@ -167,7 +166,7 @@ public class Function
 
         return startFaceSearchResponse.JobId;
     }
-    private async Task<List<(string userId, string timestamp)>> GetFaceSearchResults(string jobId, string collectionId)
+    private async Task<List<ResponseObj>> GetFaceSearchResults(string jobId, string collectionId)
     {
         GetFaceSearchRequest getFaceSearchRequest = new GetFaceSearchRequest
         {
@@ -223,10 +222,15 @@ public class Function
         catch (Exception ex)
         {
             Console.WriteLine($"Error while processing face search results: {ex.Message}");
-            return new List<(string, string)>();
+            return new List<ResponseObj>();
         }
 
-        var userList = new List<(string userId, string timestamp)>();
+        return await FindListUserIdInVideo(faceIdDict,collectionId);
+    }
+
+    private async Task<List<ResponseObj>> FindListUserIdInVideo(Dictionary<string, (double Confidence, long Timestamp)> faceIdDict,string collectionId)
+    {
+        var userList = new List<ResponseObj>();
         var uniqueUserIds = new HashSet<string>();
 
         foreach (var faceIdEntry in faceIdDict)
@@ -242,7 +246,11 @@ public class Function
                 if (!string.IsNullOrEmpty(userId) && uniqueUserIds.Add(userId))
                 {
                     string formattedTimestamp = timestamp.ToString();
-                    userList.Add((userId, formattedTimestamp));
+                    userList.Add(new ResponseObj
+                    {
+                        TimeAppearances = formattedTimestamp,
+                        UserId = userId,
+                    });
                 }
             }
             catch (Exception ex)
@@ -254,6 +262,7 @@ public class Function
 
         return userList;
     }
+
     private async Task<string> SearchUserByFaceId(string faceId, string collectionId)
     {
         var response = await _rekognitionClient.SearchUsersAsync(new SearchUsersRequest
