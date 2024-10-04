@@ -16,8 +16,6 @@ namespace Alumniphase2.Lambda;
 
 public class Function
 {
-    public const string TRAIN_PROCESS = "Training";
-    public const string DETECT_PROCESS = "Tagging";
     public const string TYPE_OF_REQUEST = "TypeOfRequest";
     public const string CONTENT_TYPE = "ContentType";
 
@@ -61,17 +59,13 @@ public class Function
 
                 var metadataResponse = await _s3Client.GetObjectMetadataAsync(bucket, key);
                 var contentType = CheckContentType(metadataResponse);
-                var process = CheckProcess(metadataResponse);
 
-                switch ((contentType, process))
+                switch (contentType)
                 {
-                    case (false, true):
-                        await TrainImageProcess(bucket, key, metadataResponse);
-                        break;
-                    case (false, false):
+                    case (false):
                         await DetectImageProcess(bucket, key, metadataResponse);
                         break;
-                    case (true, false):
+                    case (true):
                         await DetectVideoProcess(bucket, key);
                         break;
                 }
@@ -92,188 +86,10 @@ public class Function
         // Convert the list of tuples to a formatted string
         var formattedResult = string.Join(", ", listUserIds.Select(tuple => $"({tuple.Item1}, {tuple.Item2})"));
     }
-
-    private async Task<string> StartFaceSearch(string s3BucketName, string videoFileName)
-    {
-        var startFaceSearchRequest = new StartFaceSearchRequest
-        {
-            CollectionId = s3BucketName,
-            Video = new Video
-            {
-                S3Object = new Amazon.Rekognition.Model.S3Object
-                {
-                    Bucket = s3BucketName,
-                    Name = videoFileName
-                }
-            },
-            FaceMatchThreshold = 80
-        };
-
-        var startFaceSearchResponse = await _rekognitionClient.StartFaceSearchAsync(startFaceSearchRequest);
-
-        return startFaceSearchResponse.JobId;
-    }
-
-    private async Task<List<(string userId, string timestamp)>> GetFaceSearchResults(string jobId, string collectionId)
-    {
-        GetFaceSearchRequest getFaceSearchRequest = new GetFaceSearchRequest
-        {
-            JobId = jobId
-        };
-
-        GetFaceSearchResponse faceSearchResponse;
-        var faceIdDict = new Dictionary<string, (double Confidence, long Timestamp)>();
-
-        try
-        {
-            do
-            {
-                faceSearchResponse = await _rekognitionClient.GetFaceSearchAsync(getFaceSearchRequest);
-
-                if (faceSearchResponse.JobStatus == VideoJobStatus.SUCCEEDED)
-                {
-                    foreach (var personMatch in faceSearchResponse.Persons)
-                    {
-                        if (personMatch.FaceMatches != null)
-                        {
-                            foreach (var faceMatch in personMatch.FaceMatches)
-                            {
-                                string faceId = faceMatch.Face.FaceId;
-                                double confidence = faceMatch.Similarity;
-                                long timestamp = personMatch.Timestamp;
-
-                             
-                                if (faceIdDict.TryGetValue(faceId, out var existingMatch))
-                                {
-      
-                                    if (confidence > existingMatch.Confidence)
-                                    {
-                                        faceIdDict[faceId] = (confidence, timestamp);
-                                    }
-                                }
-                                else
-                                {
-                                    faceIdDict[faceId] = (confidence, timestamp);
-                                }
-                            }
-                        }
-                    }
-                }
-                else if (faceSearchResponse.JobStatus == VideoJobStatus.FAILED)
-                {
-                    Console.WriteLine("Face search job failed.");
-                    break;
-                }
-
-            } while (faceSearchResponse.JobStatus == VideoJobStatus.IN_PROGRESS);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error while processing face search results: {ex.Message}");
-            return new List<(string, string)>(); 
-        }
-
-        var userList = new List<(string userId, string timestamp)>();
-        var uniqueUserIds = new HashSet<string>();
-
-        foreach (var faceIdEntry in faceIdDict)
-        {
-            string faceId = faceIdEntry.Key;
-            long timestamp = faceIdEntry.Value.Timestamp;
-
-            try
-            {
-
-                string userId = await SearchUserByFaceId(faceId, collectionId);
-
-                if (!string.IsNullOrEmpty(userId) && uniqueUserIds.Add(userId)) 
-                {
-                    string formattedTimestamp = timestamp.ToString();
-                    userList.Add((userId, formattedTimestamp));
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching user for faceId {faceId}: {ex.Message}");
-                continue;
-            }
-        }
-
-        return userList;
-    }
-
-
-    private async Task<string> SearchUserByFaceId(string faceId, string collectionId)
-    {
-        var response = await _rekognitionClient.SearchUsersAsync(new SearchUsersRequest
-        {
-            CollectionId = collectionId,
-            MaxUsers = 1,
-            FaceId = faceId,
-            UserMatchThreshold = 80
-        });
-
-        string faceModelVersion = response.FaceModelVersion;
-        SearchedUser searchedUser = response.SearchedUser;
-        List<UserMatch> userMatches = response.UserMatches;
-
-        if (userMatches.Count == 1)
-        {
-            return userMatches.First().User.UserId;
-        }
-        Console.WriteLine("SearchUserByFaceId: More than 1 user found, or none");
-        return "";
-    }
-
-
-
-    private async Task TrainImageProcess(string bucket, string key, GetObjectMetadataResponse metadataResponse)
-    {
-        var collectionName = bucket;
-        var dynamoDbName = bucket;
-        var userId = metadataResponse.Metadata[USER_ID_ATTRIBUTE];
-
-        var response = await IndexFaces(bucket, key, collectionName);
-
-        if (response.HttpStatusCode == System.Net.HttpStatusCode.OK && response.FaceRecords.Count > 0)
-        {
-            foreach (var faceRecord in response.FaceRecords)
-            {
-                var faceId = faceRecord.Face.FaceId;
-                var imageId = faceRecord.Face.ImageId;
-
-                var itemResponse = await GetRecordByUserId(userId, dynamoDbName);
-
-                if (itemResponse.Items.Count > 0)
-                {
-                    throw new Exception("User Id is duplicate!");
-                }
-                else
-                {
-                    await CreateUser(userId, collectionName);
-
-                    await AssociateUser(userId, faceId, collectionName);
-
-                    var metadata = metadataResponse.Metadata;
-
-                    if (metadata != null && metadata.Count > 0)
-                    {
-                        await CreateNewRecord(dynamoDbName, userId, imageId, faceId);
-                    }
-                }
-            }
-        }
-        else
-        {
-            throw new Exception("index face failed");
-        }
-    }
-
     private async Task DetectImageProcess(string bucket, string key, GetObjectMetadataResponse metadataResponse)
     {
         var collectionName = bucket;
         var dynamoDbName = bucket;
-
 
         var indexFacesResponse = await IndexFaces(bucket, key, collectionName);
         var responseUserFaceId = await FindUserIdByFaceId(indexFacesResponse.FaceRecords, collectionName);
@@ -315,7 +131,7 @@ public class Function
 
                     if (itemResponse != null)
                     {
-                        var item = itemResponse.Items[0]; 
+                        var item = itemResponse.Items[0];
 
                         string faceId = item["FaceId"].S;
                         string imageId = item["ImageId"].S;
@@ -331,6 +147,134 @@ public class Function
         }
     }
 
+    private async Task<string> StartFaceSearch(string s3BucketName, string videoFileName)
+    {
+        var startFaceSearchRequest = new StartFaceSearchRequest
+        {
+            CollectionId = s3BucketName,
+            Video = new Video
+            {
+                S3Object = new Amazon.Rekognition.Model.S3Object
+                {
+                    Bucket = s3BucketName,
+                    Name = videoFileName
+                }
+            },
+            FaceMatchThreshold = 80
+        };
+
+        var startFaceSearchResponse = await _rekognitionClient.StartFaceSearchAsync(startFaceSearchRequest);
+
+        return startFaceSearchResponse.JobId;
+    }
+    private async Task<List<(string userId, string timestamp)>> GetFaceSearchResults(string jobId, string collectionId)
+    {
+        GetFaceSearchRequest getFaceSearchRequest = new GetFaceSearchRequest
+        {
+            JobId = jobId
+        };
+
+        GetFaceSearchResponse faceSearchResponse;
+        var faceIdDict = new Dictionary<string, (double Confidence, long Timestamp)>();
+
+        try
+        {
+            do
+            {
+                faceSearchResponse = await _rekognitionClient.GetFaceSearchAsync(getFaceSearchRequest);
+
+                if (faceSearchResponse.JobStatus == VideoJobStatus.SUCCEEDED)
+                {
+                    foreach (var personMatch in faceSearchResponse.Persons)
+                    {
+                        if (personMatch.FaceMatches != null)
+                        {
+                            foreach (var faceMatch in personMatch.FaceMatches)
+                            {
+                                string faceId = faceMatch.Face.FaceId;
+                                double confidence = faceMatch.Similarity;
+                                long timestamp = personMatch.Timestamp;
+
+
+                                if (faceIdDict.TryGetValue(faceId, out var existingMatch))
+                                {
+
+                                    if (confidence > existingMatch.Confidence)
+                                    {
+                                        faceIdDict[faceId] = (confidence, timestamp);
+                                    }
+                                }
+                                else
+                                {
+                                    faceIdDict[faceId] = (confidence, timestamp);
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (faceSearchResponse.JobStatus == VideoJobStatus.FAILED)
+                {
+                    Console.WriteLine("Face search job failed.");
+                    break;
+                }
+
+            } while (faceSearchResponse.JobStatus == VideoJobStatus.IN_PROGRESS);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while processing face search results: {ex.Message}");
+            return new List<(string, string)>();
+        }
+
+        var userList = new List<(string userId, string timestamp)>();
+        var uniqueUserIds = new HashSet<string>();
+
+        foreach (var faceIdEntry in faceIdDict)
+        {
+            string faceId = faceIdEntry.Key;
+            long timestamp = faceIdEntry.Value.Timestamp;
+
+            try
+            {
+
+                string userId = await SearchUserByFaceId(faceId, collectionId);
+
+                if (!string.IsNullOrEmpty(userId) && uniqueUserIds.Add(userId))
+                {
+                    string formattedTimestamp = timestamp.ToString();
+                    userList.Add((userId, formattedTimestamp));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching user for faceId {faceId}: {ex.Message}");
+                continue;
+            }
+        }
+
+        return userList;
+    }
+    private async Task<string> SearchUserByFaceId(string faceId, string collectionId)
+    {
+        var response = await _rekognitionClient.SearchUsersAsync(new SearchUsersRequest
+        {
+            CollectionId = collectionId,
+            MaxUsers = 1,
+            FaceId = faceId,
+            UserMatchThreshold = 80
+        });
+
+        string faceModelVersion = response.FaceModelVersion;
+        SearchedUser searchedUser = response.SearchedUser;
+        List<UserMatch> userMatches = response.UserMatches;
+
+        if (userMatches.Count == 1)
+        {
+            return userMatches.First().User.UserId;
+        }
+        Console.WriteLine("SearchUserByFaceId: More than 1 user found, or none");
+        return "";
+    }
     private async Task<QueryResponse> GetRecordByUserId(string userId, string dynamoDbName)
     {
         //var getItemRequest = new GetItemRequest
@@ -360,7 +304,6 @@ public class Function
 
         return await _dynamoDbClient.QueryAsync(queryRequest);
     }
-
     private async Task DeleteFaceId(List<string> faceIds, string collectionName)
     {
         await _rekognitionClient.DeleteFacesAsync(new DeleteFacesRequest
@@ -369,8 +312,6 @@ public class Function
             FaceIds = faceIds
         });
     }
-
-
     private async Task CreateNewRecord(string tableName, string userId, string imageId, string faceId)
     {
         var request = new PutItemRequest
@@ -407,7 +348,6 @@ public class Function
 
         await _dynamoDbClient.PutItemAsync(request);
     }
-
     private async Task<string> CreateUser(string userId, string collectionName)
     {
         Console.WriteLine(userId);
@@ -480,24 +420,6 @@ public class Function
         else
         {
             throw new Exception("wrong content type, làm éo gì có content type m chọn hả hưng");
-        }
-    }
-    private bool CheckProcess(GetObjectMetadataResponse metadataResponse)
-    {
-        var methods = metadataResponse.Metadata[TYPE_OF_REQUEST];
-
-        if (methods == TRAIN_PROCESS)
-        {
-            return true;
-        }
-        else if (methods == DETECT_PROCESS)
-        {
-
-            return false;
-        }
-        else
-        {
-            throw new Exception("wrong process, làm éo gì có process m chọn hả hưng");
         }
     }
     private async Task<(List<(string, string, string)>, List<string>)> FindUserIdByFaceId(List<FaceRecord> faceRecords, string collectionName)
