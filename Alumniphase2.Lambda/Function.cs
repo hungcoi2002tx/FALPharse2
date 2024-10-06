@@ -78,7 +78,7 @@ public class Function
         }
     }
 
-    private async Task DetectVideoProcess(string bucket, string key)
+    public virtual async Task DetectVideoProcess(string bucket, string key)
     {
         List<ResponseObj> listUserIds = new List<ResponseObj>();
         string jobId = await StartFaceSearch(bucket, key);
@@ -146,7 +146,7 @@ public class Function
         }
     }
 
-    private async Task<string> StartFaceSearch(string s3BucketName, string videoFileName)
+    public virtual async Task<string> StartFaceSearch(string s3BucketName, string videoFileName)
     {
         var startFaceSearchRequest = new StartFaceSearchRequest
         {
@@ -166,7 +166,7 @@ public class Function
 
         return startFaceSearchResponse.JobId;
     }
-    private async Task<List<ResponseObj>> GetFaceSearchResults(string jobId, string collectionId)
+    public virtual async Task<List<ResponseObj>> GetFaceSearchResults(string jobId, string collectionId)
     {
         GetFaceSearchRequest getFaceSearchRequest = new GetFaceSearchRequest
         {
@@ -228,7 +228,7 @@ public class Function
         return await FindListUserIdInVideo(faceIdDict,collectionId);
     }
 
-    private async Task<List<ResponseObj>> FindListUserIdInVideo(Dictionary<string, (double Confidence, long Timestamp)> faceIdDict,string collectionId)
+    public virtual async Task<List<ResponseObj>> FindListUserIdInVideo(Dictionary<string, (double Confidence, long Timestamp)> faceIdDict,string collectionId)
     {
         var userList = new List<ResponseObj>();
         var uniqueUserIds = new HashSet<string>();
@@ -263,7 +263,7 @@ public class Function
         return userList;
     }
 
-    private async Task<string> SearchUserByFaceId(string faceId, string collectionId)
+    public virtual async Task<string> SearchUserByFaceId(string faceId, string collectionId)
     {
         var response = await _rekognitionClient.SearchUsersAsync(new SearchUsersRequest
         {
