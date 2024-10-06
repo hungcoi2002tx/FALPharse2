@@ -1,4 +1,5 @@
 ﻿using Alumniphase2.Lambda.Models;
+using Alumniphase2.Lambda.Utils;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Lambda.Core;
@@ -7,6 +8,8 @@ using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Microsoft.VisualBasic;
+using Newtonsoft.Json;
 using System.Reflection.Emit;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -17,20 +20,6 @@ namespace Alumniphase2.Lambda;
 
 public class Function
 {
-    public const string TYPE_OF_REQUEST = "TypeOfRequest";
-    public const string CONTENT_TYPE = "ContentType";
-    public const string ORIGINAL_FILE_NAME = "OriginalFileName";
-
-    public const string VIDEO = "Video";
-    public const string IMAGE = "Image";
-
-    public const string USER_ID_ATTRIBUTE = "UserId";
-
-    public const string USER_ID_ATTRIBUTE_DYNAMODB = "UserId";
-    public const string FACE_ID_ATTRIBUTE_DYNAMODB = "FaceId";
-    public const string UPLOAD_DATE_ATTRIBUTE_DYNAMODB = "UploadDate";
-    public const string IMAGE_ID_ATTRIBUTE_DYNAMODB = "ImageId";
-
     private readonly IAmazonS3 _s3Client;
     private readonly IAmazonRekognition _rekognitionClient;
     private readonly IAmazonDynamoDB _dynamoDbClient;
@@ -50,6 +39,8 @@ public class Function
             {
                 var s3Record = record.S3;
 
+                var result = new FaceDetectionResult();
+
                 if (s3Record == null)
                 {
                     context.Logger.LogError("No S3 record found in the event.");
@@ -61,12 +52,13 @@ public class Function
 
                 var metadataResponse = await _s3Client.GetObjectMetadataAsync(bucket, key);
                 var contentType = CheckContentType(metadataResponse);
-                var fileName = metadataResponse.Metadata[ORIGINAL_FILE_NAME];
+                var fileName = metadataResponse.Metadata[Utils.Constants.ORIGINAL_FILE_NAME];
 
                 switch (contentType)
                 {
                     case (false):
-                        await DetectImageProcess(bucket, key, fileName);
+                        result = await DetectImageProcess(bucket, key, fileName);
+                        await StoreImageResponseResult(result, fileName);
                         break;
                     case (true):
                         await DetectVideoProcess(bucket, key);
@@ -80,6 +72,36 @@ public class Function
         }
     }
 
+    private async Task StoreImageResponseResult(FaceDetectionResult result, string fileName)
+    {
+        string jsonResult = JsonConvert.SerializeObject(result);
+        var dictionaryResponseResult = CreateDictionaryFualumniResponeResult(fileName, jsonResult);
+        await CreateNewRecord(Utils.Constants.FUALUMNI_RESPONSE_RESULT_TABLE, dictionaryResponseResult);
+    }
+    private Dictionary<string, AttributeValue> CreateDictionaryFualumniResponeResult(string fileName, string data)
+    {
+        return new Dictionary<string, AttributeValue>
+               {
+                   {
+                       Utils.Constants.FILE_NAME_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       {
+                           S = fileName
+                       }
+                   },
+                   {
+                       Utils.Constants.FACE_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       {
+                           S = data
+                       }
+                   },
+                   {
+                       Utils.Constants.CREATE_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       {
+                           S = DateTime.Now.ToString()
+                       }
+                   }
+               };
+    }
     private async Task DetectVideoProcess(string bucket, string key)
     {
         List<FaceRecognitionResponse> listUserIds = new List<FaceRecognitionResponse>();
@@ -87,8 +109,7 @@ public class Function
         string jobId = await StartFaceSearch(bucket, key);
         listUserIds = await GetFaceSearchResults(jobId, bucket);
     }
-
-    private async Task DetectImageProcess(string bucket, string key, string fileName)
+    private async Task<FaceDetectionResult> DetectImageProcess(string bucket, string key, string fileName)
     {
         var resultRegisteredUsers = new List<FaceRecognitionResponse>();
         var resultUnregisteredUsers = new List<FaceRecognitionResponse>();
@@ -119,10 +140,10 @@ public class Function
 
             if (registeredUsers != null && registeredUsers.Count > 0)
             {
-                foreach (var (userId, faceId, imageId, boundingBox) in registeredUsers)
+                foreach (var (userId, faceId, boundingBox) in registeredUsers)
                 {
                     await AssociateUser(userId, faceId, collectionName);
-                    var dictionary = CreateDictionaryFualumni(userId, faceId, imageId);
+                    var dictionary = CreateDictionaryFualumni(userId, faceId);
                     await CreateNewRecord(dynamoDbName, dictionary);
 
                     var responseObj = CreateResponseObj(fileName, null, boundingBox, faceId, userId);
@@ -134,41 +155,37 @@ public class Function
                 throw new Exception("Register user: Cannot detect anyone");
             }
 
-
-
+            return new FaceDetectionResult
+            {
+                RegisteredFaces = resultRegisteredUsers,
+                UnregisteredFaces = resultUnregisteredUsers
+            };
         }
         else
         {
             throw new Exception("Index face: Cannot detect anyone");
         }
     }
-
-    private Dictionary<string, AttributeValue> CreateDictionaryFualumni(string userId, string faceId, string imageId)
+    private Dictionary<string, AttributeValue> CreateDictionaryFualumni(string userId, string faceId)
     {
         return new Dictionary<string, AttributeValue>
                {
                    {
-                       USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       Utils.Constants.USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
                            S = userId
                        }
                    },
                    {
-                       FACE_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       Utils.Constants.FACE_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
                            S = faceId
                        }
                    },
                    {
-                       UPLOAD_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       Utils.Constants.CREATE_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
                            S = DateTime.Now.ToString()
-                       }
-                   },
-                   {
-                       IMAGE_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
-                       {
-                           S = imageId
                        }
                    }
                };
@@ -197,7 +214,7 @@ public class Function
                     Name = videoFileName
                 }
             },
-            FaceMatchThreshold = 80
+            FaceMatchThreshold = (float)ConfidenceLevel.High,
         };
 
         var startFaceSearchResponse = await _rekognitionClient.StartFaceSearchAsync(startFaceSearchRequest);
@@ -306,7 +323,7 @@ public class Function
             CollectionId = collectionId,
             MaxUsers = 1,
             FaceId = faceId,
-            UserMatchThreshold = 80
+            UserMatchThreshold = (float)ConfidenceLevel.High,
         });
 
         string faceModelVersion = response.FaceModelVersion;
@@ -373,7 +390,7 @@ public class Function
                 faceId
             },
             UserId = userId,
-            UserMatchThreshold = 70
+            UserMatchThreshold = (float)ConfidenceLevel.High,
         });
 
         return response;
@@ -389,7 +406,7 @@ public class Function
                         faceId
                 },
                 UserId = userId,
-                UserMatchThreshold = 70
+                UserMatchThreshold = (float)ConfidenceLevel.High,
             });
         }
     }
@@ -412,13 +429,13 @@ public class Function
     }
     private bool CheckContentType(GetObjectMetadataResponse metadataResponse)
     {
-        var contentType = metadataResponse.Metadata[CONTENT_TYPE];
+        var contentType = metadataResponse.Metadata[Utils.Constants.CONTENT_TYPE];
 
-        if (contentType.Contains(VIDEO))
+        if (contentType.Contains(Utils.Constants.VIDEO))
         {
             return true;
         }
-        else if (contentType.Contains(IMAGE))
+        else if (contentType.Contains(Utils.Constants.IMAGE))
         {
             return false;
         }
@@ -427,9 +444,9 @@ public class Function
             throw new Exception("wrong content type, làm éo gì có content type m chọn hả hưng");
         }
     }
-    private async Task<(List<(string, string, string, Models.BoundingBox)>, List<(string, Models.BoundingBox)>)> FindUserIdByFaceId(List<FaceRecord> faceRecords, string collectionName)
+    private async Task<(List<(string, string, Models.BoundingBox)>, List<(string, Models.BoundingBox)>)> FindUserIdByFaceId(List<FaceRecord> faceRecords, string collectionName)
     {
-        List<(string, string, string, Models.BoundingBox)> registeredUsers = new();
+        List<(string, string, Models.BoundingBox)> registeredUsers = new();
         List<(string, Models.BoundingBox)> unregisteredUser = new();
 
         foreach (var faceRecord in faceRecords)
@@ -449,12 +466,12 @@ public class Function
             {
                 CollectionId = collectionName,
                 FaceId = faceId,
-                UserMatchThreshold = 70
+                UserMatchThreshold = (float)ConfidenceLevel.High,
             });
 
             if (userResponse.UserMatches.Count > 0)
             {
-                registeredUsers.Add((userResponse.UserMatches[0].User.UserId, faceId, imageId, b));
+                registeredUsers.Add((userResponse.UserMatches[0].User.UserId, faceId, b));
             }
             else
             {
