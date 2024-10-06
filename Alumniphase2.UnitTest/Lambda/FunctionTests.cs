@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Alumniphase2.UnitTest.Lambda
 {
-    public class FunctionTests : Function
+    public class FunctionTests : Alumniphase2.Lambda.Function
     {
         private readonly Mock<IAmazonRekognition> _mockRekognitionClient;
         private readonly Mock<Function> _mockFunction;
@@ -19,7 +19,6 @@ namespace Alumniphase2.UnitTest.Lambda
         public FunctionTests()
         {
             _mockRekognitionClient = new Mock<IAmazonRekognition>();
-
             _mockFunction = new Mock<Function> { CallBase = true };
         }
 
@@ -59,8 +58,8 @@ namespace Alumniphase2.UnitTest.Lambda
         public async Task StartFaceSearch_ShouldCall_StartFaceSearchAsync_And_Return_JobId()
         {
             // Arrange
-            string bucketName = "test-bucket";
-            string videoFileName = "test-video.mp4";
+            string bucketName = "fualumni";
+            string videoFileName = "93dcc1f5-d306-4667-a9fe-9c47c5eec03a";
             string expectedJobId = "test-job-id";
 
             var startFaceSearchResponse = new StartFaceSearchResponse
@@ -68,15 +67,21 @@ namespace Alumniphase2.UnitTest.Lambda
                 JobId = expectedJobId
             };
 
-            _mockRekognitionClient
+            var mockRekognitionClient = new Mock<IAmazonRekognition>();
+            mockRekognitionClient
                 .Setup(x => x.StartFaceSearchAsync(It.IsAny<StartFaceSearchRequest>(), default))
                 .ReturnsAsync(startFaceSearchResponse);
 
+            var function = new Function
+            {
+                _rekognitionClient = mockRekognitionClient.Object // Inject mock RekognitionClient here
+            };
+
             // Act
-            var result = await _mockFunction.Object.StartFaceSearch(bucketName, videoFileName);
+            var result = await function.StartFaceSearch(bucketName, videoFileName);
 
             // Assert
-            _mockRekognitionClient.Verify(x => x.StartFaceSearchAsync(It.Is<StartFaceSearchRequest>(req =>
+            mockRekognitionClient.Verify(x => x.StartFaceSearchAsync(It.Is<StartFaceSearchRequest>(req =>
                 req.CollectionId == bucketName &&
                 req.Video.S3Object.Bucket == bucketName &&
                 req.Video.S3Object.Name == videoFileName &&
@@ -85,6 +90,7 @@ namespace Alumniphase2.UnitTest.Lambda
 
             Assert.Equal(expectedJobId, result);
         }
+
 
         //[Fact]
         //public async Task GetFaceSearchResults_ShouldReturn_ListOfResponseObjs_WhenJobSucceeded()

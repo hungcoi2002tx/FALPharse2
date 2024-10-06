@@ -31,7 +31,7 @@ public class Function
     public const string IMAGE_ID_ATTRIBUTE_DYNAMODB = "ImageId";
 
     private readonly IAmazonS3 _s3Client;
-    private readonly IAmazonRekognition _rekognitionClient;
+    public  IAmazonRekognition _rekognitionClient;
     private readonly IAmazonDynamoDB _dynamoDbClient;
 
     public Function()
