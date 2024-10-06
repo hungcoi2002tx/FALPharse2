@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Alumniphase2.Lambda.Models
 {
-    public class ResponseObj
+    public class FaceRecognitionResponse
     {
         public string FileName { get; set; } = null!;
         public string? TimeAppearances { get; set; } = null;
