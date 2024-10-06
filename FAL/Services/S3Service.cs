@@ -25,7 +25,6 @@ namespace FAL.Services
             try
             {
                 var fileTransferUtility = new TransferUtility(_service);
-
                 // Sử dụng stream để upload
                 using (var stream = new MemoryStream())
                 {
@@ -76,7 +75,7 @@ namespace FAL.Services
         {
             try
             {
-                request.Metadata.Add(nameof(TypeOfRequest), type.ToString());
+                request.Metadata.Add("OriginalFileName", file.Name);
                 request.Metadata.Add(nameof(FaceInformation.UserId), userId);
                 if (IsVideo(file))
                 {
