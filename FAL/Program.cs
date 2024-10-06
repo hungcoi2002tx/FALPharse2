@@ -3,6 +3,7 @@ using Amazon.Rekognition;
 using Amazon.S3;
 using FAL.Services;
 using FAL.Services.IServices;
+using FAL.UnitOfWork;
 using Share.SystemModel;
 
 namespace FAL
@@ -27,6 +28,7 @@ namespace FAL
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
             builder.Services.AddSingleton<IS3Service, S3Service>();
             builder.Services.AddSingleton<IDynamoDBService, DynamoDBService>();
+            builder.Services.AddSingleton<IUnitOfWork, UnitOfWork.Implement.UnitOfWork>();
 
             var app = builder.Build();
 

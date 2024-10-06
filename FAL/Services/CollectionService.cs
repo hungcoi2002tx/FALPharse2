@@ -49,6 +49,41 @@ namespace FAL.Services
             }
         }
 
+        public async Task<bool> DeleteCollectionAsync(string systermId)
+        {
+            try
+            {
+                // Tạo yêu cầu DeleteCollectionRequest
+                var request = new DeleteCollectionRequest
+                {
+                    CollectionId = systermId // Tên của collection muốn xóa
+                };
+
+                // Gửi yêu cầu xóa collection
+                var response = await _rekognitionClient.DeleteCollectionAsync(request);
+
+                // Kiểm tra mã trạng thái của phản hồi
+                if (response.StatusCode != (int)System.Net.HttpStatusCode.OK)
+                {
+                    throw new Exception($"Failed to delete collection '{systermId}'.");
+                }
+
+                Console.WriteLine($"Collection '{systermId}' deleted successfully.");
+                return true;
+            }
+            catch (ResourceNotFoundException ex)
+            {
+                // Nếu collection không tồn tại, rollback vẫn coi như thành công
+                Console.WriteLine($"Collection '{systermId}' does not exist.");
+                return false;
+            }
+            catch (Exception)
+            {
+                // Bắt lỗi chung và ném ra ngoài
+                throw;
+            }
+        }
+
         public async Task<bool> DeleteByFaceIdAsync(string faceId, string systermId)
         {
             try
@@ -248,6 +283,44 @@ namespace FAL.Services
             }
         }
 
+        public async Task<bool> DisassociateFacesAsync(string systermId, List<string> faceIds, string key)
+        {
+            try
+            {
+                // Tạo yêu cầu DissociateFacesRequest
+                var dissociateRequest = new DisassociateFacesRequest()
+                {
+                    CollectionId = systermId,
+                    UserId = key,
+                    FaceIds = faceIds
+                };
+
+                // Gửi yêu cầu hủy liên kết face với user
+                var response = await _rekognitionClient.DisassociateFacesAsync(dissociateRequest);
+
+                // Kiểm tra mã trạng thái của phản hồi
+                if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    throw new Exception($"Failed to dissociate faces from user '{key}' in collection '{systermId}'.");
+                }
+
+                Console.WriteLine($"Faces successfully dissociated from user '{key}' in collection '{systermId}'.");
+                return true;
+            }
+            catch (ResourceNotFoundException ex)
+            {
+                // Nếu face hoặc user không tồn tại, rollback vẫn coi như thành công
+                Console.WriteLine($"Face(s) or user '{key}' not found in collection '{systermId}'.");
+                return false;
+            }
+            catch (Exception)
+            {
+                // Bắt lỗi chung và ném ra ngoài
+                throw;
+            }
+        }
+
+
         public async Task<bool> IsUserExistByUserIdAsync(string systermId, string userId)
         {
             try
@@ -292,6 +365,41 @@ namespace FAL.Services
             }
             catch (Exception)
             {
+                throw;
+            }
+        }
+        public async Task<bool> DeleteNewUserAsync(string systermId, string userId)
+        {
+            try
+            {
+                // Tạo yêu cầu DeleteUserRequest
+                var request = new DeleteUserRequest()
+                {
+                    CollectionId = systermId, // Tên của collection chứa user
+                    UserId = userId           // Id của user muốn xóa
+                };
+
+                // Gửi yêu cầu xóa user
+                var response = await _rekognitionClient.DeleteUserAsync(request);
+
+                // Kiểm tra mã trạng thái của phản hồi
+                if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    throw new Exception($"Failed to delete user '{userId}' from collection '{systermId}'.");
+                }
+
+                Console.WriteLine($"User '{userId}' deleted successfully from collection '{systermId}'.");
+                return true;
+            }
+            catch (ResourceNotFoundException ex)
+            {
+                // Nếu user không tồn tại, rollback vẫn coi như thành công
+                Console.WriteLine($"User '{userId}' does not exist in collection '{systermId}'.");
+                return false;
+            }
+            catch (Exception)
+            {
+                // Bắt lỗi chung và ném ra ngoài
                 throw;
             }
         }

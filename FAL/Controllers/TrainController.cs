@@ -1,6 +1,7 @@
 ﻿using Amazon.Rekognition.Model;
 using Amazon.S3;
 using FAL.Services.IServices;
+using FAL.UnitOfWork;
 using FAL.Utils;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Http;
@@ -17,6 +18,7 @@ namespace FAL.Controllers
         private readonly IS3Service _s3Service;
         private readonly ICollectionService _collectionService;
         private readonly IDynamoDBService _dynamoService;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly CustomLog _logger;
         private readonly string SystermId = GlobalVarians.SystermId;
 
@@ -24,12 +26,13 @@ namespace FAL.Controllers
             CustomLog logger,
             ICollectionService collectionService,
             IS3Service s3Service, IDynamoDBService
-            dynamoService)
+            dynamoService,IUnitOfWork unitOfWork)
         {
             _logger = logger;
             _collectionService = collectionService;
             _s3Service = s3Service;
             _dynamoService = dynamoService;
+            _unitOfWork = unitOfWork;
         }
 
         [HttpDelete("delete")]
@@ -89,35 +92,50 @@ namespace FAL.Controllers
                 #region lay thong tin tu token companyid
 
                 #endregion
-                var collectionExits = await _collectionService.IsCollectionExistAsync(SystermId);
+
+                // Check if collection exists
+                var collectionExits = await _unitOfWork.CollectionService.IsCollectionExistAsync(SystermId);
                 if (!collectionExits)
                 {
-                    await _collectionService.CreateCollectionAsync(SystermId);
+                    await _unitOfWork.AddTask(
+                        async () => await _unitOfWork.CollectionService.CreateCollectionAsync(SystermId),
+                        async () => await _unitOfWork.CollectionService.DeleteCollectionAsync(SystermId)
+                    );
                 }
 
-                #region index face
-                var indexResponse = await _collectionService.IndexFaceByFileAsync(file, SystermId, userId);
-                #endregion
+                // Index the face from the file
+                var indexResponse = await _unitOfWork.CollectionService.IndexFaceByFileAsync(file, SystermId, userId);
 
-                #region check exit UserId
-                var isExitUser = await _dynamoService.IsExitUserAsync(SystermId, userId);
-                #endregion
+                // Check if user exists
+                var isExitUser = await _unitOfWork.DynamoService.IsExitUserAsync(SystermId, userId);
 
                 if (!isExitUser)
                 {
-                    await _collectionService.CreateNewUserAsync(SystermId, userId);
+                    await _unitOfWork.AddTask(
+                        async () => await _unitOfWork.CollectionService.CreateNewUserAsync(SystermId, userId),
+                        async () => await _unitOfWork.CollectionService.DeleteNewUserAsync(SystermId, userId) // Assuming delete user is available
+                    );
                 }
 
-                #region Add user 
-                //await AssosiateFaceWithUserAsync(indexResponse.FaceRecords[0].Face, userId);
-                await _collectionService.AssociateFacesAsync(SystermId, new List<string>() { indexResponse.FaceRecords[0].Face.FaceId }, userId);
-                await _dynamoService.CreateUserInformationAsync(SystermId, userId, indexResponse.FaceRecords[0].Face.FaceId);
-                #endregion
+                // Add user and associate face
+                var faceId = indexResponse.FaceRecords[0].Face.FaceId;
+                await _unitOfWork.AddTask(
+                    async () => await _unitOfWork.CollectionService.AssociateFacesAsync(SystermId, new List<string> { faceId }, userId),
+                    async () => await _unitOfWork.CollectionService.DisassociateFacesAsync(SystermId, new List<string> { faceId }, userId)
+                );
 
+                // Add task to save user information
+                await _unitOfWork.AddTask(
+                    async () => await _unitOfWork.DynamoService.CreateUserInformationAsync(SystermId, userId, faceId),
+                    async () => await _unitOfWork.DynamoService.DeleteUserInformationAsync(SystermId, userId,faceId) // Rollback user information
+                );
+
+                // Commit all tasks if everything succeeded
+                await _unitOfWork.CommitAsync();
             }
             catch (Exception ex)
             {
-                throw;
+                throw;  // Re-throw the exception after rollback
             }
         }
 

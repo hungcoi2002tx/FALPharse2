@@ -9,12 +9,15 @@ namespace FAL.Services.IServices
         Task<bool> DeleteByFaceIdAsync(string faceId, string systermId);
         Task<bool> DisassociatedFaceAsync(string systermId, string faceId, string userId);
         Task<bool> CreateCollectionAsync(string systermId);
+        Task<bool> DeleteCollectionAsync(string systermId);
         Task<IndexFacesResponse> IndexFaceAsync(string systermId, string bucketName, string imageName, string key = null);
         Task<IndexFacesResponse> IndexFaceByFileAsync(Image file, string systermId, string key = null);
         Task<DetectFacesResponse> DetectFaceByFileAsync(IFormFile file);
         Task<bool> AssociateFacesAsync(string systermId, List<string> faceIds, string key);
+        Task<bool> DisassociateFacesAsync(string systermId, List<string> faceIds, string key);
         Task<bool> IsUserExistByUserIdAsync(string systermId, string userId);
         Task<bool> CreateNewUserAsync(string systermId, string userId);
+        Task<bool> DeleteNewUserAsync(string systermId, string userId);
         Task<SearchUsersResponse> SearchUserByFaceIdsAsync(string systermId, string faceId);
         Task<List<Face>> GetFacesAsync(string systermId);
         Task<List<string>> GetCollectionAsync(string systermId);
