@@ -33,6 +33,10 @@ public class Function
 
     public async Task FunctionHandler(S3Event evnt, ILambdaContext context)
     {
+        var logger = new CloudWatchLogger();
+
+        // Ghi log ra CloudWatch
+        await logger.LogMessageAsync("mình là lambda, mình detect ảnh nè");
         try
         {
             foreach (var record in evnt.Records)
@@ -57,6 +61,8 @@ public class Function
                 switch (contentType)
                 {
                     case (false):
+                        // Ghi log ra CloudWatch
+                        await logger.LogMessageAsync("mình là lambda, mình detect ảnh nè");
                         result = await DetectImageProcess(bucket, key, fileName);
                         await StoreResponseResult(result, fileName);
                         break;
@@ -136,6 +142,7 @@ public class Function
                     resultUnregisteredUsers.Add(responseObj);
                 }
             }
+
 
             if (registeredUsers != null && registeredUsers.Count > 0)
             {
