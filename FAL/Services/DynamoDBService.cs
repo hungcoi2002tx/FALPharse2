@@ -58,17 +58,18 @@ namespace FAL.Services
         {
             try
             {
-                var queryRequest = new QueryRequest
+                var request = new QueryRequest
                 {
-                    TableName = systermId,
-                    FilterExpression = "FaceId = :v_faceId",
+                    TableName = "fualumni",
+                    IndexName = "FaceIdIndex",  // Use the GSI index name
+                    KeyConditionExpression = "FaceId = :faceId",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-                        {
-                            { ":v_faceId", new AttributeValue { S = faceId } }
-                        },
-                    Limit = 1
+                    {
+                        { ":faceId", new AttributeValue { S = faceId } }
+                    }
                 };
-                var response = await _dynamoDBService.QueryAsync(queryRequest);
+
+                var response = await _dynamoDBService.QueryAsync(request);
                 if (response != null && response.Count > 0)
                 {
                     return true;
