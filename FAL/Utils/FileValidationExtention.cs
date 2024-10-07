@@ -14,7 +14,7 @@ namespace FAL.Utils
                 }
 
                 // Kiểm tra kích thước của file
-                const long maxImageSize = 15 * 1024 * 1024; // 15MB
+                const long maxImageSize = 5 * 1024 * 1024; // 5MB
                 const long maxVideoSize = 15L * 1024 * 1024 * 1024; // 15GB
 
                 // Lấy loại file (đuôi file)
@@ -25,7 +25,7 @@ namespace FAL.Utils
                 {
                     if (file.Length > maxImageSize)
                     {
-                        throw new Exception(message: "Kích thước file ảnh phải nhỏ hơn 16MB.");
+                        throw new Exception(message: "Kích thước file ảnh phải nhỏ hơn 5MB.");
                     }
                 }
                 // Kiểm tra nếu là video

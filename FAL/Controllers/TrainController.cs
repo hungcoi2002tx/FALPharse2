@@ -53,6 +53,7 @@ namespace FAL.Controllers
         {
             try
             {
+                file.ValidFile();
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
                 await TrainAsync(image, userId);
@@ -109,7 +110,6 @@ namespace FAL.Controllers
                 }
 
                 #region Add user 
-                //await AssosiateFaceWithUserAsync(indexResponse.FaceRecords[0].Face, userId);
                 await _collectionService.AssociateFacesAsync(SystermId, new List<string>() { indexResponse.FaceRecords[0].Face.FaceId }, userId);
                 await _dynamoService.CreateUserInformationAsync(SystermId, userId, indexResponse.FaceRecords[0].Face.FaceId);
                 #endregion
