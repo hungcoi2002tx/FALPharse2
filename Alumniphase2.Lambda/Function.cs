@@ -6,6 +6,7 @@ using Amazon.Lambda.Core;
 using Amazon.Lambda.S3Events;
 using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
+using Amazon.Runtime.Internal.Util;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.VisualBasic;
@@ -69,6 +70,7 @@ public class Function
                     case (true):
                         result = await DetectVideoProcess(bucket, key,fileName);
                         await StoreResponseResult(result, fileName);
+                        await logger.LogMessageAsync($"Add vao db {result.RegisteredFaces.Count}");
                         break;
                 }
             }
@@ -111,7 +113,9 @@ public class Function
     }
     private async Task<FaceDetectionResult> DetectVideoProcess(string bucket, string key,string fileName)
     {
+        var logger = new CloudWatchLogger();
         string jobId = await StartFaceSearch(bucket, key);
+        await logger.LogMessageAsync($"JobId la {jobId}");
         return await GetFaceSearchResults(jobId, bucket,fileName);
     }
     private async Task<FaceDetectionResult> DetectImageProcess(string bucket, string key, string fileName)
@@ -233,7 +237,7 @@ public class Function
 
         GetFaceSearchResponse faceSearchResponse;
         var faceIdDict = new Dictionary<string, (double Confidence, long Timestamp)>();
-
+        var logger = new CloudWatchLogger();
         try
         {
             do
@@ -271,7 +275,7 @@ public class Function
                 }
                 else if (faceSearchResponse.JobStatus == VideoJobStatus.FAILED)
                 {
-                    Console.WriteLine("Face search job failed.");
+                    await logger.LogMessageAsync($"Face search failed");
                     break;
                 }
 
@@ -279,7 +283,7 @@ public class Function
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error while processing face search results: {ex.Message}");
+            await logger.LogMessageAsync($"Error while processing face search results: {ex.Message}");
             return new FaceDetectionResult();
         }
 
@@ -289,7 +293,7 @@ public class Function
     {
         var userList = new List<FaceRecognitionResponse>();
         var uniqueUserIds = new HashSet<string>();
-
+        var logger = new CloudWatchLogger();
         foreach (var faceIdEntry in faceIdDict)
         {
             string faceId = faceIdEntry.Key;
@@ -316,7 +320,7 @@ public class Function
                 continue;
             }
         }
-
+        await logger.LogMessageAsync($"Tra ket qua ve db");
         return new FaceDetectionResult
         {
             FileName = fileName,

@@ -3,6 +3,7 @@ using Amazon.Rekognition;
 using Amazon.S3;
 using FAL.Services;
 using FAL.Services.IServices;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Share.SystemModel;
 
 namespace FAL
@@ -27,7 +28,15 @@ namespace FAL
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
             builder.Services.AddSingleton<IS3Service, S3Service>();
             builder.Services.AddSingleton<IDynamoDBService, DynamoDBService>();
+            builder.Services.Configure<IISServerOptions>(options =>
+            {
+                options.MaxRequestBodySize = 100000000; // 50 MB, or set to any desired size
+            });
 
+            builder.Services.Configure<KestrelServerOptions>(options =>
+            {
+                options.Limits.MaxRequestBodySize = 100000000; // 50 MB, or set to any desired size
+            });
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
