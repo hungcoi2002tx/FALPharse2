@@ -152,6 +152,7 @@ public class Function
 
             return new FaceDetectionResult
             {
+                FileName = fileName,
                 RegisteredFaces = resultRegisteredUsers,
                 UnregisteredFaces = resultUnregisteredUsers
             };
@@ -189,7 +190,6 @@ public class Function
     {
         return new FaceRecognitionResponse
         {
-            FileName = fileName,
             TimeAppearances = timeAppearances,
             BoundingBox = boundingBox,
             FaceId = faceId,
@@ -299,7 +299,6 @@ public class Function
                     {
                         TimeAppearances = formattedTimestamp,
                         UserId = userId,
-                        FileName = fileName
                     });
                 }
             }
@@ -312,6 +311,7 @@ public class Function
 
         return new FaceDetectionResult
         {
+            FileName = fileName,
             RegisteredFaces = userList,
             UnregisteredFaces = new List<FaceRecognitionResponse>()
         };
