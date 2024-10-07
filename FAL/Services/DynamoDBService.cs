@@ -54,7 +54,34 @@ namespace FAL.Services
             }
         }
 
-        public async Task<bool> IsExitUserAsync(string systermId, string userId)
+        public async Task<bool> IsExistFaceIdAsync(string systermId, string faceId)
+        {
+            try
+            {
+                var queryRequest = new QueryRequest
+                {
+                    TableName = systermId,
+                    FilterExpression = "FaceId = :v_faceId",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                        {
+                            { ":v_faceId", new AttributeValue { S = faceId } }
+                        },
+                    Limit = 1
+                };
+                var response = await _dynamoDBService.QueryAsync(queryRequest);
+                if (response != null && response.Count > 0)
+                {
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> IsExistUserAsync(string systermId, string userId)
         {
             try
             {

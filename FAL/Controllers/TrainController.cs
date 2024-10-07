@@ -44,7 +44,11 @@ namespace FAL.Controllers
             catch (Exception ex)
             {
                 _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
-                return BadRequest(new { Status = false, Messange = ex.Message });
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Messange = "Internal Server Error"
+                });
             }
         }
 
@@ -62,7 +66,11 @@ namespace FAL.Controllers
             catch (Exception ex)
             {
                 _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
-                return BadRequest(new { Status = false, Messange = ex.Message });
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Messange = "Internal Server Error"
+                });
             }
         }
 
@@ -71,13 +79,31 @@ namespace FAL.Controllers
         {
             try
             {
+                //check faceId in dynamodb
+                var result = await _dynamoService.IsExistFaceIdAsync(SystermId, faceId);
+                if (result)
+                {
+                    return BadRequest(new ResultResponse
+                    {
+                        Status = false,
+                        Messange = "FaceId is existed in systerm"
+                    });
+                }
+
+                //train
                 await TrainFaceIdAsync(userId, faceId);
+
+                //return 
                 return Content("Train succesfully");
             }
             catch (Exception ex)
             {
                 _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
-                return BadRequest(new { Status = false, Messange = ex.Message });
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Messange = "Internal Server Error"
+                });
             }
         }
 
@@ -127,7 +153,7 @@ namespace FAL.Controllers
             try
             {
                 #region check exit UserId
-                var isExitUser = await _dynamoService.IsExitUserAsync(SystermId, userId);
+                var isExitUser = await _dynamoService.IsExistUserAsync(SystermId, userId);
                 #endregion
                 if (!isExitUser)
                 {
