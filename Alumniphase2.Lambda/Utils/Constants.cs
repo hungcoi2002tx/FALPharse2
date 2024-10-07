@@ -16,7 +16,7 @@ namespace Alumniphase2.Lambda.Utils
         public const string IMAGE = "Image";
 
         public const string USER_ID_ATTRIBUTE = "UserId";
-        public const string FUALUMNI_RESPONSE_RESULT_TABLE = "Fualumni-responseResult";
+        public const string FUALUMNI_RESPONSE_RESULT_TABLE = "fualumni-result";
 
         public const string USER_ID_ATTRIBUTE_DYNAMODB = "UserId";
         public const string ID_ATTRIBUTE_DYNAMODB = "Id";
