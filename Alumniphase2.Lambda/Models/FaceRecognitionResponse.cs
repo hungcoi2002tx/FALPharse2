@@ -8,7 +8,6 @@ namespace Alumniphase2.Lambda.Models
 {
     public class FaceRecognitionResponse
     {
-        public string FileName { get; set; } = null!;
         public string? TimeAppearances { get; set; } = null;
         public BoundingBox? BoundingBox { get; set; } = null;
         public string FaceId { get; set; } = null!;
