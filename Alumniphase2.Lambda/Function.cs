@@ -61,7 +61,7 @@ public class Function
                         await StoreImageResponseResult(result, fileName);
                         break;
                     case (true):
-                        await DetectVideoProcess(bucket, key);
+                        await DetectVideoProcess(bucket, key,fileName);
                         break;
                 }
             }
@@ -102,12 +102,12 @@ public class Function
                    }
                };
     }
-    private async Task DetectVideoProcess(string bucket, string key)
+    private async Task DetectVideoProcess(string bucket, string key,string fileName)
     {
-        List<FaceRecognitionResponse> listUserIds = new List<FaceRecognitionResponse>();
+        FaceDetectionResult result = new FaceDetectionResult();
 
         string jobId = await StartFaceSearch(bucket, key);
-        listUserIds = await GetFaceSearchResults(jobId, bucket);
+        result = await GetFaceSearchResults(jobId, bucket,fileName);
     }
     private async Task<FaceDetectionResult> DetectImageProcess(string bucket, string key, string fileName)
     {
@@ -221,7 +221,7 @@ public class Function
 
         return startFaceSearchResponse.JobId;
     }
-    private async Task<List<FaceRecognitionResponse>> GetFaceSearchResults(string jobId, string collectionId)
+    private async Task<FaceDetectionResult> GetFaceSearchResults(string jobId, string collectionId,string fileName)
     {
         GetFaceSearchRequest getFaceSearchRequest = new GetFaceSearchRequest
         {
@@ -277,12 +277,12 @@ public class Function
         catch (Exception ex)
         {
             Console.WriteLine($"Error while processing face search results: {ex.Message}");
-            return new List<FaceRecognitionResponse>();
+            return new FaceDetectionResult();
         }
 
-        return await FindListUserIdInVideo(faceIdDict, collectionId);
+        return await FindListUserIdInVideo(faceIdDict, collectionId,fileName);
     }
-    private async Task<List<FaceRecognitionResponse>> FindListUserIdInVideo(Dictionary<string, (double Confidence, long Timestamp)> faceIdDict, string collectionId)
+    private async Task<FaceDetectionResult> FindListUserIdInVideo(Dictionary<string, (double Confidence, long Timestamp)> faceIdDict, string collectionId,string fileName)
     {
         var userList = new List<FaceRecognitionResponse>();
         var uniqueUserIds = new HashSet<string>();
@@ -304,6 +304,7 @@ public class Function
                     {
                         TimeAppearances = formattedTimestamp,
                         UserId = userId,
+                        FileName = fileName
                     });
                 }
             }
@@ -314,7 +315,11 @@ public class Function
             }
         }
 
-        return userList;
+        return new FaceDetectionResult
+        {
+            RegisteredFaces = userList,
+            UnregisteredFaces = new List<FaceRecognitionResponse>()
+        };
     }
     private async Task<string> SearchUserByFaceId(string faceId, string collectionId)
     {
