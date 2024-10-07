@@ -1,4 +1,6 @@
-﻿using Amazon.DynamoDBv2;
+﻿using Alumniphase2.Lambda.Models;
+using Alumniphase2.Lambda.Utils;
+using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.S3Events;
@@ -6,6 +8,8 @@ using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Microsoft.VisualBasic;
+using Newtonsoft.Json;
 using System.Reflection.Emit;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -16,21 +20,6 @@ namespace Alumniphase2.Lambda;
 
 public class Function
 {
-    public const string TRAIN_PROCESS = "Training";
-    public const string DETECT_PROCESS = "Tagging";
-    public const string TYPE_OF_REQUEST = "TypeOfRequest";
-    public const string CONTENT_TYPE = "ContentType";
-
-    public const string VIDEO = "Video";
-    public const string IMAGE = "Image";
-
-    public const string USER_ID_ATTRIBUTE = "UserId";
-
-    public const string USER_ID_ATTRIBUTE_DYNAMODB = "UserId";
-    public const string FACE_ID_ATTRIBUTE_DYNAMODB = "FaceId";
-    public const string UPLOAD_DATE_ATTRIBUTE_DYNAMODB = "UploadDate";
-    public const string IMAGE_ID_ATTRIBUTE_DYNAMODB = "ImageId";
-
     private readonly IAmazonS3 _s3Client;
     private readonly IAmazonRekognition _rekognitionClient;
     private readonly IAmazonDynamoDB _dynamoDbClient;
@@ -50,6 +39,8 @@ public class Function
             {
                 var s3Record = record.S3;
 
+                var result = new FaceDetectionResult();
+
                 if (s3Record == null)
                 {
                     context.Logger.LogError("No S3 record found in the event.");
@@ -61,18 +52,17 @@ public class Function
 
                 var metadataResponse = await _s3Client.GetObjectMetadataAsync(bucket, key);
                 var contentType = CheckContentType(metadataResponse);
-                var process = CheckProcess(metadataResponse);
+                var fileName = metadataResponse.Metadata[Utils.Constants.ORIGINAL_FILE_NAME];
 
-                switch ((contentType, process))
+                switch (contentType)
                 {
-                    case (false, true):
-                        await TrainImageProcess(bucket, key, metadataResponse);
+                    case (false):
+                        result = await DetectImageProcess(bucket, key, fileName);
+                        await StoreResponseResult(result, fileName);
                         break;
-                    case (false, false):
-                        await DetectImageProcess(bucket, key, metadataResponse);
-                        break;
-                    case (true, false):
-                        await DetectVideoProcess(bucket, key);
+                    case (true):
+                        result = await DetectVideoProcess(bucket, key,fileName);
+                        await StoreResponseResult(result, fileName);
                         break;
                 }
             }
@@ -83,16 +73,129 @@ public class Function
         }
     }
 
-    private async Task DetectVideoProcess(string bucket, string key)
+    private async Task StoreResponseResult(FaceDetectionResult result, string fileName)
     {
-        List<(string, string)> listUserIds = new List<(string, string)>();
-        string jobId = await StartFaceSearch(bucket, key);
-
-        listUserIds = await GetFaceSearchResults(jobId, bucket);
-        // Convert the list of tuples to a formatted string
-        var formattedResult = string.Join(", ", listUserIds.Select(tuple => $"({tuple.Item1}, {tuple.Item2})"));
+        string jsonResult = JsonConvert.SerializeObject(result);
+        var dictionaryResponseResult = CreateDictionaryFualumniResponeResult(fileName, jsonResult);
+        await CreateNewRecord(Utils.Constants.FUALUMNI_RESPONSE_RESULT_TABLE, dictionaryResponseResult);
     }
+    private Dictionary<string, AttributeValue> CreateDictionaryFualumniResponeResult(string fileName, string data)
+    {
+        return new Dictionary<string, AttributeValue>
+               {
+                   {
+                       Utils.Constants.FILE_NAME_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       {
+                           S = fileName
+                       }
+                   },
+                   {
+                       Utils.Constants.FACE_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       {
+                           S = data
+                       }
+                   },
+                   {
+                       Utils.Constants.CREATE_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       {
+                           S = DateTime.Now.ToString()
+                       }
+                   }
+               };
+    }
+    private async Task<FaceDetectionResult> DetectVideoProcess(string bucket, string key,string fileName)
+    {
+        string jobId = await StartFaceSearch(bucket, key);
+        return await GetFaceSearchResults(jobId, bucket,fileName);
+    }
+    private async Task<FaceDetectionResult> DetectImageProcess(string bucket, string key, string fileName)
+    {
+        var resultRegisteredUsers = new List<FaceRecognitionResponse>();
+        var resultUnregisteredUsers = new List<FaceRecognitionResponse>();
 
+        var collectionName = bucket;
+        var dynamoDbName = bucket;
+
+        var indexFacesResponse = await IndexFaces(bucket, key, collectionName);
+        var faceRecords = indexFacesResponse.FaceRecords;
+
+        if (faceRecords != null && faceRecords.Count > 0)
+        {
+            var responseUserFaceId = await FindUserIdByFaceId(faceRecords, collectionName);
+
+            var unregisteredUsers = responseUserFaceId.Item2;
+            var registeredUsers = responseUserFaceId.Item1;
+
+            if (unregisteredUsers != null && unregisteredUsers.Count > 0)
+            {
+                await DeleteFaceId(unregisteredUsers, collectionName);
+
+                foreach (var (faceId, boundingBox) in unregisteredUsers)
+                {
+                    var responseObj = CreateResponseObj(fileName, null, boundingBox, faceId, null);
+                    resultUnregisteredUsers.Add(responseObj);
+                }
+            }
+
+            if (registeredUsers != null && registeredUsers.Count > 0)
+            {
+                foreach (var (userId, faceId, boundingBox) in registeredUsers)
+                {
+                    await AssociateUser(userId, faceId, collectionName);
+                    var dictionary = CreateDictionaryFualumni(userId, faceId);
+                    await CreateNewRecord(dynamoDbName, dictionary);
+
+                    var responseObj = CreateResponseObj(fileName, null, boundingBox, faceId, userId);
+                    resultRegisteredUsers.Add(responseObj);
+                };
+            }
+
+            return new FaceDetectionResult
+            {
+                RegisteredFaces = resultRegisteredUsers,
+                UnregisteredFaces = resultUnregisteredUsers
+            };
+        }
+        else
+        {
+            throw new Exception("Index face: Cannot detect anyone");
+        }
+    }
+    private Dictionary<string, AttributeValue> CreateDictionaryFualumni(string userId, string faceId)
+    {
+        return new Dictionary<string, AttributeValue>
+               {
+                   {
+                       Utils.Constants.USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       {
+                           S = userId
+                       }
+                   },
+                   {
+                       Utils.Constants.FACE_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       {
+                           S = faceId
+                       }
+                   },
+                   {
+                       Utils.Constants.CREATE_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       {
+                           S = DateTime.Now.ToString()
+                       }
+                   }
+               };
+    }
+    private FaceRecognitionResponse CreateResponseObj(string fileName, string? timeAppearances, Models.BoundingBox? boundingBox, string faceId, string? userId)
+    {
+        return new FaceRecognitionResponse
+        {
+            FileName = fileName,
+            TimeAppearances = timeAppearances,
+            BoundingBox = boundingBox,
+            FaceId = faceId,
+            UserId = userId
+        };
+    }
     private async Task<string> StartFaceSearch(string s3BucketName, string videoFileName)
     {
         var startFaceSearchRequest = new StartFaceSearchRequest
@@ -106,15 +209,14 @@ public class Function
                     Name = videoFileName
                 }
             },
-            FaceMatchThreshold = 80
+            FaceMatchThreshold = (float)ConfidenceLevel.High,
         };
 
         var startFaceSearchResponse = await _rekognitionClient.StartFaceSearchAsync(startFaceSearchRequest);
 
         return startFaceSearchResponse.JobId;
     }
-
-    private async Task<List<(string userId, string timestamp)>> GetFaceSearchResults(string jobId, string collectionId)
+    private async Task<FaceDetectionResult> GetFaceSearchResults(string jobId, string collectionId,string fileName)
     {
         GetFaceSearchRequest getFaceSearchRequest = new GetFaceSearchRequest
         {
@@ -142,10 +244,10 @@ public class Function
                                 double confidence = faceMatch.Similarity;
                                 long timestamp = personMatch.Timestamp;
 
-                             
+
                                 if (faceIdDict.TryGetValue(faceId, out var existingMatch))
                                 {
-      
+
                                     if (confidence > existingMatch.Confidence)
                                     {
                                         faceIdDict[faceId] = (confidence, timestamp);
@@ -170,10 +272,14 @@ public class Function
         catch (Exception ex)
         {
             Console.WriteLine($"Error while processing face search results: {ex.Message}");
-            return new List<(string, string)>(); 
+            return new FaceDetectionResult();
         }
 
-        var userList = new List<(string userId, string timestamp)>();
+        return await FindListUserIdInVideo(faceIdDict, collectionId,fileName);
+    }
+    private async Task<FaceDetectionResult> FindListUserIdInVideo(Dictionary<string, (double Confidence, long Timestamp)> faceIdDict, string collectionId,string fileName)
+    {
+        var userList = new List<FaceRecognitionResponse>();
         var uniqueUserIds = new HashSet<string>();
 
         foreach (var faceIdEntry in faceIdDict)
@@ -186,10 +292,15 @@ public class Function
 
                 string userId = await SearchUserByFaceId(faceId, collectionId);
 
-                if (!string.IsNullOrEmpty(userId) && uniqueUserIds.Add(userId)) 
+                if (!string.IsNullOrEmpty(userId) && uniqueUserIds.Add(userId))
                 {
                     string formattedTimestamp = timestamp.ToString();
-                    userList.Add((userId, formattedTimestamp));
+                    userList.Add(new FaceRecognitionResponse
+                    {
+                        TimeAppearances = formattedTimestamp,
+                        UserId = userId,
+                        FileName = fileName
+                    });
                 }
             }
             catch (Exception ex)
@@ -199,10 +310,12 @@ public class Function
             }
         }
 
-        return userList;
+        return new FaceDetectionResult
+        {
+            RegisteredFaces = userList,
+            UnregisteredFaces = new List<FaceRecognitionResponse>()
+        };
     }
-
-
     private async Task<string> SearchUserByFaceId(string faceId, string collectionId)
     {
         var response = await _rekognitionClient.SearchUsersAsync(new SearchUsersRequest
@@ -210,7 +323,7 @@ public class Function
             CollectionId = collectionId,
             MaxUsers = 1,
             FaceId = faceId,
-            UserMatchThreshold = 80
+            UserMatchThreshold = (float)ConfidenceLevel.High,
         });
 
         string faceModelVersion = response.FaceModelVersion;
@@ -224,129 +337,8 @@ public class Function
         Console.WriteLine("SearchUserByFaceId: More than 1 user found, or none");
         return "";
     }
-
-
-
-    private async Task TrainImageProcess(string bucket, string key, GetObjectMetadataResponse metadataResponse)
-    {
-        var collectionName = bucket;
-        var dynamoDbName = bucket;
-        var userId = metadataResponse.Metadata[USER_ID_ATTRIBUTE];
-
-        var response = await IndexFaces(bucket, key, collectionName);
-
-        if (response.HttpStatusCode == System.Net.HttpStatusCode.OK && response.FaceRecords.Count > 0)
-        {
-            foreach (var faceRecord in response.FaceRecords)
-            {
-                var faceId = faceRecord.Face.FaceId;
-                var imageId = faceRecord.Face.ImageId;
-
-                var itemResponse = await GetRecordByUserId(userId, dynamoDbName);
-
-                if (itemResponse.Items.Count > 0)
-                {
-                    throw new Exception("User Id is duplicate!");
-                }
-                else
-                {
-                    await CreateUser(userId, collectionName);
-
-                    await AssociateUser(userId, faceId, collectionName);
-
-                    var metadata = metadataResponse.Metadata;
-
-                    if (metadata != null && metadata.Count > 0)
-                    {
-                        await CreateNewRecord(dynamoDbName, userId, imageId, faceId);
-                    }
-                }
-            }
-        }
-        else
-        {
-            throw new Exception("index face failed");
-        }
-    }
-
-    private async Task DetectImageProcess(string bucket, string key, GetObjectMetadataResponse metadataResponse)
-    {
-        var collectionName = bucket;
-        var dynamoDbName = bucket;
-
-
-        var indexFacesResponse = await IndexFaces(bucket, key, collectionName);
-        var responseUserFaceId = await FindUserIdByFaceId(indexFacesResponse.FaceRecords, collectionName);
-        var faceIdsDelete = responseUserFaceId.Item2;
-
-        if (faceIdsDelete != null && faceIdsDelete.Count > 0)
-        {
-            await DeleteFaceId(faceIdsDelete, collectionName);
-        }
-        await AssociateUser(responseUserFaceId.Item1, collectionName);
-        foreach (var (userId, faceId, imageId) in responseUserFaceId.Item1)
-        {
-            await CreateNewRecord(dynamoDbName, userId, imageId, faceId);
-        }
-
-        SearchFacesResponse searchFacesResponse = null!;
-
-        foreach (var faceRecord in indexFacesResponse.FaceRecords)
-        {
-            searchFacesResponse = await _rekognitionClient.SearchFacesAsync(new SearchFacesRequest()
-            {
-                CollectionId = collectionName,
-                FaceId = faceRecord.Face.FaceId,
-                FaceMatchThreshold = 70F
-            });
-
-            foreach (FaceMatch face in searchFacesResponse.FaceMatches)
-            {
-                var userResponse = await _rekognitionClient.SearchUsersAsync(new SearchUsersRequest
-                {
-                    CollectionId = collectionName,
-                    FaceId = face.Face.FaceId,
-                    UserMatchThreshold = 70
-                });
-
-                foreach (var user in userResponse.UserMatches)
-                {
-                    var itemResponse = await GetRecordByUserId(user.User.UserId, dynamoDbName);
-
-                    if (itemResponse != null)
-                    {
-                        var item = itemResponse.Items[0]; 
-
-                        string faceId = item["FaceId"].S;
-                        string imageId = item["ImageId"].S;
-
-                        Console.WriteLine($"FaceId: {faceId}, ImageId: {imageId}");
-                    }
-                    else
-                    {
-                        throw new Exception("Cannot detect anyone");
-                    }
-                }
-            }
-        }
-    }
-
     private async Task<QueryResponse> GetRecordByUserId(string userId, string dynamoDbName)
     {
-        //var getItemRequest = new GetItemRequest
-        //{
-        //    TableName = dynamoDbName,
-        //    Key = new Dictionary<string, AttributeValue>
-        //    {
-        //        {
-        //            USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue {
-        //                S = userId
-        //            }
-        //        }
-        //    }
-        //};
-
-
         var queryRequest = new QueryRequest
         {
             TableName = dynamoDbName,
@@ -360,54 +352,24 @@ public class Function
 
         return await _dynamoDbClient.QueryAsync(queryRequest);
     }
-
-    private async Task DeleteFaceId(List<string> faceIds, string collectionName)
+    private async Task DeleteFaceId(List<(string, Models.BoundingBox)> faceIds, string collectionName)
     {
         await _rekognitionClient.DeleteFacesAsync(new DeleteFacesRequest
         {
             CollectionId = collectionName,
-            FaceIds = faceIds
+            FaceIds = faceIds.Select(f => f.Item1).ToList()
         });
     }
-
-
-    private async Task CreateNewRecord(string tableName, string userId, string imageId, string faceId)
+    private async Task CreateNewRecord(string tableName, Dictionary<string, AttributeValue> dictionary)
     {
         var request = new PutItemRequest
         {
             TableName = tableName,
-            Item = new Dictionary<string, AttributeValue>
-            {
-                {
-                    USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
-                    {
-                        S = userId
-                    }
-                },
-                 {
-                    FACE_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
-                    {
-                        S = faceId
-                    }
-                },
-                {
-                    UPLOAD_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
-                    {
-                        S = DateTime.Now.ToString()
-                    }
-                },
-                {
-                    IMAGE_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
-                    {
-                        S = imageId
-                    }
-                },
-            }
+            Item = dictionary,
         };
 
         await _dynamoDbClient.PutItemAsync(request);
     }
-
     private async Task<string> CreateUser(string userId, string collectionName)
     {
         Console.WriteLine(userId);
@@ -428,7 +390,7 @@ public class Function
                 faceId
             },
             UserId = userId,
-            UserMatchThreshold = 70
+            UserMatchThreshold = (float)ConfidenceLevel.High,
         });
 
         return response;
@@ -444,7 +406,7 @@ public class Function
                         faceId
                 },
                 UserId = userId,
-                UserMatchThreshold = 70
+                UserMatchThreshold = (float)ConfidenceLevel.High,
             });
         }
     }
@@ -467,13 +429,13 @@ public class Function
     }
     private bool CheckContentType(GetObjectMetadataResponse metadataResponse)
     {
-        var contentType = metadataResponse.Metadata[CONTENT_TYPE];
+        var contentType = metadataResponse.Metadata[Utils.Constants.CONTENT_TYPE];
 
-        if (contentType.Contains(VIDEO))
+        if (contentType.Contains(Utils.Constants.VIDEO))
         {
             return true;
         }
-        else if (contentType.Contains(IMAGE))
+        else if (contentType.Contains(Utils.Constants.IMAGE))
         {
             return false;
         }
@@ -482,50 +444,41 @@ public class Function
             throw new Exception("wrong content type, làm éo gì có content type m chọn hả hưng");
         }
     }
-    private bool CheckProcess(GetObjectMetadataResponse metadataResponse)
+    private async Task<(List<(string, string, Models.BoundingBox)>, List<(string, Models.BoundingBox)>)> FindUserIdByFaceId(List<FaceRecord> faceRecords, string collectionName)
     {
-        var methods = metadataResponse.Metadata[TYPE_OF_REQUEST];
-
-        if (methods == TRAIN_PROCESS)
-        {
-            return true;
-        }
-        else if (methods == DETECT_PROCESS)
-        {
-
-            return false;
-        }
-        else
-        {
-            throw new Exception("wrong process, làm éo gì có process m chọn hả hưng");
-        }
-    }
-    private async Task<(List<(string, string, string)>, List<string>)> FindUserIdByFaceId(List<FaceRecord> faceRecords, string collectionName)
-    {
-        List<(string, string, string)> responseUserFaceId = new();
-        List<string> responseFaceId = new();
+        List<(string, string, Models.BoundingBox)> registeredUsers = new();
+        List<(string, Models.BoundingBox)> unregisteredUser = new();
 
         foreach (var faceRecord in faceRecords)
         {
             var faceId = faceRecord.Face.FaceId;
             var imageId = faceRecord.Face.ImageId;
+            var boundingBox = faceRecord.Face.BoundingBox;
+            Models.BoundingBox b = new Models.BoundingBox
+            {
+                Left = boundingBox.Left,
+                Top = boundingBox.Top,
+                Width = boundingBox.Width,
+                Height = boundingBox.Height
+            };
+
             var userResponse = await _rekognitionClient.SearchUsersAsync(new SearchUsersRequest
             {
                 CollectionId = collectionName,
                 FaceId = faceId,
-                UserMatchThreshold = 70
+                UserMatchThreshold = (float)ConfidenceLevel.High,
             });
 
             if (userResponse.UserMatches.Count > 0)
             {
-                responseUserFaceId.Add((userResponse.UserMatches[0].User.UserId, faceId, imageId));
+                registeredUsers.Add((userResponse.UserMatches[0].User.UserId, faceId, b));
             }
             else
             {
-                responseFaceId.Add(faceId);
+                unregisteredUser.Add((faceId, b));
             }
         }
 
-        return (responseUserFaceId, responseFaceId);
+        return (registeredUsers, unregisteredUser);
     }
 }
