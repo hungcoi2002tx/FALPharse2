@@ -11,7 +11,7 @@
     "configuration" : "Release",
     "function-runtime" : "dotnet8",
     "function-memory-size" : 512,
-    "function-timeout"     : 15,
+    "function-timeout"     : 900,
     "function-handler"     : "Alumniphase2.Lambda::Alumniphase2.Lambda.Function::FunctionHandler",
     "framework"            : "net8.0",
     "function-name"        : "alumni",
