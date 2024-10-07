@@ -71,10 +71,7 @@ namespace FAL.Controllers
         {
             try
             {
-                //file.ValidFile();
-                //await ValidateFileWithRekognitionAsync(file);
-                //var image = await GetImageAsync(file);
-                //await TrainAsync(image, userId);
+                await TrainFaceIdAsync(userId, faceId);
                 return Content("Train succesfully");
             }
             catch (Exception ex)
@@ -117,21 +114,29 @@ namespace FAL.Controllers
                 #region index face
                 var indexResponse = await _collectionService.IndexFaceByFileAsync(file, SystermId, userId);
                 #endregion
+                await TrainFaceIdAsync(userId, indexResponse.FaceRecords[0].Face.FaceId);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
 
+        private async Task TrainFaceIdAsync(string userId, string faceId)
+        {
+            try
+            {
                 #region check exit UserId
                 var isExitUser = await _dynamoService.IsExitUserAsync(SystermId, userId);
                 #endregion
-
                 if (!isExitUser)
                 {
                     await _collectionService.CreateNewUserAsync(SystermId, userId);
                 }
-
                 #region Add user 
-                await _collectionService.AssociateFacesAsync(SystermId, new List<string>() { indexResponse.FaceRecords[0].Face.FaceId }, userId);
-                await _dynamoService.CreateUserInformationAsync(SystermId, userId, indexResponse.FaceRecords[0].Face.FaceId);
+                await _collectionService.AssociateFacesAsync(SystermId, new List<string>() { faceId }, userId);
+                await _dynamoService.CreateUserInformationAsync(SystermId, userId, faceId);
                 #endregion
-
             }
             catch (Exception ex)
             {
