@@ -75,7 +75,7 @@ namespace FAL.Services
         {
             try
             {
-                request.Metadata.Add("OriginalFileName", file.Name);
+                request.Metadata.Add("OriginalFileName", file.FileName);
                 request.Metadata.Add(nameof(FaceInformation.UserId), userId);
                 if (IsVideo(file))
                 {

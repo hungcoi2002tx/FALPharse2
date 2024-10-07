@@ -48,8 +48,8 @@ namespace FAL.Controllers
             }
         }
 
-        [HttpPost("upload")]
-        public async Task<IActionResult> UploadFileAsync(IFormFile file, string userId)
+        [HttpPost("file")]
+        public async Task<IActionResult> TrainByImageAsync(IFormFile file, string userId)
         {
             try
             {
@@ -57,6 +57,24 @@ namespace FAL.Controllers
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
                 await TrainAsync(image, userId);
+                return Content("Train succesfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return BadRequest(new { Status = false, Messange = ex.Message });
+            }
+        }
+
+        [HttpPost("faceId")]
+        public async Task<IActionResult> TrainByFaceIdAsync(string faceId, string userId)
+        {
+            try
+            {
+                //file.ValidFile();
+                //await ValidateFileWithRekognitionAsync(file);
+                //var image = await GetImageAsync(file);
+                //await TrainAsync(image, userId);
                 return Content("Train succesfully");
             }
             catch (Exception ex)
