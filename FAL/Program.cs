@@ -62,10 +62,9 @@ namespace FAL
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
             builder.Services.AddSingleton<IS3Service, S3Service>();
 
-            // Cấu hình thông tin JWT từ appsettings.json hoặc môi trường
-            var key = builder.Configuration["Jwt:Key"];
-            var issuer = builder.Configuration["Jwt:Issuer"];
-            var audience = builder.Configuration["Jwt:Audience"];
+            var key = builder.Configuration["Jwt:Key"] ?? "";
+            var issuer = builder.Configuration["Jwt:Issuer"] ?? "";
+            var audience = builder.Configuration["Jwt:Audience"] ?? "";
 
             builder.Services.AddAuthentication(options =>
             {
@@ -99,7 +98,7 @@ namespace FAL
             }
 
             app.UseHttpsRedirection();
-            app.UseAuthentication(); // Phải đặt trước app.UseAuthorization()
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
