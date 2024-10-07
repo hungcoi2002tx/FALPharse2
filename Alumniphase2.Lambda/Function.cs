@@ -58,10 +58,11 @@ public class Function
                 {
                     case (false):
                         result = await DetectImageProcess(bucket, key, fileName);
-                        await StoreImageResponseResult(result, fileName);
+                        await StoreResponseResult(result, fileName);
                         break;
                     case (true):
-                        await DetectVideoProcess(bucket, key,fileName);
+                        result = await DetectVideoProcess(bucket, key,fileName);
+                        await StoreResponseResult(result, fileName);
                         break;
                 }
             }
@@ -72,7 +73,7 @@ public class Function
         }
     }
 
-    private async Task StoreImageResponseResult(FaceDetectionResult result, string fileName)
+    private async Task StoreResponseResult(FaceDetectionResult result, string fileName)
     {
         string jsonResult = JsonConvert.SerializeObject(result);
         var dictionaryResponseResult = CreateDictionaryFualumniResponeResult(fileName, jsonResult);
@@ -102,12 +103,10 @@ public class Function
                    }
                };
     }
-    private async Task DetectVideoProcess(string bucket, string key,string fileName)
+    private async Task<FaceDetectionResult> DetectVideoProcess(string bucket, string key,string fileName)
     {
-        FaceDetectionResult result = new FaceDetectionResult();
-
         string jobId = await StartFaceSearch(bucket, key);
-        result = await GetFaceSearchResults(jobId, bucket,fileName);
+        return await GetFaceSearchResults(jobId, bucket,fileName);
     }
     private async Task<FaceDetectionResult> DetectImageProcess(string bucket, string key, string fileName)
     {
@@ -149,10 +148,6 @@ public class Function
                     var responseObj = CreateResponseObj(fileName, null, boundingBox, faceId, userId);
                     resultRegisteredUsers.Add(responseObj);
                 };
-            }
-            else
-            {
-                throw new Exception("Register user: Cannot detect anyone");
             }
 
             return new FaceDetectionResult
