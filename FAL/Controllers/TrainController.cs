@@ -44,15 +44,20 @@ namespace FAL.Controllers
             catch (Exception ex)
             {
                 _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
-                return BadRequest(new { Status = false, Messange = ex.Message });
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Messange = "Internal Server Error"
+                });
             }
         }
 
-        [HttpPost("upload")]
-        public async Task<IActionResult> UploadFileAsync(IFormFile file, string userId)
+        [HttpPost("file")]
+        public async Task<IActionResult> TrainByImageAsync(IFormFile file, string userId)
         {
             try
             {
+                file.ValidFile();
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
                 await TrainAsync(image, userId);
@@ -61,7 +66,44 @@ namespace FAL.Controllers
             catch (Exception ex)
             {
                 _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
-                return BadRequest(new { Status = false, Messange = ex.Message });
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Messange = "Internal Server Error"
+                });
+            }
+        }
+
+        [HttpPost("faceId")]
+        public async Task<IActionResult> TrainByFaceIdAsync(string faceId, string userId)
+        {
+            try
+            {
+                //check faceId in dynamodb
+                var result = await _dynamoService.IsExistFaceIdAsync(SystermId, faceId);
+                if (result)
+                {
+                    return BadRequest(new ResultResponse
+                    {
+                        Status = false,
+                        Messange = "FaceId is existed in systerm"
+                    });
+                }
+
+                //train
+                await TrainFaceIdAsync(userId, faceId);
+
+                //return 
+                return Content("Train succesfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Messange = "Internal Server Error"
+                });
             }
         }
 
@@ -98,21 +140,29 @@ namespace FAL.Controllers
                 #region index face
                 var indexResponse = await _collectionService.IndexFaceByFileAsync(file, SystermId, userId);
                 #endregion
+                await TrainFaceIdAsync(userId, indexResponse.FaceRecords[0].Face.FaceId);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
 
+        private async Task TrainFaceIdAsync(string userId, string faceId)
+        {
+            try
+            {
                 #region check exit UserId
-                var isExitUser = await _dynamoService.IsExitUserAsync(SystermId, userId);
+                var isExitUser = await _dynamoService.IsExistUserAsync(SystermId, userId);
                 #endregion
-
                 if (!isExitUser)
                 {
                     await _collectionService.CreateNewUserAsync(SystermId, userId);
                 }
-
                 #region Add user 
-                await _collectionService.AssociateFacesAsync(SystermId, new List<string>() { indexResponse.FaceRecords[0].Face.FaceId }, userId);
-                await _dynamoService.CreateUserInformationAsync(SystermId, userId, indexResponse.FaceRecords[0].Face.FaceId);
+                await _collectionService.AssociateFacesAsync(SystermId, new List<string>() { faceId }, userId);
+                await _dynamoService.CreateUserInformationAsync(SystermId, userId, faceId);
                 #endregion
-
             }
             catch (Exception ex)
             {
