@@ -90,7 +90,7 @@ public class Function
                        }
                    },
                    {
-                       Utils.Constants.FACE_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       Utils.Constants.DATA_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
                            S = data
                        }
@@ -186,6 +186,7 @@ public class Function
                    }
                };
     }
+
     private FaceRecognitionResponse CreateResponseObj(string fileName, string? timeAppearances, Models.BoundingBox? boundingBox, string faceId, string? userId)
     {
         return new FaceRecognitionResponse
