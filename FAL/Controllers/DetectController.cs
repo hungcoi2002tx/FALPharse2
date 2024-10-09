@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.SystemModel;
 using System.Net;
+using System.Reflection;
 
 namespace FAL.Controllers
 {
@@ -39,11 +40,29 @@ namespace FAL.Controllers
                 var fileName = Guid.NewGuid().ToString();
                 var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, SystermId, TypeOfRequest.Tagging);
                 #endregion
-                return Ok();
+                return Ok(new ResultResponse
+                {
+                    Status = true,
+                    Messange = "The system has received the file."
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(400, new ResultResponse
+                {
+                    Status = false,
+                    Messange = "Bad Request. Invalid value."
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Messange = "Internal Server Error"
+                });
             }
         }
 

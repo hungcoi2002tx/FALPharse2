@@ -60,7 +60,12 @@ namespace FAL.Controllers
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
                 await TrainAsync(image, userId);
-                return Content("Train succesfully");
+                //return 
+                return Ok(new ResultResponse
+                {
+                    Status = true,
+                    Messange = "The system training was successful."
+                });
             }
             catch(ArgumentException ex)
             {
@@ -102,7 +107,11 @@ namespace FAL.Controllers
                 await TrainFaceIdAsync(userId, faceId);
 
                 //return 
-                return Content("Train succesfully");
+                return Ok(new ResultResponse
+                {
+                    Status = true,
+                    Messange = "The system training was successful."
+                });
             }
             catch (Exception ex)
             {
@@ -119,12 +128,13 @@ namespace FAL.Controllers
         {
             try
             {
+                file.ValidImage();
                 var response = await _collectionService.DetectFaceByFileAsync(file);
                 if (response.FaceDetails.Count != 1)
                 {
-                    throw new Exception(message: "File ảnh yêu cầu duy nhất 1 mặt");
+                    throw new ArgumentException(message: "File ảnh yêu cầu duy nhất 1 mặt");
                 }
-                return file.ValidImage();
+                return true;
             }
             catch (Exception)
             {
