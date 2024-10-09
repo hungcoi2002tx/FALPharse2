@@ -1,12 +1,17 @@
 using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
 using Amazon.Rekognition;
 using Amazon.S3;
+using FAL.Authors;
+using FAL.Models;
 using FAL.Services;
 using FAL.Services.IServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Share.SystemModel;
+using System.Security;
 using System.Text;
 
 namespace FAL
@@ -19,7 +24,10 @@ namespace FAL
 
             // Add services to the container.
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers(options =>
+            {
+                options.Filters.Add<CustomAuthorizationFilter>();
+            });
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
@@ -58,9 +66,11 @@ namespace FAL
             builder.Services.AddAWSService<IAmazonS3>();
             builder.Services.AddAWSService<IAmazonRekognition>();
             builder.Services.AddAWSService<IAmazonDynamoDB>();
+            builder.Services.AddScoped<DynamoDBContext>();
             builder.Services.AddSingleton<CustomLog>(new CustomLog(Path.Combine(Directory.GetCurrentDirectory(), "bin", "ProgramLogs", "Log.txt")));
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
             builder.Services.AddSingleton<IS3Service, S3Service>();
+            builder.Services.AddTransient<IPermissionService, PermissionService>();
 
             var key = builder.Configuration["Jwt:Key"] ?? "";
             var issuer = builder.Configuration["Jwt:Issuer"] ?? "";
