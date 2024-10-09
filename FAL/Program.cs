@@ -70,7 +70,7 @@ namespace FAL
             builder.Services.AddSingleton<CustomLog>(new CustomLog(Path.Combine(Directory.GetCurrentDirectory(), "bin", "ProgramLogs", "Log.txt")));
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
             builder.Services.AddSingleton<IS3Service, S3Service>();
-            builder.Services.AddTransient<IPermissionService, PermissionService>();
+            builder.Services.AddScoped<IPermissionService, PermissionService>();
 
             var key = builder.Configuration["Jwt:Key"] ?? "";
             var issuer = builder.Configuration["Jwt:Issuer"] ?? "";

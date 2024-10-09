@@ -1,37 +1,27 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
 using FAL.Services.IServices;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FAL.Authors
 {
-    public class CustomAuthorizationFilter : IAsyncAuthorizationFilter
+    public class CustomAuthorizationFilter : IAuthorizationFilter
     {
-        private readonly IPermissionService _permissionService;
-
-        public CustomAuthorizationFilter(IPermissionService permissionService)
+        public void OnAuthorization(AuthorizationFilterContext context)
         {
-            _permissionService = permissionService;
-        }
-
-        public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
-        {
-            var username = context.HttpContext.User.Identity.Name;
-            var apiEndpoint = context.HttpContext.Request.Path;
-            var method = context.HttpContext.Request.Method;
-
-            // Kiểm tra nếu người dùng chưa đăng nhập
-            if (!context.HttpContext.User.Identity.IsAuthenticated)
+            var endpoint = context.HttpContext.GetEndpoint();
+            if (endpoint?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
             {
-                context.Result = new UnauthorizedResult();
+                // Skip authorization if [AllowAnonymous] is applied
                 return;
             }
 
-            // Lấy role từ PermissionService
-            var role = await _permissionService.GetRoleByUsername(username);
-            if (role == null || !_permissionService.HasPermission(role, apiEndpoint, method))
+            // Custom authorization logic here
+            if (!context.HttpContext.User.Identity.IsAuthenticated)
             {
-                context.Result = new ForbidResult("Bạn không có quyền thực hiện hành động này.");
+                context.Result = new UnauthorizedResult();
             }
         }
     }
+
 }

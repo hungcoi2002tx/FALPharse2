@@ -33,6 +33,7 @@ namespace FAL.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel loginModel)
         {
+            // Kiểm tra tính hợp lệ của thông tin đăng nhập
             if (loginModel == null || string.IsNullOrEmpty(loginModel.Username) || string.IsNullOrEmpty(loginModel.Password))
             {
                 return BadRequest("Thông tin đăng nhập không hợp lệ.");
@@ -46,15 +47,24 @@ namespace FAL.Controllers
             }
 
             // Kiểm tra mật khẩu
-            if (!BCrypt.Net.BCrypt.Verify(loginModel.Password, user.Password))
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginModel.Password, user.Password);
+            if (!isPasswordValid)
             {
                 return Unauthorized("Mật khẩu không chính xác.");
             }
 
             // Tạo JWT token
             var tokenString = _jwtTokenGenerator.GenerateJwtToken(user.Username, user.RoleId, user.SystemName);
-            return Ok(new { Token = tokenString, UserRole = user.RoleId });
+
+            // Trả về thông tin người dùng và token
+            return Ok(new
+            {
+                Token = tokenString,
+                UserRole = user.RoleId,
+                SystemName = user.SystemName // Trả về SystemName nếu cần
+            });
         }
+
 
         [AllowAnonymous]
         [HttpPost("register")]
