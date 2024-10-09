@@ -7,7 +7,7 @@ public class User
 {
     [DynamoDBHashKey]
     public string UserId { get; set; } // Khóa chính
-
+    //TODO: xử lý jwt claim username hoặc userid[DynamoDBHashKey]
     public string Username { get; set; }
     public string Password { get; set; }
     public string Email { get; set; }
