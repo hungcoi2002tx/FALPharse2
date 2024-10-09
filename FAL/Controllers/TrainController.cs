@@ -2,8 +2,6 @@
 using Amazon.S3;
 using FAL.Services.IServices;
 using FAL.Utils;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.SystemModel;
 using System.Reflection;
@@ -33,7 +31,7 @@ namespace FAL.Controllers
         }
 
         [HttpDelete("delete")]
-        public async Task<IActionResult> DeleteByUserIdAsync(string userId)
+        public async Task<IActionResult> DeleteByUserIdAsync([FromBody]string userId)
         {
             try
             {
@@ -44,7 +42,11 @@ namespace FAL.Controllers
             catch (Exception ex)
             {
                 _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
-                return BadRequest(new { Status = false, Messange = ex.Message });
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Internal Server Error"
+                });
             }
         }
 
@@ -53,16 +55,33 @@ namespace FAL.Controllers
         {
             try
             {
-                file.ValidFile();
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
                 await TrainAsync(image, userId);
-                return Content("Train succesfully");
+                //return 
+                return Ok(new ResultResponse
+                {
+                    Status = true,
+                    Message = "The system training was successful."
+                });
+            }
+            catch(ArgumentException ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(400, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Bad Request. Invalid value."
+                });
             }
             catch (Exception ex)
             {
                 _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
-                return BadRequest(new { Status = false, Messange = ex.Message });
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Internal Server Error"
+                });
             }
         }
 
@@ -71,13 +90,35 @@ namespace FAL.Controllers
         {
             try
             {
+                //check faceId in dynamodb
+                var result = await _dynamoService.IsExistFaceIdAsync(SystermId, faceId);
+                if (result)
+                {
+                    return BadRequest(new ResultResponse
+                    {
+                        Status = false,
+                        Message = "FaceId is existed in systerm"
+                    });
+                }
+
+                //train
                 await TrainFaceIdAsync(userId, faceId);
-                return Content("Train succesfully");
+
+                //return 
+                return Ok(new ResultResponse
+                {
+                    Status = true,
+                    Message = "The system training was successful."
+                });
             }
             catch (Exception ex)
             {
                 _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
-                return BadRequest(new { Status = false, Messange = ex.Message });
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Internal Server Error"
+                });
             }
         }
 
@@ -85,12 +126,13 @@ namespace FAL.Controllers
         {
             try
             {
+                file.ValidImage();
                 var response = await _collectionService.DetectFaceByFileAsync(file);
                 if (response.FaceDetails.Count != 1)
                 {
-                    throw new Exception(message: "File ảnh yêu cầu duy nhất 1 mặt");
+                    throw new ArgumentException(message: "File ảnh yêu cầu duy nhất 1 mặt");
                 }
-                return file.ValidFile();
+                return true;
             }
             catch (Exception)
             {
@@ -127,7 +169,7 @@ namespace FAL.Controllers
             try
             {
                 #region check exit UserId
-                var isExitUser = await _dynamoService.IsExitUserAsync(SystermId, userId);
+                var isExitUser = await _dynamoService.IsExistUserAsync(SystermId, userId);
                 #endregion
                 if (!isExitUser)
                 {
