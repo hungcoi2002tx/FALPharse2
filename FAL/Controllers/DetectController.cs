@@ -31,8 +31,7 @@ namespace FAL.Controllers
             try
             {
                 #region check input
-                file.ValidImage();
-                file.ValidVideo();
+                file.ValidFile();
                 #endregion
                 #region add to S3
                 var bucketExists = await _s3Service.AddBudgetAsync(SystermId);

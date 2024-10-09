@@ -57,7 +57,6 @@ namespace FAL.Controllers
         {
             try
             {
-                file.ValidImage();
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
                 await TrainAsync(image, userId);
