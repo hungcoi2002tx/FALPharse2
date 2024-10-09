@@ -56,6 +56,7 @@ namespace FAL.Controllers
             return Ok(new { Token = tokenString, UserRole = user.RoleId });
         }
 
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] UserRegisterDTO userDto)
         {

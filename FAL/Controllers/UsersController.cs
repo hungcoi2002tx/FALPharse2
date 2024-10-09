@@ -2,6 +2,7 @@
 using Amazon.DynamoDBv2;
 using Microsoft.AspNetCore.Mvc;
 using FAL.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FAL.Controllers
 {
@@ -19,6 +20,7 @@ namespace FAL.Controllers
         }
 
         // GET: api/users
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
@@ -27,6 +29,7 @@ namespace FAL.Controllers
         }
 
         // GET: api/users/{id}
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(string id)
         {
@@ -38,6 +41,7 @@ namespace FAL.Controllers
         }
 
         // POST: api/users
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] User user)
         {
@@ -50,6 +54,7 @@ namespace FAL.Controllers
         }
 
         // PUT: api/users/{id}
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] User updatedUser)
         {
@@ -72,6 +77,7 @@ namespace FAL.Controllers
         }
 
         // DELETE: api/users/{id}
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(string id)
         {

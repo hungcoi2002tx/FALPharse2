@@ -34,7 +34,7 @@ namespace FAL.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpDelete("faceId")]
         public async Task<IActionResult> DeleteFaceAsync(string faceId)
         {
@@ -48,7 +48,7 @@ namespace FAL.Controllers
                 throw;
             }
         }
-        [Authorize(Roles = "Admin,User")]
+        [Authorize]
         [HttpGet("getList")]
         public async Task<IActionResult> GetListCollectionAsync()
         {
@@ -63,7 +63,7 @@ namespace FAL.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,User" )]
+        [Authorize]
         [HttpPost("create")]
         public async Task<IActionResult> CreateCollectionAsync([FromBody] string collectionId)
         {

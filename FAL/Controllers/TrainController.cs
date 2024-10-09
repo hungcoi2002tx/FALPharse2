@@ -2,6 +2,7 @@
 using Amazon.S3;
 using FAL.Services.IServices;
 using FAL.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -32,6 +33,7 @@ namespace FAL.Controllers
             _dynamoService = dynamoService;
         }
 
+        [Authorize]
         [HttpDelete("delete")]
         public async Task<IActionResult> DeleteByUserIdAsync(string userId)
         {

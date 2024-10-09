@@ -1,6 +1,7 @@
 ﻿using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using FAL.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -19,6 +20,7 @@ namespace FAL.Controllers
         }
 
         // GET: api/roles
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetRoles()
         {
@@ -28,6 +30,7 @@ namespace FAL.Controllers
         }
 
         // GET: api/roles/{id}
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetRoleById(int id) // Thay đổi thành int id
         {
@@ -39,6 +42,7 @@ namespace FAL.Controllers
         }
 
         // POST: api/roles
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateRole([FromBody] Role role)
         {
@@ -51,6 +55,7 @@ namespace FAL.Controllers
         }
 
         // PUT: api/roles/{id}
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRole(int id, [FromBody] Role updatedRole) // Thay đổi thành int id
         {
@@ -67,6 +72,7 @@ namespace FAL.Controllers
         }
 
         // DELETE: api/roles/{id}
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRole(int id) // Thay đổi thành int id
         {
