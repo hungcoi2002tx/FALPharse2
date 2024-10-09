@@ -33,7 +33,7 @@ namespace FAL.Controllers
         }
 
         [HttpDelete("delete")]
-        public async Task<IActionResult> DeleteByUserIdAsync(string userId)
+        public async Task<IActionResult> DeleteByUserIdAsync([FromBody]string userId)
         {
             try
             {
@@ -57,11 +57,20 @@ namespace FAL.Controllers
         {
             try
             {
-                file.ValidFile();
+                file.ValidImage();
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
                 await TrainAsync(image, userId);
                 return Content("Train succesfully");
+            }
+            catch(ArgumentException ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(400, new ResultResponse
+                {
+                    Status = false,
+                    Messange = "Bad Request. Invalid value."
+                });
             }
             catch (Exception ex)
             {
@@ -116,7 +125,7 @@ namespace FAL.Controllers
                 {
                     throw new Exception(message: "File ảnh yêu cầu duy nhất 1 mặt");
                 }
-                return file.ValidFile();
+                return file.ValidImage();
             }
             catch (Exception)
             {

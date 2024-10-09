@@ -30,37 +30,16 @@ namespace FAL.Controllers
         {
             try
             {
-                //check valid file
                 #region check input
-                file.ValidFile();
+                file.ValidImage();
+                file.ValidVideo();
                 #endregion
-                //add s3
+                #region add to S3
                 var bucketExists = await _s3Service.AddBudgetAsync(SystermId);
                 if (!bucketExists) return NotFound($"Bucket {SystermId} does not exist.");
                 var fileName = Guid.NewGuid().ToString();
                 var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, SystermId, TypeOfRequest.Tagging);
-
-                //index faces
-                //var response = await _collectionService.IndexFaceAsync(SystermId, SystermId, fileName);
-
-                //string result = string.Empty;
-                //foreach (var item in response.FaceRecords)
-                //{
-                //    var faceId = item.Face.FaceId;
-                //    var data = await _collectionService.SearchUserByFaceIdsAsync(SystermId, faceId);
-                //    if (data.UserMatches != null)
-                //    {
-                //        var userId = data.UserMatches.First().User.UserId;
-                //        result = result + " " + userId;
-                //        //train again
-                //        await _collectionService.AssociateFacesAsync(SystermId, new List<string>() { faceId }, userId);
-                //    }
-                //    else
-                //    {
-                //        //delete 
-                //        await _collectionService.DeleteByFaceIdAsync(faceId, SystermId);
-                //    }
-                //}
+                #endregion
                 return Ok();
             }
             catch (Exception ex)
@@ -82,7 +61,7 @@ namespace FAL.Controllers
                 if (!bucketExists) return NotFound($"Bucket {SystermId} does not exist.");
                 foreach (var item in files)
                 {
-                    item.ValidFile();
+                    item.ValidImage();
                 }
                 foreach (var file in files)
                 {
