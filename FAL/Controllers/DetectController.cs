@@ -26,7 +26,7 @@ namespace FAL.Controllers
             _s3Service = s3Service;
         }
 
-        [HttpPost("detect")]
+        [HttpPost("")]
         public async Task<IActionResult> DetectAsync(IFormFile file)
         {
             try
@@ -43,7 +43,7 @@ namespace FAL.Controllers
                 return Ok(new ResultResponse
                 {
                     Status = true,
-                    Messange = "The system has received the file."
+                    Message = "The system has received the file."
                 });
             }
             catch (ArgumentException ex)
@@ -52,7 +52,7 @@ namespace FAL.Controllers
                 return StatusCode(400, new ResultResponse
                 {
                     Status = false,
-                    Messange = "Bad Request. Invalid value."
+                    Message = "Bad Request. Invalid value."
                 });
             }
             catch (Exception ex)
@@ -61,7 +61,7 @@ namespace FAL.Controllers
                 return StatusCode(500, new ResultResponse
                 {
                     Status = false,
-                    Messange = "Internal Server Error"
+                    Message = "Internal Server Error"
                 });
             }
         }

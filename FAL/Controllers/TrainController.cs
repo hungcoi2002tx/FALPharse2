@@ -2,8 +2,6 @@
 using Amazon.S3;
 using FAL.Services.IServices;
 using FAL.Utils;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.SystemModel;
 using System.Reflection;
@@ -47,7 +45,7 @@ namespace FAL.Controllers
                 return StatusCode(500, new ResultResponse
                 {
                     Status = false,
-                    Messange = "Internal Server Error"
+                    Message = "Internal Server Error"
                 });
             }
         }
@@ -64,7 +62,7 @@ namespace FAL.Controllers
                 return Ok(new ResultResponse
                 {
                     Status = true,
-                    Messange = "The system training was successful."
+                    Message = "The system training was successful."
                 });
             }
             catch(ArgumentException ex)
@@ -73,7 +71,7 @@ namespace FAL.Controllers
                 return StatusCode(400, new ResultResponse
                 {
                     Status = false,
-                    Messange = "Bad Request. Invalid value."
+                    Message = "Bad Request. Invalid value."
                 });
             }
             catch (Exception ex)
@@ -82,7 +80,7 @@ namespace FAL.Controllers
                 return StatusCode(500, new ResultResponse
                 {
                     Status = false,
-                    Messange = "Internal Server Error"
+                    Message = "Internal Server Error"
                 });
             }
         }
@@ -99,7 +97,7 @@ namespace FAL.Controllers
                     return BadRequest(new ResultResponse
                     {
                         Status = false,
-                        Messange = "FaceId is existed in systerm"
+                        Message = "FaceId is existed in systerm"
                     });
                 }
 
@@ -110,7 +108,7 @@ namespace FAL.Controllers
                 return Ok(new ResultResponse
                 {
                     Status = true,
-                    Messange = "The system training was successful."
+                    Message = "The system training was successful."
                 });
             }
             catch (Exception ex)
@@ -119,7 +117,7 @@ namespace FAL.Controllers
                 return StatusCode(500, new ResultResponse
                 {
                     Status = false,
-                    Messange = "Internal Server Error"
+                    Message = "Internal Server Error"
                 });
             }
         }
