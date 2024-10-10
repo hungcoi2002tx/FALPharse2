@@ -64,14 +64,15 @@ public class Function
             {
                 case (false):
                     result = await DetectImageProcess(bucket, key, fileName);
-                    await CreateResponseResult(bucket, result);
-                    await SendResult(result, logger);
+                    var (webhookSecretkey, webhookUrl) = await CreateResponseResult(bucket, result);
+                    //await SendResult(result, logger, webhookSecretkey, webhookUrl);
                     await StoreResponseResult(result, fileName);
+                    await logger.LogMessageAsync(DateTimeUtils.GetDateTimeVietNamNow());
                     break;
                 case (true):
                     result = await DetectVideoProcess(bucket, key, fileName);
                     await CreateResponseResult(bucket, result);
-                    await SendResult(result, logger);
+                    //await SendResult(result, logger, webhookSecretkey, webhookUrl);
                     await StoreResponseResult(result, fileName);
                     await logger.LogMessageAsync($"Add vao db {result.RegisteredFaces.Count}");
                     break;
@@ -83,18 +84,18 @@ public class Function
         }
     }
 
-    private async Task<string> SendResult(FaceDetectionResult result, CloudWatchLogger logger)
+    private async Task<string> SendResult(FaceDetectionResult result, CloudWatchLogger logger, string webhookSecretkey, string webhookUrl)
     {
         string jsonPayload = ConvertToJson(result);
         // Tính chữ ký HMAC cho payload
-        string signature = GenerateHMAC(jsonPayload, result.WebhookSecretkey);
+        string signature = GenerateHMAC(jsonPayload, webhookSecretkey);
         // Tạo HttpContent để gửi yêu cầu POST
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
         // Thêm header "X-Signature" với chữ ký HMAC
         content.Headers.Add("X-Signature", signature);
 
         var resultJson = ConvertToJson(result);
-        var response = await _httpClient.PostAsync(result.WebhookUrl, content);
+        var response = await _httpClient.PostAsync(webhookUrl, content);
 
         response.EnsureSuccessStatusCode();
         var responseContent = await response.Content.ReadAsStringAsync();
@@ -112,17 +113,17 @@ public class Function
         }
     }
 
-    private async Task CreateResponseResult(string bucket, FaceDetectionResult result)
+    private async Task<(string?, string?)> CreateResponseResult(string bucket, FaceDetectionResult result)
     {
         var systemName = bucket;
         string? webhookUrl = null;
         string? webhookSecretkey = null;
         Dictionary<string, AttributeValue> dictionary = new Dictionary<string, AttributeValue>
         {
-             { ":v_userId", new AttributeValue { S = systemName } }
+              { ":systemName", new AttributeValue { S = systemName } }
         };
 
-        var resultQuery = await GetRecordByAttribute(systemName, "Accounts", "UserId = :v_userId", dictionary);
+        var resultQuery = await GetRecordByAttributeIndex("Accounts", "SystemNameIndex", "SystemName = :systemName", dictionary);
         var firstRecord = resultQuery.Items.FirstOrDefault();
         if (firstRecord != null)
         {
@@ -130,22 +131,30 @@ public class Function
             {
                 webhookUrl = firstRecord["WebhookUrl"].S;
             }
-
             if (firstRecord.ContainsKey("WebhookSecretkey") && firstRecord["WebhookSecretkey"].S != null)
             {
                 webhookSecretkey = firstRecord["WebhookSecretkey"].S;
             }
-            else
-            {
-                Console.WriteLine("No records found.");
-            }
 
+            return (webhookUrl, webhookSecretkey);
         }
 
-        result.SystemName = systemName;
-        result.WebhookUrl = webhookUrl ?? "";
-        result.WebhookSecretkey = webhookSecretkey ?? "";
+        return (null, null);
     }
+
+
+    private async Task<QueryResponse> GetRecordByAttributeIndex(string tableName, string indexName, string keyConditionExpression, Dictionary<string, AttributeValue> dictionary)
+    {
+        return await _dynamoDbClient.QueryAsync(new QueryRequest
+        {
+            TableName = tableName,
+            IndexName = indexName,
+            KeyConditionExpression = keyConditionExpression,
+            ExpressionAttributeValues = dictionary
+        });
+    }
+
+
     private async Task<QueryResponse> GetRecordByAttribute(string systemName, string dynamoDbName, string keyConditionExpression, Dictionary<string, AttributeValue> dictionary)
     {
         var queryRequest = new QueryRequest
@@ -186,7 +195,7 @@ public class Function
                    {
                        Utils.Constants.CREATE_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
-                           S = DateTime.Now.ToString()
+                           S = DateTimeUtils.GetDateTimeVietNamNow()
                        }
                    }
                };
@@ -272,7 +281,7 @@ public class Function
                    {
                        Utils.Constants.CREATE_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
-                           S = DateTime.Now.ToString()
+                           S = DateTimeUtils.GetDateTimeVietNamNow()
                        }
                    }
                };
