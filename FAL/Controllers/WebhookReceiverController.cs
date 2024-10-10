@@ -17,7 +17,7 @@ namespace FALWebhook.Controllers
         public WebhookReceiverController(IConfiguration configuration)
         {
             // Lấy giá trị SecretKey từ appsettings.json
-            _secretKey = configuration["WebhookSettings:SecretKey"];
+            _secretKey = "your-secret-key";
         }
         [HttpPost]
         public async Task<IActionResult> ReceiveData([FromHeader(Name = "X-Signature")] string signature, [FromBody] FaceDetectionResult payload)
