@@ -1,5 +1,9 @@
+
+﻿using FAL.Services.IServices;
+using Microsoft.AspNetCore.Authorization;
 ﻿using AutoMapper;
 using FAL.Services.IServices;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.Data;
@@ -46,6 +50,7 @@ namespace FAL.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("faceId")]
         public async Task<IActionResult> DeleteFaceAsync(string faceId)
         {
@@ -59,7 +64,7 @@ namespace FAL.Controllers
                 throw;
             }
         }
-
+        [Authorize]
         [HttpGet("getList")]
         public async Task<IActionResult> GetListCollectionAsync()
         {
@@ -74,6 +79,7 @@ namespace FAL.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("create")]
         public async Task<IActionResult> CreateCollectionAsync([FromBody] string collectionId)
         {

@@ -2,6 +2,7 @@
 using FAL.Services;
 using FAL.Services.IServices;
 using FAL.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.SystemModel;
@@ -26,6 +27,8 @@ namespace FAL.Controllers
             _s3Service = s3Service;
         }
 
+
+        [Authorize]
         [HttpPost("")]
         public async Task<IActionResult> DetectAsync(IFormFile file)
         {
@@ -66,6 +69,7 @@ namespace FAL.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("upload-multiple-images")]
         public async Task<IActionResult> UploadMultipleImages([FromForm] IFormFileCollection files)
         {

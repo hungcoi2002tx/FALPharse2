@@ -67,6 +67,7 @@ public class Function
                         result = await DetectImageProcess(bucket, key, fileName);
                         await StoreResponseResult(result, fileName);
                         break;
+
                     case (true):
                         result = await DetectVideoProcess(bucket, key,fileName);
                         await StoreResponseResult(result, fileName);
