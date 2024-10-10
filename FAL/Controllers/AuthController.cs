@@ -101,7 +101,7 @@ namespace FAL.Controllers
                 SystemName = userDto.SystemName,
                 WebhookUrl = userDto.WebhookUrl,
                 WebhookSecretKey = userDto.WebhookSecretKey,
-                Status = "Active" // Trạng thái mặc định
+                Status = "Deactive" // Trạng thái mặc định
             };
 
             // Lưu user vào DynamoDB
