@@ -65,14 +65,17 @@ public class Function
                 case (false):
                     result = await DetectImageProcess(bucket, key, fileName);
                     var (webhookUrlImage, webhookSecretkeyImage) = await CreateResponseResult(bucket, result);
-                    //await SendResult(result, logger, webhookSecretkey, webhookUrl);
+                    await SendResult(result, logger, webhookSecretkeyImage, webhookUrlImage);
                     await StoreResponseResult(result, fileName);
                     await logger.LogMessageAsync(DateTimeUtils.GetDateTimeVietNamNow());
                     break;
                 case (true):
                     result = await DetectVideoProcess(bucket, key, fileName);
-                    await CreateResponseResult(bucket, result);
-                    //await SendResult(result, logger, webhookSecretkey, webhookUrl);
+                    var (webhookUrlVideo, webhookSecretkeyVideo) = await CreateResponseResult(bucket, result);
+                    await logger.LogMessageAsync($"Add vao db {webhookUrlVideo}");
+                    await logger.LogMessageAsync($"Add vao db {webhookSecretkeyVideo}");
+
+                    await SendResult(result, logger, webhookSecretkeyVideo, webhookUrlVideo);
                     await StoreResponseResult(result, fileName);
                     await logger.LogMessageAsync($"Add vao db {result.RegisteredFaces.Count}");
                     break;
@@ -87,6 +90,8 @@ public class Function
     private async Task<string> SendResult(FaceDetectionResult result, CloudWatchLogger logger, string webhookSecretkey, string webhookUrl)
     {
         string jsonPayload = ConvertToJson(result);
+        await logger.LogMessageAsync(jsonPayload);
+
         // Tính chữ ký HMAC cho payload
         string signature = GenerateHMAC(jsonPayload, webhookSecretkey);
         // Tạo HttpContent để gửi yêu cầu POST
@@ -118,6 +123,7 @@ public class Function
         var systemName = bucket;
         string? webhookUrl = null;
         string? webhookSecretkey = null;
+        var logger = new CloudWatchLogger();
         Dictionary<string, AttributeValue> dictionary = new Dictionary<string, AttributeValue>
         {
               { ":systemName", new AttributeValue { S = systemName } }
@@ -125,15 +131,17 @@ public class Function
 
         var resultQuery = await GetRecordByAttributeIndex("Accounts", "SystemNameIndex", "SystemName = :systemName", dictionary);
         var firstRecord = resultQuery.Items.FirstOrDefault();
+
         if (firstRecord != null)
         {
             if (firstRecord.ContainsKey("WebhookUrl") && firstRecord["WebhookUrl"].S != null)
             {
                 webhookUrl = firstRecord["WebhookUrl"].S;
             }
-            if (firstRecord.ContainsKey("WebhookSecretkey") && firstRecord["WebhookSecretkey"].S != null)
+
+            if (firstRecord.ContainsKey("WebhookSecretKey") && firstRecord["WebhookSecretKey"].S != null)
             {
-                webhookSecretkey = firstRecord["WebhookSecretkey"].S;
+                webhookSecretkey = firstRecord["WebhookSecretKey"].S;
             }
 
             return (webhookUrl, webhookSecretkey);
