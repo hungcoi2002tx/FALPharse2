@@ -10,6 +10,6 @@ namespace Share.SystemModel
     {
         public bool Status { get; set; }
 
-        public string Messange { get; set; }
+        public string Message { get; set; }
     }
 }

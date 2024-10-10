@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Share.SystemModel;
 using System.Security;
 using System.Text;
@@ -98,7 +99,16 @@ namespace FAL
             });
 
             builder.Services.AddSingleton<IDynamoDBService, DynamoDBService>();
+            builder.Services.Configure<IISServerOptions>(options =>
+            {
+                options.MaxRequestBodySize = 100000000; // 50 MB, or set to any desired size
+            });
 
+            builder.Services.Configure<KestrelServerOptions>(options =>
+            {
+                options.Limits.MaxRequestBodySize = 100000000; // 50 MB, or set to any desired size
+            });
+            builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

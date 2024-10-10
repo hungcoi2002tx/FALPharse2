@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.SystemModel;
 using System.Net;
+using System.Reflection;
 
 namespace FAL.Controllers
 {
@@ -26,48 +27,45 @@ namespace FAL.Controllers
             _s3Service = s3Service;
         }
 
+
         [Authorize]
-        [HttpPost("detect")]
+        [HttpPost("")]
         public async Task<IActionResult> DetectAsync(IFormFile file)
         {
             try
             {
-                //check valid file
                 #region check input
                 file.ValidFile();
                 #endregion
-                //add s3
+                #region add to S3
                 var bucketExists = await _s3Service.AddBudgetAsync(SystermId);
                 if (!bucketExists) return NotFound($"Bucket {SystermId} does not exist.");
                 var fileName = Guid.NewGuid().ToString();
                 var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, SystermId, TypeOfRequest.Tagging);
-
-                //index faces
-                //var response = await _collectionService.IndexFaceAsync(SystermId, SystermId, fileName);
-
-                //string result = string.Empty;
-                //foreach (var item in response.FaceRecords)
-                //{
-                //    var faceId = item.Face.FaceId;
-                //    var data = await _collectionService.SearchUserByFaceIdsAsync(SystermId, faceId);
-                //    if (data.UserMatches != null)
-                //    {
-                //        var userId = data.UserMatches.First().User.UserId;
-                //        result = result + " " + userId;
-                //        //train again
-                //        await _collectionService.AssociateFacesAsync(SystermId, new List<string>() { faceId }, userId);
-                //    }
-                //    else
-                //    {
-                //        //delete 
-                //        await _collectionService.DeleteByFaceIdAsync(faceId, SystermId);
-                //    }
-                //}
-                return Ok();
+                #endregion
+                return Ok(new ResultResponse
+                {
+                    Status = true,
+                    Message = "The system has received the file."
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(400, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Bad Request. Invalid value."
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Internal Server Error"
+                });
             }
         }
 
@@ -85,7 +83,7 @@ namespace FAL.Controllers
                 if (!bucketExists) return NotFound($"Bucket {SystermId} does not exist.");
                 foreach (var item in files)
                 {
-                    item.ValidFile();
+                    item.ValidImage();
                 }
                 foreach (var file in files)
                 {

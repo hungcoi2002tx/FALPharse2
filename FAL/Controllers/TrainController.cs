@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Share.Data;
 using Share.SystemModel;
 using System.Reflection;
 
@@ -35,7 +36,7 @@ namespace FAL.Controllers
 
         [Authorize]
         [HttpDelete("delete")]
-        public async Task<IActionResult> DeleteByUserIdAsync(string userId)
+        public async Task<IActionResult> DeleteByUserIdAsync([FromBody]string userId)
         {
             try
             {
@@ -49,7 +50,7 @@ namespace FAL.Controllers
                 return StatusCode(500, new ResultResponse
                 {
                     Status = false,
-                    Messange = "Internal Server Error"
+                    Message = "Internal Server Error"
                 });
             }
         }
@@ -59,11 +60,24 @@ namespace FAL.Controllers
         {
             try
             {
-                file.ValidFile();
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
                 await TrainAsync(image, userId);
-                return Content("Train succesfully");
+                //return 
+                return Ok(new ResultResponse
+                {
+                    Status = true,
+                    Message = "The system training was successful."
+                });
+            }
+            catch(ArgumentException ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(400, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Bad Request. Invalid value."
+                });
             }
             catch (Exception ex)
             {
@@ -71,32 +85,36 @@ namespace FAL.Controllers
                 return StatusCode(500, new ResultResponse
                 {
                     Status = false,
-                    Messange = "Internal Server Error"
+                    Message = "Internal Server Error"
                 });
             }
         }
 
         [HttpPost("faceId")]
-        public async Task<IActionResult> TrainByFaceIdAsync(string faceId, string userId)
+        public async Task<IActionResult> TrainByFaceIdAsync([FromBody] FaceTrainModel info )
         {
             try
             {
                 //check faceId in dynamodb
-                var result = await _dynamoService.IsExistFaceIdAsync(SystermId, faceId);
+                var result = await _dynamoService.IsExistFaceIdAsync(SystermId, info.FaceId);
                 if (result)
                 {
                     return BadRequest(new ResultResponse
                     {
                         Status = false,
-                        Messange = "FaceId is existed in systerm"
+                        Message = "FaceId is existed in systerm"
                     });
                 }
 
                 //train
-                await TrainFaceIdAsync(userId, faceId);
+                await TrainFaceIdAsync(info.UserId, info.FaceId);
 
                 //return 
-                return Content("Train succesfully");
+                return Ok(new ResultResponse
+                {
+                    Status = true,
+                    Message = "The system training was successful."
+                });
             }
             catch (Exception ex)
             {
@@ -104,7 +122,7 @@ namespace FAL.Controllers
                 return StatusCode(500, new ResultResponse
                 {
                     Status = false,
-                    Messange = "Internal Server Error"
+                    Message = "Internal Server Error"
                 });
             }
         }
@@ -113,12 +131,13 @@ namespace FAL.Controllers
         {
             try
             {
+                file.ValidImage();
                 var response = await _collectionService.DetectFaceByFileAsync(file);
                 if (response.FaceDetails.Count != 1)
                 {
-                    throw new Exception(message: "File ảnh yêu cầu duy nhất 1 mặt");
+                    throw new ArgumentException(message: "File ảnh yêu cầu duy nhất 1 mặt");
                 }
-                return file.ValidFile();
+                return true;
             }
             catch (Exception)
             {
