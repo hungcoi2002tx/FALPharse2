@@ -3,6 +3,7 @@ using Amazon.S3;
 using FAL.Services.IServices;
 using FAL.Utils;
 using Microsoft.AspNetCore.Mvc;
+using Share.Data;
 using Share.SystemModel;
 using System.Reflection;
 
@@ -86,12 +87,12 @@ namespace FAL.Controllers
         }
 
         [HttpPost("faceId")]
-        public async Task<IActionResult> TrainByFaceIdAsync(string faceId, string userId)
+        public async Task<IActionResult> TrainByFaceIdAsync([FromBody] FaceTrainModel info )
         {
             try
             {
                 //check faceId in dynamodb
-                var result = await _dynamoService.IsExistFaceIdAsync(SystermId, faceId);
+                var result = await _dynamoService.IsExistFaceIdAsync(SystermId, info.FaceId);
                 if (result)
                 {
                     return BadRequest(new ResultResponse
@@ -102,7 +103,7 @@ namespace FAL.Controllers
                 }
 
                 //train
-                await TrainFaceIdAsync(userId, faceId);
+                await TrainFaceIdAsync(info.UserId, info.FaceId);
 
                 //return 
                 return Ok(new ResultResponse

@@ -1,7 +1,10 @@
-﻿using FAL.Services.IServices;
+﻿using AutoMapper;
+using FAL.Services.IServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Share.Data;
 using Share.SystemModel;
+using System.Reflection;
 
 namespace FAL.Controllers
 {
@@ -12,11 +15,15 @@ namespace FAL.Controllers
         private readonly IS3Service _s3Service;
         private readonly ICollectionService _collectionService;
         private readonly string SystermId = GlobalVarians.SystermId;
+        private readonly IMapper _mapper;
+        private readonly CustomLog _logger;
 
-        public CollectionController(IS3Service s3Service, ICollectionService collectionService)
+        public CollectionController(IS3Service s3Service, ICollectionService collectionService, IMapper mapper, CustomLog log)
         {
             _s3Service = s3Service;
             _collectionService = collectionService;
+            _mapper = mapper;
+            _logger = log;
         }
 
         [HttpGet("users")]
@@ -25,11 +32,17 @@ namespace FAL.Controllers
             try
             {
                 var result = await _collectionService.GetFacesAsync(SystermId);
-                return Ok(result);
+                List<FaceTrainModel> list = _mapper.Map<List<FaceTrainModel>>(result);
+                return Ok(list);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Internal Server Error"
+                });
             }
         }
 
