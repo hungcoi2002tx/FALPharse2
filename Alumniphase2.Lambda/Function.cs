@@ -64,7 +64,7 @@ public class Function
             {
                 case (false):
                     result = await DetectImageProcess(bucket, key, fileName);
-                    var (webhookSecretkey, webhookUrl) = await CreateResponseResult(bucket, result);
+                    var (webhookUrlImage, webhookSecretkeyImage) = await CreateResponseResult(bucket, result);
                     //await SendResult(result, logger, webhookSecretkey, webhookUrl);
                     await StoreResponseResult(result, fileName);
                     await logger.LogMessageAsync(DateTimeUtils.GetDateTimeVietNamNow());
