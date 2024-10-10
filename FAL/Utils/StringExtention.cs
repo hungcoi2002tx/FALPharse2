@@ -20,5 +20,18 @@ namespace FAL.Utils
 				throw;
 			}
         }
+
+        public static string GetTableNameResult(string systemId)
+        {
+            try
+            {
+               return $"{systemId}-result";
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
     }
 }
