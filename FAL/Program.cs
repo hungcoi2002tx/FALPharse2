@@ -37,6 +37,7 @@ namespace FAL
             {
                 options.Limits.MaxRequestBodySize = 100000000; // 50 MB, or set to any desired size
             });
+            builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
