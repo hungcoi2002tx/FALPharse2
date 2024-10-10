@@ -33,7 +33,7 @@ namespace FALWebhook.Controllers
             }
             string botToken = "7866949652:AAErC16gTxmjl6pVMCf0TeTOaiDjG55TRME";
             string chatId = "-1002303179397";
-            await SendMessageTele.TelegramBot.SendMessageAsync(botToken, chatId, JsonSerializer.Serialize(payload));
+            await SendMessageTele.TelegramBot.SendMessageAsync(botToken, chatId, payloadString);
 
             // Trả về phản hồi cho client
             return Ok(new { Message = "Webhook đã nhận dữ liệu thành công." });
