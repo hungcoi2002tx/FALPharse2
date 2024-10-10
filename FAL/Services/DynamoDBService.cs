@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2.Model;
 using Amazon.Rekognition.Model;
 using FAL.Services.IServices;
 using Share.Data;
+using Share.SearchModel;
 
 namespace FAL.Services
 {
@@ -53,6 +54,7 @@ namespace FAL.Services
                 throw;
             }
         }
+
 
         public async Task<bool> IsExistFaceIdAsync(string systermId, string faceId)
         {

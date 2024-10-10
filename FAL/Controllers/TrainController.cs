@@ -46,7 +46,7 @@ namespace FAL.Controllers
                 return StatusCode(500, new ResultResponse
                 {
                     Status = false,
-                    Message = "Internal Server Error"
+                    Message = "Internal Server Error."
                 });
             }
         }
