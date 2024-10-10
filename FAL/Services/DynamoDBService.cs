@@ -23,26 +23,26 @@ namespace FAL.Services
                 {
                     TableName = tableName,
                     Item = new Dictionary<string, AttributeValue>
-            {
-                {
-                    nameof(FaceInformation.UserId), new AttributeValue
                     {
-                        S = userId
+                        {
+                            nameof(FaceInformation.UserId), new AttributeValue
+                            {
+                                S = userId
+                            }
+                        },
+                        {
+                            nameof(FaceInformation.FaceId), new AttributeValue
+                            {
+                                S = faceId
+                            }
+                        },
+                        {
+                            nameof(FaceInformation.CreateDate), new AttributeValue
+                            {
+                                S = DateTime.Now.ToString()
+                            }
+                        }
                     }
-                },
-                 {
-                    nameof(FaceInformation.FaceId), new AttributeValue
-                    {
-                        S = faceId
-                    }
-                },
-                {
-                    nameof(FaceInformation.CreateDate), new AttributeValue
-                    {
-                        S = DateTime.Now.ToString()
-                    }
-                }
-            }
                 };
 
                 await _dynamoDBService.PutItemAsync(request);
@@ -60,7 +60,7 @@ namespace FAL.Services
             {
                 var request = new QueryRequest
                 {
-                    TableName = "fualumni",
+                    TableName = systermId,
                     IndexName = "FaceIdIndex",  // Use the GSI index name
                     KeyConditionExpression = "FaceId = :faceId",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
@@ -102,6 +102,36 @@ namespace FAL.Services
                     return true;
                 }
                 return false;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+
+        public async Task<string?> GetRecordByKeyConditionExpressionAsync(string systermId, string keyConditionExpression, Dictionary<string, AttributeValue> dictionary)
+        {
+            string? result = null;
+            try
+            {
+                var queryRequest = new QueryRequest
+                {
+                    TableName = systermId,
+                    KeyConditionExpression = keyConditionExpression,
+                    ExpressionAttributeValues = dictionary,
+                };
+                var resultQuery = await _dynamoDBService.QueryAsync(queryRequest);
+
+                var firstRecord = resultQuery.Items.FirstOrDefault();
+                if (firstRecord != null)
+                {
+                    if (firstRecord.ContainsKey("Data") && firstRecord["Data"].S != null)
+                    {
+                        result = firstRecord["Data"].S;
+                    }
+                }
+                return result;
             }
             catch (Exception ex)
             {

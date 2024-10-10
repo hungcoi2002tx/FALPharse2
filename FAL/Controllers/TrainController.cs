@@ -2,6 +2,9 @@
 using Amazon.S3;
 using FAL.Services.IServices;
 using FAL.Utils;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.Data;
 using Share.SystemModel;
@@ -31,6 +34,7 @@ namespace FAL.Controllers
             _dynamoService = dynamoService;
         }
 
+        [Authorize]
         [HttpDelete("delete")]
         public async Task<IActionResult> DeleteByUserIdAsync([FromBody]string userId)
         {
@@ -56,9 +60,10 @@ namespace FAL.Controllers
         {
             try
             {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
-                await TrainAsync(image, userId);
+                await TrainAsync(image, userId, systermId);
                 //return 
                 return Ok(new ResultResponse
                 {
@@ -91,6 +96,7 @@ namespace FAL.Controllers
         {
             try
             {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 //check faceId in dynamodb
                 var result = await _dynamoService.IsExistFaceIdAsync(SystermId, info.FaceId);
                 if (result)
@@ -103,7 +109,7 @@ namespace FAL.Controllers
                 }
 
                 //train
-                await TrainFaceIdAsync(info.UserId, info.FaceId);
+                await TrainFaceIdAsync(info.UserId, info.FaceId, systermId);
 
                 //return 
                 return Ok(new ResultResponse
@@ -141,23 +147,20 @@ namespace FAL.Controllers
             }
         }
 
-        private async Task TrainAsync(Image file, string userId)
+        private async Task TrainAsync(Image file, string userId, string systermId)
         {
             try
             {
-                #region lay thong tin tu token companyid
-
-                #endregion
-                var collectionExits = await _collectionService.IsCollectionExistAsync(SystermId);
+                var collectionExits = await _collectionService.IsCollectionExistAsync(systermId);
                 if (!collectionExits)
                 {
-                    await _collectionService.CreateCollectionAsync(SystermId);
+                    await _collectionService.CreateCollectionAsync(systermId);
                 }
 
                 #region index face
-                var indexResponse = await _collectionService.IndexFaceByFileAsync(file, SystermId, userId);
+                var indexResponse = await _collectionService.IndexFaceByFileAsync(file, systermId, userId);
                 #endregion
-                await TrainFaceIdAsync(userId, indexResponse.FaceRecords[0].Face.FaceId);
+                await TrainFaceIdAsync(userId, indexResponse.FaceRecords[0].Face.FaceId,systermId);
             }
             catch (Exception ex)
             {
@@ -165,20 +168,20 @@ namespace FAL.Controllers
             }
         }
 
-        private async Task TrainFaceIdAsync(string userId, string faceId)
+        private async Task TrainFaceIdAsync(string userId, string faceId, string systermId)
         {
             try
             {
                 #region check exit UserId
-                var isExitUser = await _dynamoService.IsExistUserAsync(SystermId, userId);
+                var isExitUser = await _dynamoService.IsExistUserAsync(systermId, userId);
                 #endregion
                 if (!isExitUser)
                 {
-                    await _collectionService.CreateNewUserAsync(SystermId, userId);
+                    await _collectionService.CreateNewUserAsync(systermId, userId);
                 }
                 #region Add user 
-                await _collectionService.AssociateFacesAsync(SystermId, new List<string>() { faceId }, userId);
-                await _dynamoService.CreateUserInformationAsync(SystermId, userId, faceId);
+                await _collectionService.AssociateFacesAsync(systermId, new List<string>() { faceId }, userId);
+                await _dynamoService.CreateUserInformationAsync(systermId, userId, faceId);
                 #endregion
             }
             catch (Exception ex)
@@ -199,19 +202,6 @@ namespace FAL.Controllers
                 };
             }
             catch (Exception)
-            {
-                throw;
-            }
-        }
-
-        private async Task AssosiateFaceWithUserAsync(Face face, string key)
-        {
-            try
-            {
-                await _collectionService.CreateNewUserAsync(SystermId, key);
-                await _collectionService.AssociateFacesAsync(SystermId, new List<string>() { face.FaceId }, key);
-            }
-            catch (Exception ex)
             {
                 throw;
             }
