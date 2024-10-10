@@ -1,6 +1,6 @@
 ﻿namespace FAL.Dtos
 {
-    public class UserRegisterDTO
+    public class AccountRegisterDTO
     {
         public string Username { get; set; }
         public string Password { get; set; }

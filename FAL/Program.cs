@@ -66,11 +66,12 @@ namespace FAL
             builder.Services.AddAWSService<IAmazonS3>();
             builder.Services.AddAWSService<IAmazonRekognition>();
             builder.Services.AddAWSService<IAmazonDynamoDB>();
-            builder.Services.AddScoped<DynamoDBContext>();
+            builder.Services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
             builder.Services.AddSingleton<CustomLog>(new CustomLog(Path.Combine(Directory.GetCurrentDirectory(), "bin", "ProgramLogs", "Log.txt")));
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
             builder.Services.AddSingleton<IS3Service, S3Service>();
-            builder.Services.AddScoped<IPermissionService, PermissionService>();
+            builder.Services.AddSingleton<IPermissionService, PermissionService>();
+            //builder.Services.AddSingleton<CustomAuthorizationFilter>();
 
             var key = builder.Configuration["Jwt:Key"] ?? "";
             var issuer = builder.Configuration["Jwt:Issuer"] ?? "";

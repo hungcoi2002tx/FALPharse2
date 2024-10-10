@@ -8,12 +8,12 @@ namespace FAL.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController : ControllerBase
+    public class AccountsController : ControllerBase
     {
         private readonly IAmazonDynamoDB _dynamoDbClient;
         private readonly DynamoDBContext _dbContext;
 
-        public UsersController(IAmazonDynamoDB dynamoDbClient)
+        public AccountsController(IAmazonDynamoDB dynamoDbClient)
         {
             _dynamoDbClient = dynamoDbClient;
             _dbContext = new DynamoDBContext(dynamoDbClient);
@@ -24,16 +24,16 @@ namespace FAL.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
-            var users = await _dbContext.ScanAsync<User>(new List<ScanCondition>()).GetRemainingAsync();
+            var users = await _dbContext.ScanAsync<Account>(new List<ScanCondition>()).GetRemainingAsync();
             return Ok(users);
         }
 
-        // GET: api/users/{id}
+        // GET: api/users/{username}
         [Authorize]
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetUserById(string id)
+        [HttpGet("{username}")]
+        public async Task<IActionResult> GetUserById(string username)
         {
-            var user = await _dbContext.LoadAsync<User>(id);
+            var user = await _dbContext.LoadAsync<Account>(username);
             if (user == null)
                 return NotFound("User không tìm thấy!");
 
@@ -43,9 +43,9 @@ namespace FAL.Controllers
         // POST: api/users
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] User user)
+        public async Task<IActionResult> CreateUser([FromBody] Account user)
         {
-            var existingUser = await _dbContext.LoadAsync<User>(user.UserId);
+            var existingUser = await _dbContext.LoadAsync<Account>(user.Username);
             if (existingUser != null)
                 return BadRequest("User đã tồn tại!");
 
@@ -53,18 +53,24 @@ namespace FAL.Controllers
             return Ok(user); // Tạo mới một user
         }
 
-        // PUT: api/users/{id}
+        // PUT: api/users/{username}
         [Authorize]
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(string id, [FromBody] User updatedUser)
+        [HttpPut("{username}")]
+        public async Task<IActionResult> UpdateUser(string username, [FromBody] Account updatedUser)
         {
-            var existingUser = await _dbContext.LoadAsync<User>(id);
+            var existingUser = await _dbContext.LoadAsync<Account>(username);
             if (existingUser == null)
                 return NotFound("User không tìm thấy để update!");
 
-            // Cập nhật user
+            // Cập nhật thông tin user
             existingUser.Username = updatedUser.Username;
-            existingUser.Password = updatedUser.Password;
+
+            // Kiểm tra nếu mật khẩu mới khác với mật khẩu cũ, thì mã hóa mật khẩu
+            if (!BCrypt.Net.BCrypt.Verify(updatedUser.Password, existingUser.Password))
+            {
+                existingUser.Password = BCrypt.Net.BCrypt.HashPassword(updatedUser.Password);  // Mã hóa mật khẩu
+            }
+
             existingUser.Email = updatedUser.Email;
             existingUser.RoleId = updatedUser.RoleId; // Cập nhật RoleId duy nhất, kiểu int
             existingUser.SystemName = updatedUser.SystemName;
@@ -76,12 +82,13 @@ namespace FAL.Controllers
             return Ok(existingUser);
         }
 
-        // DELETE: api/users/{id}
+
+        // DELETE: api/users/{username}
         [Authorize]
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(string id)
+        [HttpDelete("{username}")]
+        public async Task<IActionResult> DeleteUser(string username)
         {
-            var user = await _dbContext.LoadAsync<User>(id);
+            var user = await _dbContext.LoadAsync<Account>(username);
             if (user == null)
                 return NotFound("User không tìm thấy để xóa!");
 

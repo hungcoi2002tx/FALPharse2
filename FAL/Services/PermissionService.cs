@@ -1,37 +1,45 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using FAL.Models;
 using FAL.Services.IServices;
+using System.Security.Claims;
 
 namespace FAL.Services
 {
     public class PermissionService : IPermissionService
     {
-        private readonly DynamoDBContext _dbContext;
+        private readonly IDynamoDBContext _dbContext;
 
-        public PermissionService(DynamoDBContext dbContext)
+        public PermissionService(IDynamoDBContext dbContext)
         {
             _dbContext = dbContext;
         }
 
-        public async Task<Role> GetRoleByUsername(string username)
+        public bool HasPermission(ClaimsPrincipal user, string resource, string action)
         {
-            // Lấy thông tin người dùng từ DynamoDB bằng username
-            var user = await _dbContext.LoadAsync<User>(username); 
+            // Lấy roleId từ custom claim "RoleId"
+            var roleIdClaim = user.FindFirst("RoleId");
 
-            if (user == null)
+            if (roleIdClaim == null)
             {
-                return null;
+                // Không tìm thấy RoleId trong token
+                return false;
             }
 
-            // Lấy role tương ứng từ DynamoDB
-            return await _dbContext.LoadAsync<Role>(user.RoleId); 
+            // Chuyển đổi RoleId từ claim thành int
+            var roleId = int.Parse(roleIdClaim.Value);
+
+            // Tìm Role từ DynamoDB
+            var role = _dbContext.LoadAsync<Role>(roleId).Result;
+
+            if (role == null) return false;
+
+            // Kiểm tra xem role có quyền trên resource và action cụ thể
+            var hasPermission = role.Permissions.Any(p =>
+                p.Resource == resource && p.Actions.Contains(action));
+
+            return hasPermission;
         }
 
-
-        public bool HasPermission(Role role, string apiEndpoint, string method)
-        {
-            var permission = role.Permissions.FirstOrDefault(p => p.Resource == apiEndpoint);
-            return permission != null && permission.Actions.Contains(method);
-        }
     }
+
 }

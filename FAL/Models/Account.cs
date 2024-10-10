@@ -1,14 +1,14 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 namespace FAL.Models;
 
-[DynamoDBTable("Users")]
-public class User
+[DynamoDBTable("Accounts")]
+public class Account
 {
     [DynamoDBHashKey]
-    public string UserId { get; set; } // Khóa chính
-    //TODO: xử lý jwt claim username hoặc userid[DynamoDBHashKey]
     public string Username { get; set; }
+    [JsonIgnore]
     public string Password { get; set; }
     public string Email { get; set; }
     public int RoleId { get; set; }  // Chỉ một RoleId duy nhất cho user, kiểu int

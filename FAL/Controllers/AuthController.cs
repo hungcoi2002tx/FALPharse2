@@ -40,7 +40,7 @@ namespace FAL.Controllers
             }
 
             // Tìm người dùng trong DynamoDB
-            var user = await _dbContext.LoadAsync<User>(loginModel.Username);
+            var user = await _dbContext.LoadAsync<Account>(loginModel.Username);
             if (user == null)
             {
                 return Unauthorized("Tên người dùng không tồn tại.");
@@ -68,7 +68,7 @@ namespace FAL.Controllers
 
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] UserRegisterDTO userDto)
+        public async Task<IActionResult> Register([FromBody] AccountRegisterDTO userDto)
         {
             if (userDto == null)
             {
@@ -82,7 +82,7 @@ namespace FAL.Controllers
             }
 
             // Kiểm tra xem người dùng đã tồn tại chưa
-            var existingUser = await _dbContext.LoadAsync<User>(userDto.Username);
+            var existingUser = await _dbContext.LoadAsync<Account>(userDto.Username);
             if (existingUser != null)
             {
                 return Conflict("Tên người dùng đã tồn tại.");
@@ -92,9 +92,8 @@ namespace FAL.Controllers
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
 
             // Tạo một đối tượng User
-            var user = new User
+            var user = new Account
             {
-                UserId = Guid.NewGuid().ToString(),
                 Username = userDto.Username,
                 Password = hashedPassword,
                 Email = userDto.Email,
@@ -112,7 +111,7 @@ namespace FAL.Controllers
         }
 
         // Phương thức validate dữ liệu từ UserRegisterDTO
-        private bool ValidateRegisterDto(UserRegisterDTO userDto, out string errorMessage)
+        private bool ValidateRegisterDto(AccountRegisterDTO userDto, out string errorMessage)
         {
             if (string.IsNullOrEmpty(userDto.Username) || userDto.Username.Length < 3)
             {
