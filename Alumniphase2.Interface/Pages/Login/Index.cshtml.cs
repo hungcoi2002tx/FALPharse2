@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace Alumniphase2.Interface.Pages.Login
 {
@@ -56,7 +58,7 @@ namespace Alumniphase2.Interface.Pages.Login
                         SameSite = SameSiteMode.Strict 
                     });
 
-                    return RedirectToPage("/DetectFace");
+                    return RedirectToPage("/DetectFace/Index");
                 }
             }
 

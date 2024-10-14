@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 
-namespace Alumniphase2.Interface.Pages.DetectFace
+namespace Alumniphase2.Interface.Pages.TrainFace
 {
     public class IndexModel : PageModel
     {
@@ -15,9 +13,10 @@ namespace Alumniphase2.Interface.Pages.DetectFace
         public int ImageHeight { get; private set; }
         private readonly IWebHostEnvironment _hostingEnvironment;
         public string? FilePath { get; private set; } = null;
-        string url = "http://fal-dev.eba-55qpmvbp.ap-southeast-1.elasticbeanstalk.com/api/Detect";
+        string url = "http://fal-dev.eba-55qpmvbp.ap-southeast-1.elasticbeanstalk.com/api/Train/file";
         private readonly HttpClient _httpClient;
         private string token;
+        public string UserId; // Thay thế bằng UserId thực tế
 
 
 
@@ -32,7 +31,7 @@ namespace Alumniphase2.Interface.Pages.DetectFace
         }
 
 
-        public async Task OnPostDetectFaceAsync()
+        public async Task OnPostTrainFaceAsync()
         {
             token = Request.Cookies["AuthToken"];
             if (FileName != null)
@@ -62,31 +61,30 @@ namespace Alumniphase2.Interface.Pages.DetectFace
             var imagePath = Path.Combine(wwwRootPath, "images", imageFile);
             FilePath = imagePath;
 
-            var result = await GetResultAsync();
-
-            if (result != null)
-            {
-
-            }
+           await GetResultAsync();
         }
 
         private async Task<string?> GetResultAsync()
         {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
+
             using (var form = new MultipartFormDataContent())
             {
-                // Tạo nội dung file
+                // Thêm UserId vào form
+                form.Add(new StringContent(UserId), "UserId");
+
+                // Tạo nội dung file từ đường dẫn
                 var fileContent = new ByteArrayContent(System.IO.File.ReadAllBytes(FilePath));
-                fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data");
+                fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream"); // Bạn có thể thay đổi nếu cần
 
-                // Thêm file vào request
-                form.Add(fileContent, "file", Path.GetFileName(FilePath));
+                // Thêm file vào nội dung của form
+                form.Add(fileContent, "token", Path.GetFileName(FilePath));
 
-                // Gửi request POST
+                // Gửi yêu cầu POST
                 HttpResponseMessage response = await _httpClient.PostAsync(url, form);
 
-                // Kiểm tra kết quả
+                // Kiểm tra kết quả trả về
                 if (response.IsSuccessStatusCode)
                 {
                     string responseData = await response.Content.ReadAsStringAsync();
@@ -99,6 +97,5 @@ namespace Alumniphase2.Interface.Pages.DetectFace
                 }
             }
         }
-
     }
 }

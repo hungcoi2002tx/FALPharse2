@@ -1,9 +1,11 @@
 ﻿@page
-@model Alumniphase2.Interface.Pages.DetectFace.IndexModel
+@model Alumniphase2.Interface.Pages.TrainFace.IndexModel
 
-<form method="post" enctype="multipart/form-data" asp-page-handler="DetectFace">
+<form method="post" enctype="multipart/form-data">
     <div>Enter your image or video:</div>
     <input type="file" id="FileName" name="FileName" accept="image/*,video/*" onchange="previewMedia(event)" />
+    <div>Enter UserId</div>
+    <input name="UserId"  />
     <br />
     <br />
     <img id="previewImage" src="#" alt="File preview" style="display:none; max-width: 200px; max-height: 200px;" />
@@ -41,3 +43,4 @@
         reader.readAsDataURL(file); // Đọc file để hiển thị
     }
 </script>
+
