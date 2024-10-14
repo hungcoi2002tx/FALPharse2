@@ -24,6 +24,10 @@ namespace Alumniphase2.Lambda.Utils
         public const string DATA_ATTRIBUTE_DYNAMODB = "Data";
         public const string CREATE_DATE_ATTRIBUTE_DYNAMODB = "CreateDate";
         public const string FILE_NAME_ATTRIBUTE_DYNAMODB = "FileName";
+
+
+        public const string DATE_FORMAT = "MM/dd/yyyy h:mm:ss tt";
+        public const string TIME_ZONE_VIET_NAM = "SE Asia Standard Time";
     }
 
 }
