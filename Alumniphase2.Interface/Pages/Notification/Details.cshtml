@@ -1,0 +1,69 @@
+﻿@page
+@model Alumniphase2.Interface.Pages.Notification.DetailsModel
+@{
+}
+<h2>Face Details</h2>
+
+<div>
+    <h3>Picture</h3>
+    <img src="@Model.PictureUrl" alt="Face Image" style="max-width:500px;" />
+</div>
+
+<h3>Registered Faces</h3>
+@if (Model.RegisteredFaces != null && Model.RegisteredFaces.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Time Appearances</th>
+                <th>Bounding Box</th>
+                <th>FaceId</th>
+                <th>UserId</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var face in Model.RegisteredFaces)
+            {
+                <tr>
+                    <td>@face.TimeAppearances</td>
+                    <td>@face.BoundingBox</td>
+                    <td>@face.FaceId</td>
+                    <td>@face.UserId</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No registered faces found.</p>
+}
+
+<!-- Unregistered Faces Table -->
+<h3>Unregistered Faces</h3>
+@if (Model.UnregisteredFaces != null && Model.UnregisteredFaces.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Time Appearances</th>
+                <th>Bounding Box</th>
+                <th>FaceId</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var face in Model.UnregisteredFaces)
+            {
+                <tr>
+                    <td>@face.TimeAppearances</td>
+                    <td>@face.BoundingBox</td>
+                    <td>@face.FaceId</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No unregistered faces found.</p>
+}

@@ -1,0 +1,39 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model Alumniphase2.Interface.Pages.Notification.IndexModel
+@{
+    var files = Model.ListData;
+}
+
+<h2>Files List</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>File Name</th>
+            <th>Created Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (files != null && files.Any())
+        {
+            foreach (var file in files)
+            {
+                <tr>
+                    <td>
+                        <a asp-page="/Notification/Details" asp-route-fileName="@file.FileName">
+                            @file.FileName
+                        </a>
+                    </td>
+                    <td>@file.CreateDate</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="2">No files available.</td>
+            </tr>
+        }
+    </tbody>
+</table>
