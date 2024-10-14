@@ -10,6 +10,8 @@ namespace Alumniphase2.Interface.Pages.Notification
     public class DetailsModel : PageModel
     {
         public string? PictureUrl { get; private set; } 
+        public int ImageWidth { get; private set; } 
+        public int ImageHeight { get; private set; } 
         private const string _tableName = "client-storeData"; 
         public List<FaceRecognitionResponse> RegisteredFaces { get; private set; } = new List<FaceRecognitionResponse>();
         public List<FaceRecognitionResponse> UnregisteredFaces { get; private set; } = new List<FaceRecognitionResponse>();
@@ -22,8 +24,16 @@ namespace Alumniphase2.Interface.Pages.Notification
 
         public async Task OnGetAsync(string fileName)
         {
-            PictureUrl = $"/images/459280901_837416941878718_801692676479463698_n (1).png";
+            PictureUrl = $"/images/{fileName}";
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
 
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var image = System.Drawing.Image.FromFile(filePath))
+            {
+                ImageWidth = image.Width;
+                ImageHeight = image.Height;
+            }
             var response = await QueryDynamoDBAsync(fileName);
 
             ProcessResponse(response);
@@ -34,11 +44,11 @@ namespace Alumniphase2.Interface.Pages.Notification
             var queryRequest = new QueryRequest
             {
                 TableName = _tableName,
-                KeyConditionExpression = "fileName = :v_fileName",
+                KeyConditionExpression = "FileName = :v_fileName",
                 ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-            {
-                { ":v_fileName", new AttributeValue { S = fileName } }
-            }
+                {
+                    { ":v_fileName", new AttributeValue { S = fileName } }
+                }
             };
 
             return await _dynamoDBClient.QueryAsync(queryRequest);

@@ -22,17 +22,12 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
-app.UseAuthorization();
-
 app.UseEndpoints(endpoints =>
 {
-    endpoints.MapControllers(); // B?o ??m r?ng các endpoint cho controller ???c ánh x?
+    endpoints.MapControllers();
 });
-
-
+app.UseAuthorization();
 app.MapRazorPages();
 
 app.Run();

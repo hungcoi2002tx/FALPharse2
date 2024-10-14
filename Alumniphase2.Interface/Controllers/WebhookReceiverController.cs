@@ -9,6 +9,7 @@ using System.Text;
 
 namespace Alumniphase2.Interface.Controllers
 {
+    [Route("WebhookReceiver")]
     public class WebhookReceiverController : Controller
     {
         private readonly string _secretKey;
@@ -24,7 +25,7 @@ namespace Alumniphase2.Interface.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost]
+        [HttpPost("ReceiveData")]
         public async Task<IActionResult> ReceiveData([FromHeader(Name = "X-Signature")] string signature, [FromBody] FaceDetectionResult payload)
         {
             try

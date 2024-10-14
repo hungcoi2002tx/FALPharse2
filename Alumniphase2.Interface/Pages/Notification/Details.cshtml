@@ -1,12 +1,54 @@
 ﻿@page
 @model Alumniphase2.Interface.Pages.Notification.DetailsModel
-@{
-}
+@using System.Text.Json
+
+<style>
+    .image-container {
+        position: relative;
+        display: block;
+    }
+
+    .bounding-box-register {
+        position: absolute;
+        border: 2px solid green;
+    }
+
+    .bounding-box-unregister {
+        position: absolute;
+        border: 2px solid red;
+    }
+
+    .text-box {
+        position: absolute;
+        display: none;
+    }
+
+        .bounding-box-register:hover + .text-box, .text-box:hover, .bounding-box-unregister:hover + .text-box {
+            display: inline;
+            display: block;
+        }
+  
+</style>
 <h2>Face Details</h2>
 
-<div>
+<div class="image-container">
     <h3>Picture</h3>
-    <img src="@Model.PictureUrl" alt="Face Image" style="max-width:500px;" />
+    @if (!string.IsNullOrEmpty(Model.PictureUrl))
+    {
+        <img src="@Model.PictureUrl" style="max-width: 800px; max-height: 600px; display: inline" onload="onImageLoad()" />
+        @foreach (var face in Model.RegisteredFaces)
+        {
+            <div class="bounding-box-register" id="faceBox-@face.FaceId" style="display:inline"></div>
+            <input type="text" class="text-box" id="userIdInput-@face.FaceId" value="@face.UserId" />
+        }
+
+        @foreach (var face in Model.UnregisteredFaces)
+        {
+            <div class="bounding-box-unregister" id="faceBox-@face.FaceId" style="display:inline"></div>
+            <input type="text" class="text-box" id="userIdInput-@face.FaceId" />
+            <input type="hidden" class="text-box" id="userId-@face.FaceId" value="@face.FaceId" />
+        }
+    }
 </div>
 
 <h3>Registered Faces</h3>
@@ -26,7 +68,7 @@
             {
                 <tr>
                     <td>@face.TimeAppearances</td>
-                    <td>@face.BoundingBox</td>
+                    <td>@face.BoundingBox.Left</td>
                     <td>@face.FaceId</td>
                     <td>@face.UserId</td>
                 </tr>
@@ -56,7 +98,7 @@ else
             {
                 <tr>
                     <td>@face.TimeAppearances</td>
-                    <td>@face.BoundingBox</td>
+                    <td>@face.BoundingBox.Left</td>
                     <td>@face.FaceId</td>
                 </tr>
             }
@@ -67,3 +109,77 @@ else
 {
     <p>No unregistered faces found.</p>
 }
+
+
+
+
+
+
+
+
+<script>
+    var originalImageWidth = @Model.ImageWidth;
+    var originalImageHeight = @Model.ImageHeight;
+    var UnregisteredFaces = @Html.Raw(JsonSerializer.Serialize(Model.UnregisteredFaces));
+    var RegisteredFaces = @Html.Raw(JsonSerializer.Serialize(Model.RegisteredFaces));
+
+
+    function setBoundingBox(left, top1, width, height, index) {
+        var imageElement = document.querySelector('.image-container img'); // Ảnh hiển thị
+        var boundingBox = document.getElementById('faceBox-' + index);
+        var textBox = document.getElementById('userIdInput-' + index);
+
+
+    
+        // Lấy kích thước ảnh hiển thị
+        var displayedImageWidth = imageElement.clientWidth;
+        var displayedImageHeight = imageElement.clientHeight;
+
+
+
+        // Tính toán tỷ lệ giữa ảnh hiển thị và ảnh gốc
+        var widthRatio = displayedImageWidth / originalImageWidth;
+        var heightRatio = displayedImageHeight / originalImageHeight;
+
+
+        // Điều chỉnh toạ độ và kích thước theo tỷ lệ
+        var adjustedLeft = left * originalImageWidth * widthRatio;
+        var adjustedTop = top1 * originalImageHeight * heightRatio + 40; // Cộng thêm 40px nếu cần
+        var adjustedWidth = width * originalImageWidth * widthRatio;
+        var adjustedHeight = height * originalImageHeight * heightRatio;
+
+
+
+        // Set vị trí và kích thước cho khung viền
+        boundingBox.style.left = adjustedLeft + 'px';
+        boundingBox.style.top = adjustedTop + 'px';
+        boundingBox.style.width = adjustedWidth + 'px';
+        boundingBox.style.height = adjustedHeight + 'px';
+
+        // Set vị trí cho textbox (dưới khung viền một chút)
+        textBox.style.left = adjustedLeft + 'px';
+        textBox.style.top = (adjustedTop + adjustedHeight) + 'px';
+    }
+
+
+
+
+
+
+
+
+
+    function onImageLoad() {
+        RegisteredFaces.forEach((face) => {
+            console.log("face.BoundingBox.FaceLeft:", face.BoundingBox.Left);
+
+
+            setBoundingBox(parseFloat(face.BoundingBox.Left), parseFloat(face.BoundingBox.Top), parseFloat(face.BoundingBox.Width), parseFloat(face.BoundingBox.Height), face.FaceId);
+        });
+
+        UnregisteredFaces.forEach((face) => {
+            setBoundingBox(parseFloat(face.BoundingBox.Left), parseFloat(face.BoundingBox.Top), parseFloat(face.BoundingBox.Width), parseFloat(face.BoundingBox.Height), face.FaceId);
+        });
+    }
+
+</script>
