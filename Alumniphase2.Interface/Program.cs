@@ -1,7 +1,11 @@
+using Amazon.DynamoDBv2.DataModel;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddHttpClient();
+builder.Services.AddControllers();
+builder.Services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
@@ -20,6 +24,12 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthorization();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers(); // B?o ??m r?ng các endpoint cho controller ???c ánh x?
+});
+
 
 app.MapRazorPages();
 

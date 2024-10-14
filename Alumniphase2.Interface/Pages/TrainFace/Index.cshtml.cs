@@ -16,6 +16,7 @@ namespace Alumniphase2.Interface.Pages.TrainFace
         string url = "http://fal-dev.eba-55qpmvbp.ap-southeast-1.elasticbeanstalk.com/api/Train/file";
         private readonly HttpClient _httpClient;
         private string token;
+        public string Message { get; private set; }
         public string UserId; // Thay thế bằng UserId thực tế
 
 
@@ -61,7 +62,17 @@ namespace Alumniphase2.Interface.Pages.TrainFace
             var imagePath = Path.Combine(wwwRootPath, "images", imageFile);
             FilePath = imagePath;
 
-           await GetResultAsync();
+           var result = await GetResultAsync();
+
+            if (result != null)
+            {
+                Message = "Đợi tớ xíu nghenn, check kêt quả ở trang notify ạa <3";
+            }
+            else
+            {
+                Message = "s3 loi roi, check lại đi ạ  <3";
+
+            }
         }
 
         private async Task<string?> GetResultAsync()

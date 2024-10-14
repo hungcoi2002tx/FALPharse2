@@ -18,6 +18,9 @@ namespace Alumniphase2.Interface.Pages.DetectFace
         string url = "http://fal-dev.eba-55qpmvbp.ap-southeast-1.elasticbeanstalk.com/api/Detect";
         private readonly HttpClient _httpClient;
         private string token;
+        public string Message;
+
+        //public string Token { get; private set; }
 
 
 
@@ -29,6 +32,8 @@ namespace Alumniphase2.Interface.Pages.DetectFace
 
         public void OnGet()
         {
+
+
         }
 
 
@@ -66,7 +71,11 @@ namespace Alumniphase2.Interface.Pages.DetectFace
 
             if (result != null)
             {
-
+                Message = "Đợi tớ xíu nghenn, check kêt quả ở trang notify ạa <3";
+            }
+            else
+            {
+                Message = "Hưng ơi s3 lỗi cụ m r @@";
             }
         }
 
@@ -99,6 +108,5 @@ namespace Alumniphase2.Interface.Pages.DetectFace
                 }
             }
         }
-
     }
 }

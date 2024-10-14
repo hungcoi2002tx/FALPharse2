@@ -74,7 +74,6 @@ public class Function
                     var (webhookUrlVideo, webhookSecretkeyVideo) = await CreateResponseResult(bucket, result);
                     await logger.LogMessageAsync($"Add vao db {webhookUrlVideo}");
                     await logger.LogMessageAsync($"Add vao db {webhookSecretkeyVideo}");
-
                     await SendResult(result, logger, webhookSecretkeyVideo, webhookUrlVideo);
                     await StoreResponseResult(result, fileName);
                     await logger.LogMessageAsync($"Add vao db {result.RegisteredFaces.Count}");
@@ -243,7 +242,6 @@ public class Function
                     resultUnregisteredUsers.Add(responseObj);
                 }
             }
-
 
             if (registeredUsers != null && registeredUsers.Count > 0)
             {
