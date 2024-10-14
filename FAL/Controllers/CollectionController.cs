@@ -1,5 +1,9 @@
+
+﻿using FAL.Services.IServices;
+using Microsoft.AspNetCore.Authorization;
 ﻿using AutoMapper;
 using FAL.Services.IServices;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.Data;
@@ -31,7 +35,8 @@ namespace FAL.Controllers
         {
             try
             {
-                var result = await _collectionService.GetFacesAsync(SystermId);
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
+                var result = await _collectionService.GetFacesAsync(systermId);
                 List<FaceTrainModel> list = _mapper.Map<List<FaceTrainModel>>(result);
                 return Ok(list);
             }
@@ -46,12 +51,13 @@ namespace FAL.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("faceId")]
-        public async Task<IActionResult> DeleteFaceAsync(string faceId)
+        public async Task<IActionResult> DeleteFaceAsync(string faceId,string systermId)
         {
             try
             {
-                var result = await _collectionService.DeleteByFaceIdAsync(faceId, SystermId);
+                var result = await _collectionService.DeleteByFaceIdAsync(faceId, systermId);
                 return Ok(result);
             }
             catch (Exception)
@@ -60,6 +66,7 @@ namespace FAL.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet("getList")]
         public async Task<IActionResult> GetListCollectionAsync()
         {
@@ -74,6 +81,7 @@ namespace FAL.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("create")]
         public async Task<IActionResult> CreateCollectionAsync([FromBody] string collectionId)
         {

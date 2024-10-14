@@ -2,11 +2,13 @@
 using FAL.Services;
 using FAL.Services.IServices;
 using FAL.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.SystemModel;
 using System.Net;
 using System.Reflection;
+using System.Text.Json;
 
 namespace FAL.Controllers
 {
@@ -26,19 +28,22 @@ namespace FAL.Controllers
             _s3Service = s3Service;
         }
 
+
+        [Authorize]
         [HttpPost("")]
         public async Task<IActionResult> DetectAsync(IFormFile file)
         {
             try
             {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 #region check input
                 file.ValidFile();
                 #endregion
                 #region add to S3
-                var bucketExists = await _s3Service.AddBudgetAsync(SystermId);
-                if (!bucketExists) return NotFound($"Bucket {SystermId} does not exist.");
+                var bucketExists = await _s3Service.AddBudgetAsync(systermId);
+                if (!bucketExists) return NotFound($"Bucket {systermId} does not exist.");
                 var fileName = Guid.NewGuid().ToString();
-                var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, SystermId, TypeOfRequest.Tagging);
+                var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging);
                 #endregion
                 return Ok(new ResultResponse
                 {
@@ -66,17 +71,19 @@ namespace FAL.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("upload-multiple-images")]
         public async Task<IActionResult> UploadMultipleImages([FromForm] IFormFileCollection files)
         {
             try
             {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 if (files == null || files.Count == 0)
                 {
                     return BadRequest("No files received from the upload.");
                 }
-                var bucketExists = await _s3Service.AddBudgetAsync(SystermId);
-                if (!bucketExists) return NotFound($"Bucket {SystermId} does not exist.");
+                var bucketExists = await _s3Service.AddBudgetAsync(systermId);
+                if (!bucketExists) return NotFound($"Bucket {systermId} does not exist.");
                 foreach (var item in files)
                 {
                     item.ValidImage();
@@ -84,7 +91,7 @@ namespace FAL.Controllers
                 foreach (var file in files)
                 {
                     var fileName = Guid.NewGuid().ToString();
-                    var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, SystermId, TypeOfRequest.Tagging);
+                    var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging);
                 }
                 return Ok("Files uploaded successfully.");
             }
