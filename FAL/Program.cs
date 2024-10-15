@@ -114,9 +114,10 @@ namespace FAL
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.UseSwagger();
                 app.UseSwaggerUI();
             }
+            // Use swagger for product enviroment  
+            app.UseSwagger();
 
             app.UseHttpsRedirection();
             app.UseAuthentication();
