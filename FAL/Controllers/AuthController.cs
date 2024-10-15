@@ -54,7 +54,7 @@ namespace FAL.Controllers
             }
 
             // Tạo JWT token
-            var tokenString = _jwtTokenGenerator.GenerateJwtToken(user.Username, user.RoleId, user.SystemName);
+            var tokenString = _jwtTokenGenerator.GenerateJwtToken(user.Username, user.RoleId.ToString(), user.SystemName);
 
             // Trả về thông tin người dùng và token
             return Ok(new
@@ -101,7 +101,7 @@ namespace FAL.Controllers
                 SystemName = userDto.SystemName,
                 WebhookUrl = userDto.WebhookUrl,
                 WebhookSecretKey = userDto.WebhookSecretKey,
-                Status = "Active" // Trạng thái mặc định
+                Status = "Deactive" // Trạng thái mặc định
             };
 
             // Lưu user vào DynamoDB
