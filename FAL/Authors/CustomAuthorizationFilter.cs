@@ -53,7 +53,7 @@ namespace FAL.Authors
             var account = _dbContext.LoadAsync<Account>(username).Result; // Tìm tài khoản từ DynamoDB
             if (account == null)
             {
-                context.Result = new JsonResult(new { message = "Unauthorized: User not found." })
+                context.Result = new JsonResult(new { message = "Không tìm thấy tài khoản" })
                 {
                     StatusCode = StatusCodes.Status401Unauthorized
                 };
@@ -62,7 +62,7 @@ namespace FAL.Authors
 
             if (string.Equals(account.Status, DEACTIVE, StringComparison.OrdinalIgnoreCase))
             {
-                context.Result = new JsonResult(new { message = "Forbidden: Your account is deactivated." })
+                context.Result = new JsonResult(new { message = "Tài khoản của bạn chưa được phê duyệt" })
                 {
                     StatusCode = StatusCodes.Status403Forbidden
                 };
@@ -72,7 +72,7 @@ namespace FAL.Authors
             // Kiểm tra quyền truy cập
             if (!_permissionService.HasPermission(user, resource, httpMethod))
             {
-                context.Result = new JsonResult(new { message = "Forbidden: You do not have permission to access this resource." })
+                context.Result = new JsonResult(new { message = "Bạn không có quyền truy cập chức năng này." })
                 {
                     StatusCode = StatusCodes.Status403Forbidden
                 };
