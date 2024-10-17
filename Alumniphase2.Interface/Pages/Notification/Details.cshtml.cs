@@ -1,5 +1,8 @@
-using Amazon.DynamoDBv2;
+﻿using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
+using Amazon.S3;
+using Amazon.S3.Model;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
@@ -9,34 +12,42 @@ namespace Alumniphase2.Interface.Pages.Notification
 {
     public class DetailsModel : PageModel
     {
-        public string? PictureUrl { get; private set; } 
-        public int ImageWidth { get; private set; } 
-        public int ImageHeight { get; private set; } 
-        private const string _tableName = "client-storeData"; 
+        public string? PictureUrl { get; private set; }
+        public string Key { get; private set; }
+        public int ImageWidth { get; private set; }
+        public int ImageHeight { get; private set; }
+        private const string _tableName = "client-storeData";
+        string bucketName = "fualumni";
         public List<FaceRecognitionResponse> RegisteredFaces { get; private set; } = new List<FaceRecognitionResponse>();
         public List<FaceRecognitionResponse> UnregisteredFaces { get; private set; } = new List<FaceRecognitionResponse>();
         private readonly IAmazonDynamoDB _dynamoDBClient;
+        private readonly IAmazonS3 _s3Client;
 
-        public DetailsModel(IAmazonDynamoDB dynamoDBClient)
+        public DetailsModel(IAmazonDynamoDB dynamoDBClient, IAmazonS3 s3Client)
         {
             _dynamoDBClient = dynamoDBClient;
+            _s3Client = s3Client;
         }
 
         public async Task OnGetAsync(string fileName)
         {
-            PictureUrl = $"/images/{fileName}";
             var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
 
-            var filePath = Path.Combine(uploadsFolder, fileName);
-
-            using (var image = System.Drawing.Image.FromFile(filePath))
-            {
-                ImageWidth = image.Width;
-                ImageHeight = image.Height;
-            }
             var response = await QueryDynamoDBAsync(fileName);
 
             ProcessResponse(response);
+            await GetUrlImageFromS3();
+        }
+
+        private async Task GetUrlImageFromS3()
+        {
+            var request = new GetPreSignedUrlRequest
+            {
+                BucketName = bucketName,
+                Key = Key,
+                Expires = DateTime.UtcNow.AddMinutes(30) // URL sẽ hết hạn sau 15 phút
+            };
+            PictureUrl = await _s3Client.GetPreSignedURLAsync(request);
         }
 
         private async Task<QueryResponse> QueryDynamoDBAsync(string fileName)
@@ -64,7 +75,9 @@ namespace Alumniphase2.Interface.Pages.Notification
                 {
                     // Deserialize the Data column into the specified type
                     var data = JsonConvert.DeserializeObject<FaceDetectionResult>(dataValue.S);
-
+                    ImageWidth = data.Width ?? 0;
+                    ImageHeight = data.Height ?? 0;
+                    Key = data.Key;
                     RegisteredFaces = data.RegisteredFaces ?? new List<FaceRecognitionResponse>();
                     UnregisteredFaces = data.UnregisteredFaces ?? new List<FaceRecognitionResponse>();
                 }

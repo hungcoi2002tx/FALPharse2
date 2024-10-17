@@ -35,34 +35,15 @@ namespace Alumniphase2.Interface.Pages.TrainFace
         public async Task OnPostTrainFaceAsync()
         {
             token = Request.Cookies["AuthToken"];
-            if (FileName != null)
+            var tempFolder = Path.GetTempPath();
+            var filePath = Path.Combine(tempFolder, FileName.FileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                var filePath = Path.Combine(uploadsFolder, FileName.FileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await FileName.CopyToAsync(stream);
-                }
-
-                using (var image = System.Drawing.Image.FromFile(filePath))
-                {
-                    ImageWidth = image.Width;
-                    ImageHeight = image.Height;
-                }
+                await FileName.CopyToAsync(stream);
             }
 
-            var wwwRootPath = _hostingEnvironment.WebRootPath;
-            var imageFile = FileName.FileName;
-            var imagePath = Path.Combine(wwwRootPath, "images", imageFile);
-            FilePath = imagePath;
-
-           var result = await GetResultAsync();
+            var result = await GetResultAsync(filePath);
 
             if (result != null)
             {
@@ -75,7 +56,7 @@ namespace Alumniphase2.Interface.Pages.TrainFace
             }
         }
 
-        private async Task<string?> GetResultAsync()
+        private async Task<string?> GetResultAsync(string filePath)
         {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -86,11 +67,11 @@ namespace Alumniphase2.Interface.Pages.TrainFace
                 form.Add(new StringContent(UserId), "UserId");
 
                 // Tạo nội dung file từ đường dẫn
-                var fileContent = new ByteArrayContent(System.IO.File.ReadAllBytes(FilePath));
+                var fileContent = new ByteArrayContent(System.IO.File.ReadAllBytes(filePath));
                 fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream"); // Bạn có thể thay đổi nếu cần
 
                 // Thêm file vào nội dung của form
-                form.Add(fileContent, "token", Path.GetFileName(FilePath));
+                form.Add(fileContent, "token", Path.GetFileName(filePath));
 
                 // Gửi yêu cầu POST
                 HttpResponseMessage response = await _httpClient.PostAsync(url, form);
