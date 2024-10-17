@@ -12,6 +12,8 @@ using Amazon.S3.Model;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using System.Reflection.Emit;
+using System.Security.Cryptography;
+using System.Text;
 using static System.Net.Mime.MediaTypeNames;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
@@ -24,12 +26,14 @@ public class Function
     private readonly IAmazonS3 _s3Client;
     private readonly IAmazonRekognition _rekognitionClient;
     private readonly IAmazonDynamoDB _dynamoDbClient;
+    private readonly HttpClient _httpClient;
 
     public Function()
     {
         _s3Client = new AmazonS3Client();
         _rekognitionClient = new AmazonRekognitionClient();
         _dynamoDbClient = new AmazonDynamoDBClient();
+        _httpClient = new HttpClient();
     }
 
     public async Task FunctionHandler(S3Event evnt, ILambdaContext context)
@@ -40,40 +44,52 @@ public class Function
         await logger.LogMessageAsync("mình là lambda, mình detect ảnh nè");
         try
         {
-            foreach (var record in evnt.Records)
+            var s3Record = evnt.Records[0].S3;
+            var result = new FaceDetectionResult();
+
+            if (s3Record == null)
             {
-                var s3Record = record.S3;
+                context.Logger.LogError("No S3 record found in the event.");
+                return;
+            }
 
-                var result = new FaceDetectionResult();
+            var bucket = s3Record.Bucket.Name;
+            var key = s3Record.Object.Key;
+            await logger.LogMessageAsync($"Key: {key}");
 
-                if (s3Record == null)
-                {
-                    context.Logger.LogError("No S3 record found in the event.");
-                    return;
-                }
+            var metadataResponse = await _s3Client.GetObjectMetadataAsync(bucket, key);
+            var contentType = CheckContentType(metadataResponse);
+            var fileName = metadataResponse.Metadata[Utils.Constants.ORIGINAL_FILE_NAME];
+            var imageWidth = metadataResponse.Metadata["ImageWidth"];
+            var imageHeight = metadataResponse.Metadata["ImageHeight"];
 
-                var bucket = s3Record.Bucket.Name;
-                var key = s3Record.Object.Key;
+            await logger.LogMessageAsync($"fileName: {fileName}");
+            await logger.LogMessageAsync($"ImageWidth: {imageWidth}");
+            await logger.LogMessageAsync($"imageHeight: {imageHeight}");
 
-                var metadataResponse = await _s3Client.GetObjectMetadataAsync(bucket, key);
-                var contentType = CheckContentType(metadataResponse);
-                var fileName = metadataResponse.Metadata[Utils.Constants.ORIGINAL_FILE_NAME];
-
-                switch (contentType)
-                {
-                    case (false):
-                        // Ghi log ra CloudWatch
-                        await logger.LogMessageAsync("mình là lambda, mình detect ảnh nè");
-                        result = await DetectImageProcess(bucket, key, fileName);
-                        await StoreResponseResult(result, fileName);
-                        break;
-
-                    case (true):
-                        result = await DetectVideoProcess(bucket, key,fileName);
-                        await StoreResponseResult(result, fileName);
-                        await logger.LogMessageAsync($"Add vao db {result.RegisteredFaces.Count}");
-                        break;
-                }
+            switch (contentType)
+            {
+                case (false):
+                    result = await DetectImageProcess(bucket, key, fileName);
+                    result.Width = int.Parse(imageWidth);
+                    result.Height = int.Parse(imageHeight);
+                    result.Key = key;
+                    var (webhookUrlImage, webhookSecretkeyImage) = await CreateResponseResult(bucket, result);
+                    await SendResult(result, logger, webhookSecretkeyImage, webhookUrlImage);
+                    await StoreResponseResult(result, fileName);
+                    break;
+                case (true):
+                    result = await DetectVideoProcess(bucket, key, fileName);
+                    result.Width = int.Parse(imageWidth);
+                    result.Height = int.Parse(imageHeight);
+                    result.Key = key;
+                    var (webhookUrlVideo, webhookSecretkeyVideo) = await CreateResponseResult(bucket, result);
+                    await logger.LogMessageAsync($"Add vao db {webhookUrlVideo}");
+                    await logger.LogMessageAsync($"Add vao db {webhookSecretkeyVideo}");
+                    await SendResult(result, logger, webhookSecretkeyVideo, webhookUrlVideo);
+                    await StoreResponseResult(result, fileName);
+                    await logger.LogMessageAsync($"Add vao db {result.RegisteredFaces.Count}");
+                    break;
             }
         }
         catch (Exception ex)
@@ -82,9 +98,100 @@ public class Function
         }
     }
 
+    private async Task<string> SendResult(FaceDetectionResult result, CloudWatchLogger logger, string webhookSecretkey, string webhookUrl)
+    {
+        string jsonPayload = ConvertToJson(result);
+        await logger.LogMessageAsync(jsonPayload);
+
+        // Tính chữ ký HMAC cho payload
+        string signature = GenerateHMAC(jsonPayload, webhookSecretkey);
+        // Tạo HttpContent để gửi yêu cầu POST
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+        // Thêm header "X-Signature" với chữ ký HMAC
+        content.Headers.Add("X-Signature", signature);
+
+        var resultJson = ConvertToJson(result);
+        var response = await _httpClient.PostAsync(webhookUrl, content);
+
+        response.EnsureSuccessStatusCode();
+        var responseContent = await response.Content.ReadAsStringAsync();
+        await logger.LogMessageAsync("Response from API: " + responseContent);
+
+        return resultJson;
+    }
+
+    private static string GenerateHMAC(string payload, string secret)
+    {
+        using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret)))
+        {
+            var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
+            return Convert.ToBase64String(hashBytes);
+        }
+    }
+
+    private async Task<(string?, string?)> CreateResponseResult(string bucket, FaceDetectionResult result)
+    {
+        var systemName = bucket;
+        string? webhookUrl = null;
+        string? webhookSecretkey = null;
+        var logger = new CloudWatchLogger();
+        Dictionary<string, AttributeValue> dictionary = new Dictionary<string, AttributeValue>
+        {
+              { ":systemName", new AttributeValue { S = systemName } }
+        };
+
+        var resultQuery = await GetRecordByAttributeIndex("Accounts", "SystemNameIndex", "SystemName = :systemName", dictionary);
+        var firstRecord = resultQuery.Items.FirstOrDefault();
+
+        if (firstRecord != null)
+        {
+            if (firstRecord.ContainsKey("WebhookUrl") && firstRecord["WebhookUrl"].S != null)
+            {
+                webhookUrl = firstRecord["WebhookUrl"].S;
+            }
+
+            if (firstRecord.ContainsKey("WebhookSecretKey") && firstRecord["WebhookSecretKey"].S != null)
+            {
+                webhookSecretkey = firstRecord["WebhookSecretKey"].S;
+            }
+
+            return (webhookUrl, webhookSecretkey);
+        }
+
+        return (null, null);
+    }
+
+
+    private async Task<QueryResponse> GetRecordByAttributeIndex(string tableName, string indexName, string keyConditionExpression, Dictionary<string, AttributeValue> dictionary)
+    {
+        return await _dynamoDbClient.QueryAsync(new QueryRequest
+        {
+            TableName = tableName,
+            IndexName = indexName,
+            KeyConditionExpression = keyConditionExpression,
+            ExpressionAttributeValues = dictionary
+        });
+    }
+
+
+    private async Task<QueryResponse> GetRecordByAttribute(string systemName, string dynamoDbName, string keyConditionExpression, Dictionary<string, AttributeValue> dictionary)
+    {
+        var queryRequest = new QueryRequest
+        {
+            TableName = dynamoDbName,
+            KeyConditionExpression = keyConditionExpression,
+            ExpressionAttributeValues = dictionary,
+        };
+
+        return await _dynamoDbClient.QueryAsync(queryRequest);
+    }
+    private string ConvertToJson<T>(T obj)
+    {
+        return JsonConvert.SerializeObject(obj);
+    }
     private async Task StoreResponseResult(FaceDetectionResult result, string fileName)
     {
-        string jsonResult = JsonConvert.SerializeObject(result);
+        string jsonResult = ConvertToJson(result);
         var dictionaryResponseResult = CreateDictionaryFualumniResponeResult(fileName, jsonResult);
         await CreateNewRecord(Utils.Constants.FUALUMNI_RESPONSE_RESULT_TABLE, dictionaryResponseResult);
     }
@@ -107,17 +214,17 @@ public class Function
                    {
                        Utils.Constants.CREATE_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
-                           S = DateTime.Now.ToString()
+                           S = DateTimeUtils.GetDateTimeVietNamNow()
                        }
                    }
                };
     }
-    private async Task<FaceDetectionResult> DetectVideoProcess(string bucket, string key,string fileName)
+    private async Task<FaceDetectionResult> DetectVideoProcess(string bucket, string key, string fileName)
     {
         var logger = new CloudWatchLogger();
         string jobId = await StartFaceSearch(bucket, key);
         await logger.LogMessageAsync($"JobId la {jobId}");
-        return await GetFaceSearchResults(jobId, bucket,fileName);
+        return await GetFaceSearchResults(jobId, bucket, fileName);
     }
     private async Task<FaceDetectionResult> DetectImageProcess(string bucket, string key, string fileName)
     {
@@ -147,7 +254,6 @@ public class Function
                     resultUnregisteredUsers.Add(responseObj);
                 }
             }
-
 
             if (registeredUsers != null && registeredUsers.Count > 0)
             {
@@ -193,12 +299,11 @@ public class Function
                    {
                        Utils.Constants.CREATE_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
-                           S = DateTime.Now.ToString()
+                           S = DateTimeUtils.GetDateTimeVietNamNow()
                        }
                    }
                };
     }
-
     private FaceRecognitionResponse CreateResponseObj(string fileName, string? timeAppearances, Models.BoundingBox? boundingBox, string faceId, string? userId)
     {
         return new FaceRecognitionResponse
@@ -229,7 +334,7 @@ public class Function
 
         return startFaceSearchResponse.JobId;
     }
-    private async Task<FaceDetectionResult> GetFaceSearchResults(string jobId, string collectionId,string fileName)
+    private async Task<FaceDetectionResult> GetFaceSearchResults(string jobId, string collectionId, string fileName)
     {
         GetFaceSearchRequest getFaceSearchRequest = new GetFaceSearchRequest
         {
@@ -288,9 +393,9 @@ public class Function
             return new FaceDetectionResult();
         }
 
-        return await FindListUserIdInVideo(faceIdDict, collectionId,fileName);
+        return await FindListUserIdInVideo(faceIdDict, collectionId, fileName);
     }
-    private async Task<FaceDetectionResult> FindListUserIdInVideo(Dictionary<string, (double Confidence, long Timestamp)> faceIdDict, string collectionId,string fileName)
+    private async Task<FaceDetectionResult> FindListUserIdInVideo(Dictionary<string, (double Confidence, long Timestamp)> faceIdDict, string collectionId, string fileName)
     {
         var userList = new List<FaceRecognitionResponse>();
         var uniqueUserIds = new HashSet<string>();
@@ -349,21 +454,6 @@ public class Function
         }
         Console.WriteLine("SearchUserByFaceId: More than 1 user found, or none");
         return "";
-    }
-    private async Task<QueryResponse> GetRecordByUserId(string userId, string dynamoDbName)
-    {
-        var queryRequest = new QueryRequest
-        {
-            TableName = dynamoDbName,
-            KeyConditionExpression = "UserId = :v_userId",
-            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-            {
-                { ":v_userId", new AttributeValue { S = userId } }
-            },
-            Limit = 1
-        };
-
-        return await _dynamoDbClient.QueryAsync(queryRequest);
     }
     private async Task DeleteFaceId(List<(string, Models.BoundingBox)> faceIds, string collectionName)
     {

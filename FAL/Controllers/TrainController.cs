@@ -98,7 +98,7 @@ namespace FAL.Controllers
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 //check faceId in dynamodb
-                var result = await _dynamoService.IsExistFaceIdAsync(SystermId, info.FaceId);
+                var result = await _dynamoService.IsExistFaceIdAsync(systermId, info.FaceId);
                 if (result)
                 {
                     return BadRequest(new ResultResponse

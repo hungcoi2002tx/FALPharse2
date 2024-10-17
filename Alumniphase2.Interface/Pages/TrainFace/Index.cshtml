@@ -1,0 +1,46 @@
+﻿@page
+@model Alumniphase2.Interface.Pages.TrainFace.IndexModel
+
+<form method="post" enctype="multipart/form-data">
+    <div>Enter your image or video:</div>
+    <input type="file" id="FileName" name="FileName" accept="image/*,video/*" onchange="previewMedia(event)" />
+    <div>Enter UserId</div>
+    <input name="UserId"  />
+    <br />
+    <br />
+    <img id="previewImage" src="#" alt="File preview" style="display:none; max-width: 200px; max-height: 200px;" />
+    <video id="previewVideo" controls style="display:none; max-width: 200px; max-height: 200px;"></video>
+    <br />
+    <button type="submit">Upload</button>
+</form>
+
+<script>
+    function previewMedia(event) {
+        var input = event.target;
+        var file = input.files[0];
+        var reader = new FileReader();
+
+        if (!file) return; // Nếu không có file nào được chọn thì thoát
+
+        reader.onload = function () {
+            var previewImage = document.getElementById('previewImage');
+            var previewVideo = document.getElementById('previewVideo');
+
+            // Kiểm tra loại file
+            if (file.type.startsWith('image/')) {
+                // Hiển thị ảnh
+                previewImage.src = reader.result;
+                previewImage.style.display = 'block';
+                previewVideo.style.display = 'none'; // Ẩn video nếu có
+            } else if (file.type.startsWith('video/')) {
+                // Hiển thị video
+                previewVideo.src = reader.result;
+                previewVideo.style.display = 'block';
+                previewImage.style.display = 'none'; // Ẩn ảnh nếu có
+            }
+        };
+
+        reader.readAsDataURL(file); // Đọc file để hiển thị
+    }
+</script>
+
