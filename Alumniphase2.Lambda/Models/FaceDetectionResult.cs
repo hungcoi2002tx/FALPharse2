@@ -11,5 +11,8 @@ namespace Alumniphase2.Lambda.Models
         public string FileName { get; set; } = null!;
         public List<FaceRecognitionResponse> RegisteredFaces { get; set; } = null!;
         public List<FaceRecognitionResponse>? UnregisteredFaces { get; set; } = null;
+        public int? ImageWidth { get; set; } = null;
+        public int? ImageHeight { get; set; } = null;
+        public string Key { get; set; } = null!;
     }
 }

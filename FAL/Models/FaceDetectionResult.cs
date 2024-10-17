@@ -10,15 +10,15 @@
         public string? UserId { get; set; } = null;
     }
 
-public class BoundingBox
+    public class BoundingBox
     {
         public float? Left { get; set; }
         public float? Top { get; set; }
         public float? Width { get; set; }
         public float? Height { get; set; }
     }
- 
-public class FaceDetectionResult
+
+    public class FaceDetectionResult
     {
         public string? FileName { get; set; } = null!;
         public List<FaceRecognitionResponse>? RegisteredFaces { get; set; } = null!;

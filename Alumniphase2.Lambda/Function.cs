@@ -59,11 +59,16 @@ public class Function
             var metadataResponse = await _s3Client.GetObjectMetadataAsync(bucket, key);
             var contentType = CheckContentType(metadataResponse);
             var fileName = metadataResponse.Metadata[Utils.Constants.ORIGINAL_FILE_NAME];
+            var imageWidth = metadataResponse.Metadata["ImageWidth"];
+            var imageHeight = metadataResponse.Metadata["ImageHeight"];
 
             switch (contentType)
             {
                 case (false):
                     result = await DetectImageProcess(bucket, key, fileName);
+                    result.ImageWidth = int.Parse(imageWidth);
+                    result.ImageHeight = int.Parse(imageHeight);
+                    result.Key = key;
                     var (webhookUrlImage, webhookSecretkeyImage) = await CreateResponseResult(bucket, result);
                     await SendResult(result, logger, webhookSecretkeyImage, webhookUrlImage);
                     await StoreResponseResult(result, fileName);
@@ -71,6 +76,7 @@ public class Function
                     break;
                 case (true):
                     result = await DetectVideoProcess(bucket, key, fileName);
+                    result.Key = key;
                     var (webhookUrlVideo, webhookSecretkeyVideo) = await CreateResponseResult(bucket, result);
                     await logger.LogMessageAsync($"Add vao db {webhookUrlVideo}");
                     await logger.LogMessageAsync($"Add vao db {webhookSecretkeyVideo}");
@@ -119,6 +125,7 @@ public class Function
 
     private async Task<(string?, string?)> CreateResponseResult(string bucket, FaceDetectionResult result)
     {
+
         var systemName = bucket;
         string? webhookUrl = null;
         string? webhookSecretkey = null;

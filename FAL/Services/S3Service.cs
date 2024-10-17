@@ -35,7 +35,7 @@ namespace FAL.Services
                     int width = 0, height = 0;
                     if (IsImage(file))
                     {
-                        (width,height) = GetImageDimensions(stream);
+                        (width, height) = GetImageDimensions(stream);
                     }
                     // Kiểm tra kích thước tệp và quyết định phương thức upload
                     if (file.Length < _divideSize)
@@ -50,7 +50,7 @@ namespace FAL.Services
                         };
 
                         // Thêm metadata nếu có
-                        uploadRequest = GetMetaData(uploadRequest,type,userId,file,width,height); 
+                        uploadRequest = GetMetaData(uploadRequest, type, userId, file, width, height);
                         await fileTransferUtility.UploadAsync(uploadRequest);
                     }
                     else
@@ -87,14 +87,14 @@ namespace FAL.Services
             }
         }
 
-        private TransferUtilityUploadRequest GetMetaData(TransferUtilityUploadRequest request, TypeOfRequest type, string userId, IFormFile file,int width, int height)
+        private TransferUtilityUploadRequest GetMetaData(TransferUtilityUploadRequest request, TypeOfRequest type, string userId, IFormFile file, int width, int height)
         {
             try
             {
                 request.Metadata.Add("OriginalFileName", file.FileName);
                 request.Metadata.Add(nameof(FaceInformation.UserId), userId);
-                request.Metadata.Add(nameof(FaceDetectionResult.Width), width.ToString());
-                request.Metadata.Add(nameof(FaceDetectionResult.Height), height.ToString());
+                request.Metadata.Add(nameof(FaceDetectionResult.ImageWidth), width.ToString());
+                request.Metadata.Add(nameof(FaceDetectionResult.ImageHeight), height.ToString());
                 if (IsVideo(file))
                 {
                     request.Metadata.Add(nameof(ContentType), ContentType.Video.ToString());
@@ -105,7 +105,7 @@ namespace FAL.Services
                 }
                 return request;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw;
             }
@@ -163,7 +163,7 @@ namespace FAL.Services
         {
             try
             {
-                
+
                 return true;
             }
             catch (Exception)
