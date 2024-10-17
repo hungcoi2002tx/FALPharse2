@@ -40,43 +40,41 @@ namespace Alumniphase2.Interface.Pages.DetectFace
         public async Task OnPostDetectFaceAsync()
         {
             token = Request.Cookies["AuthToken"];
-            var tempFolder = Path.GetTempPath();
-            var filePath = Path.Combine(tempFolder, FileName.FileName);
 
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            using (var memoryStream = new MemoryStream())
             {
-                await FileName.CopyToAsync(stream);
-            }
+                // Sao chép nội dung file vào MemoryStream
+                await FileName.CopyToAsync(memoryStream);
 
-            var result = await GetResultAsync(filePath);
+                // Lấy kết quả từ API bằng MemoryStream
+                var result = await GetResultAsync(memoryStream);
 
-            if (result != null)
-            {
-                if (System.IO.File.Exists(filePath))
+                if (result != null)
                 {
-                    System.IO.File.Delete(filePath);
+                    Message = "Đợi tớ xíu nghenn, check kêt quả ở trang notify ạa <3";
                 }
-
-                Message = "Đợi tớ xíu nghenn, check kêt quả ở trang notify ạa <3";
-            }
-            else
-            {
-                Message = "Hưng ơi s3 lỗi cụ m r @@";
+                else
+                {
+                    Message = "Hưng ơi s3 lỗi cụ m r @@";
+                }
             }
         }
 
-        private async Task<string?> GetResultAsync(string filePath)
+        private async Task<string?> GetResultAsync(MemoryStream memoryStream)
         {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             using (var form = new MultipartFormDataContent())
             {
-                // Tạo nội dung file từ đường dẫn tạm thời
-                var fileContent = new ByteArrayContent(System.IO.File.ReadAllBytes(filePath));
+                // Đặt vị trí của MemoryStream về đầu
+                memoryStream.Position = 0;
+
+                // Tạo nội dung file từ MemoryStream
+                var fileContent = new ByteArrayContent(memoryStream.ToArray());
                 fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data");
 
                 // Thêm file vào request
-                form.Add(fileContent, "file", Path.GetFileName(filePath));
+                form.Add(fileContent, "file", FileName.FileName);
 
                 // Gửi request POST
                 HttpResponseMessage response = await _httpClient.PostAsync(url, form);
@@ -95,6 +93,8 @@ namespace Alumniphase2.Interface.Pages.DetectFace
                 }
             }
         }
+
+
 
     }
 
