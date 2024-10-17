@@ -55,22 +55,34 @@ public class Function
 
             var bucket = s3Record.Bucket.Name;
             var key = s3Record.Object.Key;
+            await logger.LogMessageAsync($"Key: {key}");
 
             var metadataResponse = await _s3Client.GetObjectMetadataAsync(bucket, key);
             var contentType = CheckContentType(metadataResponse);
             var fileName = metadataResponse.Metadata[Utils.Constants.ORIGINAL_FILE_NAME];
+            var imageWidth = metadataResponse.Metadata["ImageWidth"];
+            var imageHeight = metadataResponse.Metadata["ImageHeight"];
+
+            await logger.LogMessageAsync($"fileName: {fileName}");
+            await logger.LogMessageAsync($"ImageWidth: {imageWidth}");
+            await logger.LogMessageAsync($"imageHeight: {imageHeight}");
 
             switch (contentType)
             {
                 case (false):
                     result = await DetectImageProcess(bucket, key, fileName);
+                    result.Width = int.Parse(imageWidth);
+                    result.Height = int.Parse(imageHeight);
+                    result.Key = key;
                     var (webhookUrlImage, webhookSecretkeyImage) = await CreateResponseResult(bucket, result);
                     await SendResult(result, logger, webhookSecretkeyImage, webhookUrlImage);
                     await StoreResponseResult(result, fileName);
-                    await logger.LogMessageAsync(DateTimeUtils.GetDateTimeVietNamNow());
                     break;
                 case (true):
                     result = await DetectVideoProcess(bucket, key, fileName);
+                    result.Width = int.Parse(imageWidth);
+                    result.Height = int.Parse(imageHeight);
+                    result.Key = key;
                     var (webhookUrlVideo, webhookSecretkeyVideo) = await CreateResponseResult(bucket, result);
                     await logger.LogMessageAsync($"Add vao db {webhookUrlVideo}");
                     await logger.LogMessageAsync($"Add vao db {webhookSecretkeyVideo}");
