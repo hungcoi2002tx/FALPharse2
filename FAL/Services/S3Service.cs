@@ -4,7 +4,9 @@ using FAL.Services.IServices;
 using Share.SystemModel;
 using Share.Data;
 using FAL.Utils;
-
+using System.Drawing;
+using System.IO;
+using SixLabors.ImageSharp;
 namespace FAL.Services
 {
     public class S3Service : IS3Service
@@ -30,7 +32,11 @@ namespace FAL.Services
                 {
                     await file.CopyToAsync(stream);
                     stream.Position = 0;
-
+                    int width = 0, height = 0;
+                    if (IsImage(file))
+                    {
+                        (width,height) = GetImageDimensions(stream);
+                    }
                     // Kiểm tra kích thước tệp và quyết định phương thức upload
                     if (file.Length < _divideSize)
                     {
@@ -44,7 +50,7 @@ namespace FAL.Services
                         };
 
                         // Thêm metadata nếu có
-                        uploadRequest = GetMetaData(uploadRequest,type,userId,file); 
+                        uploadRequest = GetMetaData(uploadRequest,type,userId,file,width,height); 
                         await fileTransferUtility.UploadAsync(uploadRequest);
                     }
                     else
@@ -59,7 +65,7 @@ namespace FAL.Services
                             StorageClass = S3StorageClass.Standard, // Có thể điều chỉnh storage class
                         };
                         // Thêm metadata nếu có
-                        uploadRequest = GetMetaData(uploadRequest, type, userId, file);
+                        uploadRequest = GetMetaData(uploadRequest, type, userId, file, width, height);
                         await fileTransferUtility.UploadAsync(uploadRequest);
                     }
                 }
@@ -71,12 +77,24 @@ namespace FAL.Services
             }
         }
 
-        private TransferUtilityUploadRequest GetMetaData(TransferUtilityUploadRequest request, TypeOfRequest type, string userId, IFormFile file)
+        private (int width, int height) GetImageDimensions(Stream stream)
+        {
+            stream.Position = 0;
+
+            using (Image image = Image.Load(stream))
+            {
+                return (image.Width, image.Height);
+            }
+        }
+
+        private TransferUtilityUploadRequest GetMetaData(TransferUtilityUploadRequest request, TypeOfRequest type, string userId, IFormFile file,int width, int height)
         {
             try
             {
                 request.Metadata.Add("OriginalFileName", file.FileName);
                 request.Metadata.Add(nameof(FaceInformation.UserId), userId);
+                request.Metadata.Add("ImageWidth", width.ToString());
+                request.Metadata.Add("ImageHeight", height.ToString());
                 if (IsVideo(file))
                 {
                     request.Metadata.Add(nameof(ContentType), ContentType.Video.ToString());
