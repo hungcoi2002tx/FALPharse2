@@ -93,8 +93,8 @@ namespace FAL.Services
             {
                 request.Metadata.Add("OriginalFileName", file.FileName);
                 request.Metadata.Add(nameof(FaceInformation.UserId), userId);
-                request.Metadata.Add(nameof(FaceDetectionResult.Width), width.ToString());
-                request.Metadata.Add(nameof(FaceDetectionResult.Height), height.ToString());
+                request.Metadata.Add("Width", width.ToString());
+                request.Metadata.Add("Height", height.ToString());
                 if (IsVideo(file))
                 {
                     request.Metadata.Add(nameof(ContentType), ContentType.Video.ToString());
