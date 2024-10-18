@@ -11,6 +11,11 @@
     <br />
     <button type="submit">Upload</button>
 </form>
+@if(Model.Message != null)
+{
+    <div>@Model.Message</div>
+}
+
 
 <script>
     function previewMedia(event) {

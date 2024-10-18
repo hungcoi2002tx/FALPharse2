@@ -39,25 +39,31 @@ namespace Alumniphase2.Interface.Pages.DetectFace
 
         public async Task OnPostDetectFaceAsync()
         {
-            token = Request.Cookies["AuthToken"];
-
-            using (var memoryStream = new MemoryStream())
+            try
             {
-                // Sao chép nội dung file vào MemoryStream
-                await FileName.CopyToAsync(memoryStream);
-
-                // Lấy kết quả từ API bằng MemoryStream
-                var result = await GetResultAsync(memoryStream);
-
-                if (result != null)
+                using (var memoryStream = new MemoryStream())
                 {
-                    Message = "Đợi tớ xíu nghenn, check kêt quả ở trang notify ạa <3";
-                }
-                else
-                {
-                    Message = "Hưng ơi s3 lỗi cụ m r @@";
+                    // Sao chép nội dung file vào MemoryStream
+                    await FileName.CopyToAsync(memoryStream);
+
+                    // Lấy kết quả từ API bằng MemoryStream
+                    var result = await GetResultAsync(memoryStream);
+
+                    if (result != null)
+                    {
+                        Message = "Đợi tớ xíu nghenn, check kêt quả ở trang notify ạa <3";
+                    }
+                    else
+                    {
+                        Message = "Hưng ơi s3 lỗi cụ m r @@";
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            token = Request.Cookies["AuthToken"];
         }
 
         private async Task<string?> GetResultAsync(MemoryStream memoryStream)
