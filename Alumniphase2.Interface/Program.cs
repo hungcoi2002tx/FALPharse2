@@ -11,6 +11,7 @@ builder.Services.AddTransient<IDynamoDBContext, DynamoDBContext>();
 builder.Services.AddAWSService<IAmazonDynamoDB>();
 builder.Services.AddRazorPages();
 
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
