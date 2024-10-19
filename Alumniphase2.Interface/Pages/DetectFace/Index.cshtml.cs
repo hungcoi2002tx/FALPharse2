@@ -16,18 +16,20 @@ namespace Alumniphase2.Interface.Pages.DetectFace
         private readonly IWebHostEnvironment _hostingEnvironment;
         //public string? FilePath { get; private set; } = null;
         string url = "http://fal-dev.eba-55qpmvbp.ap-southeast-1.elasticbeanstalk.com/api/Detect";
-        private readonly HttpClient _httpClient;
-        private string token;
+        [BindProperty]
+        public string token { get; set; } = string.Empty;
         public string Message;
+        public string Message2;
 
         //public string Token { get; private set; }
 
 
 
-        public IndexModel(IWebHostEnvironment hostingEnvironment, HttpClient httpClient)
+        public IndexModel(IWebHostEnvironment hostingEnvironment)
         {
             _hostingEnvironment = hostingEnvironment;
-            _httpClient = httpClient;
+
+          
         }
 
         public void OnGet()
@@ -41,6 +43,8 @@ namespace Alumniphase2.Interface.Pages.DetectFace
         {
             try
             {
+           
+
                 using (var memoryStream = new MemoryStream())
                 {
                     // Sao chép nội dung file vào MemoryStream
@@ -63,12 +67,25 @@ namespace Alumniphase2.Interface.Pages.DetectFace
             {
                 throw new Exception(ex.Message);
             }
-            token = Request.Cookies["AuthToken"];
         }
 
         private async Task<string?> GetResultAsync(MemoryStream memoryStream)
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+            var _httpClient = new HttpClient(handler);
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            else
+            {
+                // Log để kiểm tra token rỗng
+                Console.WriteLine("Token là null hoặc rỗng.");
+            }
+
 
             using (var form = new MultipartFormDataContent())
             {
@@ -83,6 +100,7 @@ namespace Alumniphase2.Interface.Pages.DetectFace
                 form.Add(fileContent, "file", FileName.FileName);
 
                 // Gửi request POST
+
                 HttpResponseMessage response = await _httpClient.PostAsync(url, form);
 
                 // Kiểm tra kết quả
@@ -95,13 +113,10 @@ namespace Alumniphase2.Interface.Pages.DetectFace
                 else
                 {
                     Console.WriteLine("Error: " + response.StatusCode);
+                    Message2 = "Error: " + response.StatusCode;
                     return null;
                 }
             }
         }
-
-
-
     }
-
 }

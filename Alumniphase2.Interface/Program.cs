@@ -1,5 +1,5 @@
+﻿using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2;
-using Amazon.DynamoDBv2.DataModel;
 using Amazon.S3;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,25 +11,24 @@ builder.Services.AddTransient<IDynamoDBContext, DynamoDBContext>();
 builder.Services.AddAWSService<IAmazonDynamoDB>();
 builder.Services.AddRazorPages();
 
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers();
-});
 app.UseAuthorization();
+
+// Map controllers if you are using them
+app.MapControllers();
+
+// Map Razor Pages
 app.MapRazorPages();
 
 app.Run();
