@@ -2,10 +2,13 @@
 using FAL.Services;
 using FAL.Services.IServices;
 using FAL.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.SystemModel;
 using System.Net;
+using System.Reflection;
+using System.Text.Json;
 
 namespace FAL.Controllers
 {
@@ -25,69 +28,70 @@ namespace FAL.Controllers
             _s3Service = s3Service;
         }
 
-        [HttpPost("detect")]
+
+        [Authorize]
+        [HttpPost("")]
         public async Task<IActionResult> DetectAsync(IFormFile file)
         {
             try
             {
-                //check valid file
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 #region check input
                 file.ValidFile();
                 #endregion
-                //add s3
-                var bucketExists = await _s3Service.AddBudgetAsync(SystermId);
-                if (!bucketExists) return NotFound($"Bucket {SystermId} does not exist.");
+                #region add to S3
+                var bucketExists = await _s3Service.AddBudgetAsync(systermId);
+                if (!bucketExists) return NotFound($"Bucket {systermId} does not exist.");
                 var fileName = Guid.NewGuid().ToString();
-                var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, SystermId, TypeOfRequest.Tagging);
-
-                //index faces
-                //var response = await _collectionService.IndexFaceAsync(SystermId, SystermId, fileName);
-
-                //string result = string.Empty;
-                //foreach (var item in response.FaceRecords)
-                //{
-                //    var faceId = item.Face.FaceId;
-                //    var data = await _collectionService.SearchUserByFaceIdsAsync(SystermId, faceId);
-                //    if (data.UserMatches != null)
-                //    {
-                //        var userId = data.UserMatches.First().User.UserId;
-                //        result = result + " " + userId;
-                //        //train again
-                //        await _collectionService.AssociateFacesAsync(SystermId, new List<string>() { faceId }, userId);
-                //    }
-                //    else
-                //    {
-                //        //delete 
-                //        await _collectionService.DeleteByFaceIdAsync(faceId, SystermId);
-                //    }
-                //}
-                return Ok();
+                var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging);
+                #endregion
+                return Ok(new ResultResponse
+                {
+                    Status = true,
+                    Message = "The system has received the file."
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(400, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Bad Request. Invalid value."
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Internal Server Error"
+                });
             }
         }
 
+        [Authorize]
         [HttpPost("upload-multiple-images")]
         public async Task<IActionResult> UploadMultipleImages([FromForm] IFormFileCollection files)
         {
             try
             {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 if (files == null || files.Count == 0)
                 {
                     return BadRequest("No files received from the upload.");
                 }
-                var bucketExists = await _s3Service.AddBudgetAsync(SystermId);
-                if (!bucketExists) return NotFound($"Bucket {SystermId} does not exist.");
+                var bucketExists = await _s3Service.AddBudgetAsync(systermId);
+                if (!bucketExists) return NotFound($"Bucket {systermId} does not exist.");
                 foreach (var item in files)
                 {
-                    item.ValidFile();
+                    item.ValidImage();
                 }
                 foreach (var file in files)
                 {
                     var fileName = Guid.NewGuid().ToString();
-                    var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, SystermId, TypeOfRequest.Tagging);
+                    var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging);
                 }
                 return Ok("Files uploaded successfully.");
             }

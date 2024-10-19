@@ -1,0 +1,21 @@
+
+{
+    "region" : "ap-southeast-1",
+    "configuration" : "Release",
+    "framework"     : "net6.0",
+    "self-contained" : false,
+    "application"    : "Alumniphase2Interface",
+    "environment"    : "Alumniphase2Interface-dev",
+    "app-path"       : "/",
+    "iis-website"    : "Default Web Site",
+    "enable-xray"    : false,
+    "enhanced-health-type" : "basic",
+    "additional-options"   : "\"aws:autoscaling:launchconfiguration,SecurityGroups\"=\"sg-09050eaa124bf7d63\";\"aws:ec2:vpc,Subnets\"=\"subnet-0246631a24df25005\"",
+    "solution-stack"       : "64bit Windows Server 2022 v2.15.5 running IIS 10.0",
+    "environment-type"     : "SingleInstance",
+    "cname"                : "alumniphase2interface-dev",
+    "instance-type"        : "t2.medium",
+    "key-pair"             : "",
+    "instance-profile"     : "aws-elasticbeanstalk-ec2-role",
+    "service-role"         : "aws-elasticbeanstalk-service-role"
+}
