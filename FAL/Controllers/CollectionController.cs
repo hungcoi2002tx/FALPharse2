@@ -1,4 +1,5 @@
-﻿using FAL.Services.IServices;
+﻿using Amazon.DynamoDBv2.Model;
+using FAL.Services.IServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.SystemModel;
@@ -66,7 +67,7 @@ namespace FAL.Controllers
         {
             try
             {
-                var result = await _collectionService.CreateCollectionByIdAsync(collectionId);
+                var result = await _collectionService.CreateCollectionByIdAsync(collectionId);     
                 return Ok(result);
             }
             catch (Exception)

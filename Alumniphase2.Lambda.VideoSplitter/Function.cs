@@ -18,77 +18,87 @@ public class Function
     {
         S3Client = new AmazonS3Client();
     }
-
-    public async Task<Dictionary<string, string>> FunctionHandler(S3Event evnt, ILambdaContext context)
+    public class VideoProcessingPayload
     {
-        var eventRecords = evnt.Records ?? new List<S3Event.S3EventNotificationRecord>();
-        foreach (var record in eventRecords)
-        {
-            var s3Event = record.S3;
-            if (s3Event == null)
+        public string BucketName { get; set; }
+        public string Prefix { get; set; }
+        public string Key { get; set; }
+    }
+    public async Task<Dictionary<string, string>> FunctionHandler(VideoProcessingPayload payload, ILambdaContext context)
+    {
+        //var eventRecords = evnt.Records ?? new List<S3Event.S3EventNotificationRecord>();
+        //foreach (var record in eventRecords)
+        //{
+        //    var s3Event = record.S3;
+        //    if (s3Event == null)
+        //    {
+        //        continue;
+        //    }
+
+
+
+        //    try
+        //    {
+        //        string bucketName = s3Event.Bucket.Name;
+        //        string objectKey = s3Event.Object.Key;
+
+        //        // Log the name of the video (objectKey)
+        //        context.Logger.LogInformation($"Processing video: {objectKey}");
+
+        //        // Get the video file
+        //        using var videoStream = await this.S3Client.GetObjectStreamAsync(bucketName, objectKey, null);
+
+        //        // Assuming you're using FFmpeg to process video into chunks
+        //        string videoName = Path.GetFileNameWithoutExtension(objectKey);
+        //        string outputFolder = $"{videoName}/"; // Set the prefix for output parts
+
+        //        // Process video using FFmpeg (pseudo-code, you need to implement FFmpeg logic)
+        //        List<Stream> videoParts = CutVideoIntoParts(videoStream, durationInSeconds: 10);
+
+        //        // Upload each part back to S3
+        //        int partNumber = 1;
+        //        foreach (var part in videoParts)
+        //        {
+        //            string partKey = $"{outputFolder}part_{partNumber}.mp4";
+        //            context.Logger.LogInformation($"Uploading part: {partKey}");
+
+        //            await this.S3Client.PutObjectAsync(new PutObjectRequest
+        //            {
+        //                BucketName = bucketName,
+        //                Key = partKey,
+        //                InputStream = part
+        //            });
+
+        //            partNumber++;
+        //        }
+
+        //        // Prepare the result for Step Functions
+        //        var stepFunctionResponse = new Dictionary<string, string>
+        //    {
+        //        { "myBucketName", bucketName },
+        //        { "myPrefixName", videoName }
+        //    };
+
+        //        // Log success
+        //        context.Logger.LogInformation($"Processing complete for {objectKey}");
+
+        //        // Return the result for Step Functions
+        //        return stepFunctionResponse;
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        context.Logger.LogError($"Error processing video {s3Event.Object.Key} from bucket {s3Event.Bucket.Name}. Make sure the video exists and the bucket is in the same region.");
+        //        context.Logger.LogError(e.Message);
+        //        context.Logger.LogError(e.StackTrace);
+        //        throw;
+        //    }
+        //}
+        var stepFunctionResponse = new Dictionary<string, string>
             {
-                continue;
-            }
-
-            try
-            {
-                string bucketName = s3Event.Bucket.Name;
-                string objectKey = s3Event.Object.Key;
-
-                // Log the name of the video (objectKey)
-                context.Logger.LogInformation($"Processing video: {objectKey}");
-
-                // Get the video file
-                using var videoStream = await this.S3Client.GetObjectStreamAsync(bucketName, objectKey, null);
-
-                // Assuming you're using FFmpeg to process video into chunks
-                string videoName = Path.GetFileNameWithoutExtension(objectKey);
-                string outputFolder = $"{videoName}/"; // Set the prefix for output parts
-
-                // Process video using FFmpeg (pseudo-code, you need to implement FFmpeg logic)
-                List<Stream> videoParts = CutVideoIntoParts(videoStream, durationInSeconds: 10);
-
-                // Upload each part back to S3
-                int partNumber = 1;
-                foreach (var part in videoParts)
-                {
-                    string partKey = $"{outputFolder}part_{partNumber}.mp4";
-                    context.Logger.LogInformation($"Uploading part: {partKey}");
-
-                    await this.S3Client.PutObjectAsync(new PutObjectRequest
-                    {
-                        BucketName = bucketName,
-                        Key = partKey,
-                        InputStream = part
-                    });
-
-                    partNumber++;
-                }
-
-                // Prepare the result for Step Functions
-                var stepFunctionResponse = new Dictionary<string, string>
-            {
-                { "myBucketName", bucketName },
-                { "myPrefix", videoName }
+                { "myBucketName", "thang-test-1" },
+                { "myPrefixName", "videoSource" }
             };
-
-                // Log success
-                context.Logger.LogInformation($"Processing complete for {objectKey}");
-
-                // Return the result for Step Functions
-                return stepFunctionResponse;
-            }
-            catch (Exception e)
-            {
-                context.Logger.LogError($"Error processing video {s3Event.Object.Key} from bucket {s3Event.Bucket.Name}. Make sure the video exists and the bucket is in the same region.");
-                context.Logger.LogError(e.Message);
-                context.Logger.LogError(e.StackTrace);
-                throw;
-            }
-        }
-
-        // If no records are processed, return an empty dictionary
-        return new Dictionary<string, string>();
+        return stepFunctionResponse;
     }
 
 
