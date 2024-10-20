@@ -28,7 +28,6 @@ namespace FAL.Controllers
             _logger = logger;
             _rekognitionClient = rekognitionClient;
         }
-        [Authorize]
         [HttpPost("compare")]
         public async Task<IActionResult> CompareFaces([FromForm] CompareFaceRequest request)
         {
