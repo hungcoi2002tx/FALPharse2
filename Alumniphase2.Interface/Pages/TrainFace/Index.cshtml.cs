@@ -14,17 +14,22 @@ namespace Alumniphase2.Interface.Pages.TrainFace
         private readonly IWebHostEnvironment _hostingEnvironment;
         public string? FilePath { get; private set; } = null;
         string url = "http://fal-dev.eba-55qpmvbp.ap-southeast-1.elasticbeanstalk.com/api/Train/file";
-        private readonly HttpClient _httpClient;
-        private string token;
-        public string Message { get; private set; }
-        public string UserId; // Thay thế bằng UserId thực tế
+        [BindProperty]
+
+        public string token { get; set; } = string.Empty;
+        [BindProperty]
+
+        public string Message { get; set; }
+        [BindProperty]
+
+        public string UserId { get; set; }// Thay thế bằng UserId thực tế
 
 
 
-        public IndexModel(IWebHostEnvironment hostingEnvironment, HttpClient httpClient)
+        public IndexModel(IWebHostEnvironment hostingEnvironment)
         {
             _hostingEnvironment = hostingEnvironment;
-            _httpClient = httpClient;
+
         }
 
         public void OnGet()
@@ -34,68 +39,62 @@ namespace Alumniphase2.Interface.Pages.TrainFace
 
         public async Task OnPostTrainFaceAsync()
         {
-            token = Request.Cookies["AuthToken"];
-            if (FileName != null)
+
+
+            using (var memoryStream = new MemoryStream())
             {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-                if (!Directory.Exists(uploadsFolder))
+                // Sao chép nội dung file vào MemoryStream
+                await FileName.CopyToAsync(memoryStream);
+
+                // Lấy kết quả từ API bằng MemoryStream
+                var result = await GetResultAsync(memoryStream);
+
+                if (result != null)
                 {
-                    Directory.CreateDirectory(uploadsFolder);
+                    Message = "Đợi tớ xíu nghenn, check kết quả ở trang notify ạa <3";
                 }
-
-                var filePath = Path.Combine(uploadsFolder, FileName.FileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                else
                 {
-                    await FileName.CopyToAsync(stream);
+                    Message = "S3 lỗi rồi, kiểm tra lại đi ạ <3";
                 }
-
-                using (var image = System.Drawing.Image.FromFile(filePath))
-                {
-                    ImageWidth = image.Width;
-                    ImageHeight = image.Height;
-                }
-            }
-
-            var wwwRootPath = _hostingEnvironment.WebRootPath;
-            var imageFile = FileName.FileName;
-            var imagePath = Path.Combine(wwwRootPath, "images", imageFile);
-            FilePath = imagePath;
-
-           var result = await GetResultAsync();
-
-            if (result != null)
-            {
-                Message = "Đợi tớ xíu nghenn, check kêt quả ở trang notify ạa <3";
-            }
-            else
-            {
-                Message = "s3 loi roi, check lại đi ạ  <3";
-
             }
         }
 
-        private async Task<string?> GetResultAsync()
+        private async Task<string?> GetResultAsync(MemoryStream memoryStream)
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+            var _httpClient = new HttpClient(handler);
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            else
+            {
+                // Log để kiểm tra token rỗng
+                Console.WriteLine("Token là null hoặc rỗng.");
+            }
 
+            // Construct the URL with UserId as a query parameter
+            var requestUrl = $"{url}?userId={UserId}";
 
             using (var form = new MultipartFormDataContent())
             {
-                // Thêm UserId vào form
-                form.Add(new StringContent(UserId), "UserId");
+                memoryStream.Position = 0;
 
-                // Tạo nội dung file từ đường dẫn
-                var fileContent = new ByteArrayContent(System.IO.File.ReadAllBytes(FilePath));
-                fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream"); // Bạn có thể thay đổi nếu cần
+                // Tạo nội dung file từ MemoryStream
+                var fileContent = new ByteArrayContent(memoryStream.ToArray());
+                fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data");
 
-                // Thêm file vào nội dung của form
-                form.Add(fileContent, "token", Path.GetFileName(FilePath));
+                // Thêm file vào request
+                form.Add(fileContent, "file", FileName.FileName);
 
-                // Gửi yêu cầu POST
-                HttpResponseMessage response = await _httpClient.PostAsync(url, form);
+                // Send the POST request
+                HttpResponseMessage response = await _httpClient.PostAsync(requestUrl, form);
 
-                // Kiểm tra kết quả trả về
+                // Check the response
                 if (response.IsSuccessStatusCode)
                 {
                     string responseData = await response.Content.ReadAsStringAsync();
@@ -108,5 +107,7 @@ namespace Alumniphase2.Interface.Pages.TrainFace
                 }
             }
         }
+
+
     }
 }
