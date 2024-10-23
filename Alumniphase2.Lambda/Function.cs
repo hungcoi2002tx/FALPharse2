@@ -228,6 +228,8 @@ public class Function
     }
     private async Task<FaceDetectionResult> DetectImageProcess(string bucket, string key, string fileName)
     {
+        var logger = new CloudWatchLogger();
+
         var resultRegisteredUsers = new List<FaceRecognitionResponse>();
         var resultUnregisteredUsers = new List<FaceRecognitionResponse>();
 
@@ -236,6 +238,8 @@ public class Function
 
         var indexFacesResponse = await IndexFaces(bucket, key, collectionName);
         var faceRecords = indexFacesResponse.FaceRecords;
+        await logger.LogMessageAsync($"facerecord:{faceRecords.Count}");
+
 
         if (faceRecords != null && faceRecords.Count > 0)
         {
@@ -246,7 +250,7 @@ public class Function
 
             if (unregisteredUsers != null && unregisteredUsers.Count > 0)
             {
-                await DeleteFaceId(unregisteredUsers, collectionName);
+                //await DeleteFaceId(unregisteredUsers, collectionName);
 
                 foreach (var (faceId, boundingBox) in unregisteredUsers)
                 {

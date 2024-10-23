@@ -1,18 +1,24 @@
 ﻿@page
 @model Alumniphase2.Interface.Pages.TrainFace.IndexModel
 
-<form method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data" asp-page-handler="TrainFace">
     <div>Enter your image or video:</div>
     <input type="file" id="FileName" name="FileName" accept="image/*,video/*" onchange="previewMedia(event)" />
     <div>Enter UserId</div>
-    <input name="UserId"  />
+    <input asp-for="UserId" />
     <br />
     <br />
     <img id="previewImage" src="#" alt="File preview" style="display:none; max-width: 200px; max-height: 200px;" />
     <video id="previewVideo" controls style="display:none; max-width: 200px; max-height: 200px;"></video>
     <br />
+    <input asp-for="token" />
     <button type="submit">Upload</button>
 </form>
+
+@if (Model.Message != null)
+{
+    <div>@Model.Message</div>
+}
 
 <script>
     function previewMedia(event) {

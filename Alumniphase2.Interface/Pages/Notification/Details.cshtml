@@ -129,7 +129,8 @@ else
         var boundingBox = document.getElementById('faceBox-' + index);
         var textBox = document.getElementById('userIdInput-' + index);
 
-
+        console.log("originalImageWidth:", originalImageWidth);
+        console.log("originalImageHeight:", originalImageHeight);
     
         // Lấy kích thước ảnh hiển thị
         var displayedImageWidth = imageElement.clientWidth;
@@ -171,7 +172,6 @@ else
 
     function onImageLoad() {
         RegisteredFaces.forEach((face) => {
-            console.log("face.BoundingBox.FaceLeft:", face.BoundingBox.Left);
 
 
             setBoundingBox(parseFloat(face.BoundingBox.Left), parseFloat(face.BoundingBox.Top), parseFloat(face.BoundingBox.Width), parseFloat(face.BoundingBox.Height), face.FaceId);

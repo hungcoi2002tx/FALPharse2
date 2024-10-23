@@ -9,8 +9,21 @@
     <img id="previewImage" src="#" alt="File preview" style="display:none; max-width: 200px; max-height: 200px;" />
     <video id="previewVideo" controls style="display:none; max-width: 200px; max-height: 200px;"></video>
     <br />
+    <input asp-for="token" />
     <button type="submit">Upload</button>
 </form>
+@if(Model.Message != null)
+{
+    <div>@Model.Message</div>
+}
+@if (Model.Message2 != null)
+{
+    <div>@Model.Message2</div>
+}
+@if (Model.token != null)
+{
+    <div>@Model.token</div>
+}
 
 <script>
     function previewMedia(event) {
