@@ -3,7 +3,11 @@ using Amazon.Lambda.S3Events;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
+using MediaToolkit.Model;
+using MediaToolkit.Options;
+using MediaToolkit;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -26,139 +30,195 @@ public class Function
     }
     public async Task<Dictionary<string, string>> FunctionHandler(VideoProcessingPayload payload, ILambdaContext context)
     {
-        //var eventRecords = evnt.Records ?? new List<S3Event.S3EventNotificationRecord>();
-        //foreach (var record in eventRecords)
-        //{
-        //    var s3Event = record.S3;
-        //    if (s3Event == null)
-        //    {
-        //        continue;
-        //    }
+        try
+        {
+            string bucketName = payload.BucketName;
+            string objectKey = $"{payload.Prefix}/{payload.Key}";
 
+            context.Logger.LogInformation($"Processing video: {objectKey}");
 
+            using var videoStream = await this.S3Client.GetObjectStreamAsync(bucketName, objectKey, null);
 
-        //    try
-        //    {
-        //        string bucketName = s3Event.Bucket.Name;
-        //        string objectKey = s3Event.Object.Key;
+            // Process video using FFmpeg
+            string videoName = Path.GetFileNameWithoutExtension(objectKey);
+            List<Stream> videoParts = await CutVideoIntoParts(videoStream, durationInSeconds: 60, context);
 
-        //        // Log the name of the video (objectKey)
-        //        context.Logger.LogInformation($"Processing video: {objectKey}");
-
-        //        // Get the video file
-        //        using var videoStream = await this.S3Client.GetObjectStreamAsync(bucketName, objectKey, null);
-
-        //        // Assuming you're using FFmpeg to process video into chunks
-        //        string videoName = Path.GetFileNameWithoutExtension(objectKey);
-        //        string outputFolder = $"{videoName}/"; // Set the prefix for output parts
-
-        //        // Process video using FFmpeg (pseudo-code, you need to implement FFmpeg logic)
-        //        List<Stream> videoParts = CutVideoIntoParts(videoStream, durationInSeconds: 10);
-
-        //        // Upload each part back to S3
-        //        int partNumber = 1;
-        //        foreach (var part in videoParts)
-        //        {
-        //            string partKey = $"{outputFolder}part_{partNumber}.mp4";
-        //            context.Logger.LogInformation($"Uploading part: {partKey}");
-
-        //            await this.S3Client.PutObjectAsync(new PutObjectRequest
-        //            {
-        //                BucketName = bucketName,
-        //                Key = partKey,
-        //                InputStream = part
-        //            });
-
-        //            partNumber++;
-        //        }
-
-        //        // Prepare the result for Step Functions
-        //        var stepFunctionResponse = new Dictionary<string, string>
-        //    {
-        //        { "myBucketName", bucketName },
-        //        { "myPrefixName", videoName }
-        //    };
-
-        //        // Log success
-        //        context.Logger.LogInformation($"Processing complete for {objectKey}");
-
-        //        // Return the result for Step Functions
-        //        return stepFunctionResponse;
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        context.Logger.LogError($"Error processing video {s3Event.Object.Key} from bucket {s3Event.Bucket.Name}. Make sure the video exists and the bucket is in the same region.");
-        //        context.Logger.LogError(e.Message);
-        //        context.Logger.LogError(e.StackTrace);
-        //        throw;
-        //    }
-        //}
-        var stepFunctionResponse = new Dictionary<string, string>
+            // Upload each part asynchronously
+            var uploadTasks = new List<Task>();
+            int partNumber = 1;
+            foreach (var part in videoParts)
             {
-                { "myBucketName", "thang-test-1" },
-                { "myPrefixName", "videoSource" }
-            };
-        return stepFunctionResponse;
+                string partKey = $"{videoName}/part_{partNumber}.mp4";
+                context.Logger.LogInformation($"Uploading part: {partKey}");
+
+                uploadTasks.Add(UploadPartToS3(bucketName, partKey, part));
+                partNumber++;
+            }
+
+            await Task.WhenAll(uploadTasks);
+
+            // Prepare the result for Step Functions
+            var stepFunctionResponse = new Dictionary<string, string>
+        {
+            { "myBucketName", bucketName },
+            { "myPrefixName", videoName }
+        };
+
+            // Log success
+            context.Logger.LogInformation($"Processing complete for {objectKey}");
+
+            return stepFunctionResponse;
+        }
+        catch (Exception e)
+        {
+            context.Logger.LogError($"Error processing video {payload.Key} from bucket {payload.BucketName}. Error: {e.Message}");
+            throw;
+        }
     }
 
-
-    private List<Stream> CutVideoIntoParts(Stream videoStream, int durationInSeconds)
+    private async Task UploadPartToS3(string bucketName, string key, Stream part)
+    {
+        await this.S3Client.PutObjectAsync(new PutObjectRequest
+        {
+            BucketName = bucketName,
+            Key = key,
+            InputStream = part
+        });
+    }
+    private async Task<List<Stream>> CutVideoIntoParts(Stream videoStream, int durationInSeconds, ILambdaContext context)
     {
         var videoParts = new List<Stream>();
         string tempInputPath = "/tmp/inputVideo.mp4";
         string tempOutputFolder = "/tmp/output/";
 
-        // Create the output folder
-        Directory.CreateDirectory(tempOutputFolder);
+        // Ensure output directory exists
+        if (!Directory.Exists(tempOutputFolder))
+        {
+            Directory.CreateDirectory(tempOutputFolder);
+        }
+        context.Logger.LogInformation($"Output directory created at: {tempOutputFolder}");
 
-        // Save the input video stream to the local file system
+        // Write the videoStream to a temporary file in /tmp
         using (var fileStream = new FileStream(tempInputPath, FileMode.Create, FileAccess.Write))
         {
-            videoStream.CopyTo(fileStream);
+            await videoStream.CopyToAsync(fileStream);
         }
 
-        // Generate FFmpeg command to cut the video into parts
-        string ffmpegCommand = $"-i {tempInputPath} -c copy -map 0 -segment_time {durationInSeconds} -f segment -reset_timestamps 1 {tempOutputFolder}part_%03d.mp4";
+        context.Logger.LogInformation($"Input video file written to: {tempInputPath}");
 
-        // Run FFmpeg command
-        RunFFmpeg(ffmpegCommand);
+        // Update this path to where your FFmpeg binary is stored (inside the Lambda layer)
+        var ffmpegPath = "/opt/ffmpeg-layer/bin/ffmpeg-git-20240629-arm64-static/ffmpeg";   // Ensure this is the correct path for FFmpeg
 
-        // Collect the output video parts as streams
-        var outputFiles = Directory.GetFiles(tempOutputFolder, "part_*.mp4");
-        foreach (var outputFile in outputFiles)
+        // Check if the FFmpeg binary exists
+        if (!File.Exists(ffmpegPath))
         {
-            var outputStream = new MemoryStream(File.ReadAllBytes(outputFile));
-            videoParts.Add(outputStream);
+            context.Logger.LogError("FFmpeg binary not found at the specified path.");
+            throw new FileNotFoundException("FFmpeg binary not found.");
         }
+
+        // Get the total duration of the video file using FFmpeg
+        var totalDuration = GetVideoDuration(ffmpegPath, tempInputPath, context);
+        context.Logger.LogInformation($"Total duration of video: {totalDuration} seconds");
+
+        for (int i = 0; i * durationInSeconds < totalDuration; i++)
+        {
+            string tempOutputPath = Path.Combine(tempOutputFolder, $"part_{i:D3}.mp4");
+
+            // Construct your FFmpeg command
+            string ffmpegArgs = $"-ss {i * durationInSeconds} -i {tempInputPath} -c copy -t {durationInSeconds} {tempOutputPath}";
+
+            // Run FFmpeg to cut the video
+            var processOutput = RunFFmpegProcess(ffmpegPath, ffmpegArgs, context);
+            context.Logger.LogInformation(processOutput);
+
+            // Convert the output part to a stream and add it to the list
+            using (var tempFileStream = new FileStream(tempOutputPath, FileMode.Open, FileAccess.Read))
+            {
+                var outputStream = new MemoryStream();
+                await tempFileStream.CopyToAsync(outputStream);
+                outputStream.Position = 0;
+                videoParts.Add(outputStream);
+            }
+
+            File.Delete(tempOutputPath);
+            context.Logger.LogInformation($"Deleted temporary output file: {tempOutputPath}");
+        }
+
+        File.Delete(tempInputPath);
+        context.Logger.LogInformation($"Deleted temporary input file: {tempInputPath}");
 
         return videoParts;
     }
 
-    // Helper method to run the FFmpeg command
-    private void RunFFmpeg(string arguments)
+    // Method to run the FFmpeg process
+    private string RunFFmpegProcess(string ffmpegPath, string arguments, ILambdaContext context)
     {
-        var process = new Process
+        var processStartInfo = new ProcessStartInfo
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "/usr/bin/ffmpeg",  // Path to FFmpeg binary in your Lambda environment or local machine
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            FileName = ffmpegPath,
+            Arguments = arguments,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
         };
 
-        process.Start();
-        process.WaitForExit();
-
-        // Check for errors
-        string error = process.StandardError.ReadToEnd();
-        if (process.ExitCode != 0)
+        using (var process = new Process { StartInfo = processStartInfo })
         {
-            throw new Exception($"FFmpeg failed with error: {error}");
+            process.Start();
+
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                context.Logger.LogError($"FFmpeg error: {error}");
+                throw new Exception($"FFmpeg failed with exit code {process.ExitCode}. Error: {error}");
+            }
+
+            return output + error;
         }
     }
+
+    // Method to get the video duration using FFmpeg
+    private double GetVideoDuration(string ffmpegPath, string inputPath, ILambdaContext context)
+    {
+        string ffmpegArgs = $"-i {inputPath}";
+
+        var processStartInfo = new ProcessStartInfo
+        {
+            FileName = ffmpegPath,
+            Arguments = ffmpegArgs,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using (var process = new Process { StartInfo = processStartInfo })
+        {
+            process.Start();
+
+            string output = process.StandardError.ReadToEnd();  // FFmpeg prints info to stderr
+            process.WaitForExit();
+
+            var match = Regex.Match(output, @"Duration: (\d+):(\d+):(\d+.\d+)");
+            if (match.Success)
+            {
+                var hours = int.Parse(match.Groups[1].Value);
+                var minutes = int.Parse(match.Groups[2].Value);
+                var seconds = double.Parse(match.Groups[3].Value);
+
+                return (hours * 3600) + (minutes * 60) + seconds;
+            }
+
+            context.Logger.LogError("Could not extract video duration.");
+            throw new Exception("Failed to retrieve video duration from FFmpeg.");
+        }
+    }
+
+
 
 }
