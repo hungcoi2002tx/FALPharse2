@@ -28,7 +28,14 @@ public class Function
         public string Prefix { get; set; }
         public string Key { get; set; }
     }
-    public async Task<Dictionary<string, string>> FunctionHandler(VideoProcessingPayload payload, ILambdaContext context)
+
+    public class StepFunctionResponse
+    {
+        public string myBucketName { get; set; }
+        public string myPrefixName { get; set; }
+        public string myObjectKey { get; set; }
+    }
+    public async Task<StepFunctionResponse> FunctionHandler(VideoProcessingPayload payload, ILambdaContext context)
     {
         try
         {
@@ -58,11 +65,12 @@ public class Function
             await Task.WhenAll(uploadTasks);
 
             // Prepare the result for Step Functions
-            var stepFunctionResponse = new Dictionary<string, string>
-        {
-            { "myBucketName", bucketName },
-            { "myPrefixName", videoName }
-        };
+            var stepFunctionResponse = new StepFunctionResponse
+            {
+                myBucketName = bucketName,
+                myPrefixName = videoName,
+                myObjectKey = payload.Key,
+            };
 
             // Log success
             context.Logger.LogInformation($"Processing complete for {objectKey}");

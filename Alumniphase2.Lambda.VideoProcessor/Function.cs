@@ -25,15 +25,16 @@ public class Function
         _rekognitionClient = new AmazonRekognitionClient();
         _dynamoDbClient = new AmazonDynamoDBClient();
     }
+
     public async Task<FaceDetectionResult> FunctionHandler(JsonElement input, ILambdaContext context)
     {
         string bucketName = input.GetProperty("bucketName").GetString();
         string prefixName = input.GetProperty("prefixName").GetString();
         string key = input.GetProperty("key").GetString();
-
-        var metadataResponse = await _s3Client.GetObjectMetadataAsync(bucketName, key);
+        string objectKey = input.GetProperty("myObjectKey").GetString();
         var result = new FaceDetectionResult();
         result = await DetectVideoProcess(bucketName, key);
+        result.FileName = objectKey;
         return result;
     }
 
@@ -147,6 +148,7 @@ public class Function
                     {
                         TimeAppearances = formattedTimestamp,
                         UserId = userId,
+                        FaceId = faceId,
                     });
                 }
             }
