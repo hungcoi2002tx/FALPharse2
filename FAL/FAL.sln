@@ -17,6 +17,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoSendWebhook", "..\DemoS
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Alumniphase2.Interface", "..\Alumniphase2.Interface\Alumniphase2.Interface.csproj", "{746EAC8C-6571-4F19-BC81-6BA79A9A43FD}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Alumniphase2.Lambda.VideoProcessor", "..\..\..\Fal\FALPharse2\Alumniphase2.Lambda.VideoProcessor\Alumniphase2.Lambda.VideoProcessor.csproj", "{CF94BC18-DCAD-4C29-A520-D7959DD14C46}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Alumniphase2.Lambda.VideoResult", "..\..\..\Fal\FALPharse2\Alumniphase2.Lambda.VideoResult\Alumniphase2.Lambda.VideoResult.csproj", "{374F540D-8635-4E8D-A473-0053C7A2979F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Alumniphase2.Lambda.VideoSplitter", "..\..\..\Fal\FALPharse2\Alumniphase2.Lambda.VideoSplitter\Alumniphase2.Lambda.VideoSplitter.csproj", "{4217C71C-98C4-4EB0-8F40-28385D634882}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +57,18 @@ Global
 		{746EAC8C-6571-4F19-BC81-6BA79A9A43FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{746EAC8C-6571-4F19-BC81-6BA79A9A43FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{746EAC8C-6571-4F19-BC81-6BA79A9A43FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF94BC18-DCAD-4C29-A520-D7959DD14C46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF94BC18-DCAD-4C29-A520-D7959DD14C46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF94BC18-DCAD-4C29-A520-D7959DD14C46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF94BC18-DCAD-4C29-A520-D7959DD14C46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{374F540D-8635-4E8D-A473-0053C7A2979F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{374F540D-8635-4E8D-A473-0053C7A2979F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{374F540D-8635-4E8D-A473-0053C7A2979F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{374F540D-8635-4E8D-A473-0053C7A2979F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4217C71C-98C4-4EB0-8F40-28385D634882}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4217C71C-98C4-4EB0-8F40-28385D634882}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4217C71C-98C4-4EB0-8F40-28385D634882}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4217C71C-98C4-4EB0-8F40-28385D634882}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
