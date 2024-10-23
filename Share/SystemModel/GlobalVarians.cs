@@ -8,7 +8,8 @@ namespace Share.SystemModel
 {
     public static class GlobalVarians
     {
-        public static readonly string SystermId = "fualumni";
+        //public static readonly string SystermId = "testRekognition";
+        public static readonly string SystermId = "systemName";
         public static readonly long MAXFILESIZE = 15L * 1024 * 1024 * 1024;
         public static readonly long PARTSIZE = 500 * 1024 * 1024;
         public static readonly long DIVIDESIZE = 500 * 1024 * 1024;

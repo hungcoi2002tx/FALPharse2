@@ -10,7 +10,7 @@ namespace Alumniphase2.Lambda.Models
     {
         public string? TimeAppearances { get; set; } = null;
         public BoundingBox? BoundingBox { get; set; } = null;
-        public string FaceId { get; set; } = null!;
+        public string? FaceId { get; set; } = null;
         public string? UserId { get; set; } = null;
     }
 }
