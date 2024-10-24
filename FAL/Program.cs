@@ -24,6 +24,13 @@ namespace FAL
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowSpecificOrigin",
+                    builder => builder.WithOrigins("http://localhost:4200") // Miền cho phép
+                                      .AllowAnyMethod()
+                                      .AllowAnyHeader());
+            });
 
             builder.Services.AddControllers(options =>
             {
@@ -118,6 +125,7 @@ namespace FAL
                 app.UseSwaggerUI();
             }
 
+            app.UseCors("AllowSpecificOrigin");
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();

@@ -12,16 +12,17 @@ namespace Alumniphase2.Interface.Pages.Notification
 {
     public class DetailsModel : PageModel
     {
-        public string? PictureUrl { get; private set; }
-        public string Key { get; private set; }
-        public int ImageWidth { get; private set; }
-        public int ImageHeight { get; private set; }
         private const string _tableName = "client-storeData";
         string bucketName = "fualumni";
-        public List<FaceRecognitionResponse> RegisteredFaces { get; private set; } = new List<FaceRecognitionResponse>();
-        public List<FaceRecognitionResponse> UnregisteredFaces { get; private set; } = new List<FaceRecognitionResponse>();
         private readonly IAmazonDynamoDB _dynamoDBClient;
         private readonly IAmazonS3 _s3Client;
+        public string Key { get; private set; }
+        public string? PictureUrl { get; private set; }
+        public int ImageWidth { get; private set; }
+        public int ImageHeight { get; private set; }
+        public List<FaceRecognitionResponse> RegisteredFaces { get; private set; } = new List<FaceRecognitionResponse>();
+        public List<FaceRecognitionResponse> UnregisteredFaces { get; private set; } = new List<FaceRecognitionResponse>();
+
 
         public DetailsModel(IAmazonDynamoDB dynamoDBClient, IAmazonS3 s3Client)
         {
@@ -31,8 +32,6 @@ namespace Alumniphase2.Interface.Pages.Notification
 
         public async Task OnGetAsync(string fileName)
         {
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-
             var response = await QueryDynamoDBAsync(fileName);
 
             ProcessResponse(response);
