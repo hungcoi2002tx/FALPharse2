@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoSendWebhook", "..\DemoS
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Alumniphase2.Interface", "..\Alumniphase2.Interface\Alumniphase2.Interface.csproj", "{746EAC8C-6571-4F19-BC81-6BA79A9A43FD}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Alumniphase2.Lambda.CompareFace", "..\Alumniphase2.Lambda.CompareFace\Alumniphase2.Lambda.CompareFace.csproj", "{06D86DC7-EDB9-49E2-8885-2E622BE6DCD2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{746EAC8C-6571-4F19-BC81-6BA79A9A43FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{746EAC8C-6571-4F19-BC81-6BA79A9A43FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{746EAC8C-6571-4F19-BC81-6BA79A9A43FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06D86DC7-EDB9-49E2-8885-2E622BE6DCD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06D86DC7-EDB9-49E2-8885-2E622BE6DCD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06D86DC7-EDB9-49E2-8885-2E622BE6DCD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06D86DC7-EDB9-49E2-8885-2E622BE6DCD2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
