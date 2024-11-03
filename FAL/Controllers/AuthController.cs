@@ -36,34 +36,44 @@ namespace FAL.Controllers
             // Kiểm tra tính hợp lệ của thông tin đăng nhập
             if (loginModel == null || string.IsNullOrEmpty(loginModel.Username) || string.IsNullOrEmpty(loginModel.Password))
             {
-                return BadRequest("Thông tin đăng nhập không hợp lệ.");
+                return BadRequest(new { status = false, message = "Thông tin đăng nhập không hợp lệ." });
             }
 
             // Tìm người dùng trong DynamoDB
             var user = await _dbContext.LoadAsync<Account>(loginModel.Username);
             if (user == null)
             {
-                return Unauthorized("Tên người dùng không tồn tại.");
+                return Unauthorized(new { status = false, message = "Tên người dùng không tồn tại." });
             }
 
             // Kiểm tra mật khẩu
             bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginModel.Password, user.Password);
             if (!isPasswordValid)
             {
-                return Unauthorized("Mật khẩu không chính xác.");
+                return Unauthorized(new { status = false, message = "Mật khẩu không chính xác." });
             }
 
-            // Tạo JWT token
-            var tokenString = _jwtTokenGenerator.GenerateJwtToken(user.Username, user.RoleId.ToString(), user.SystemName);
+            // Tạo JWT token và lấy thời gian hết hạn của token
+            // Gọi GenerateJwtToken
+            var jwtToken = _jwtTokenGenerator.GenerateJwtToken(user.Username, user.RoleId.ToString(), user.SystemName);
 
-            // Trả về thông tin người dùng và token
+            // Lấy chuỗi token
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+
+            // Tính toán expires_in
+            var expiresIn = (int)(jwtToken.ValidTo - DateTime.UtcNow).TotalSeconds;
+
+            // Trả về thông tin người dùng và token với status true
             return Ok(new
             {
-                Token = tokenString,
-                UserRole = user.RoleId,
-                SystemName = user.SystemName // Trả về SystemName nếu cần
+                status = true,
+                token = tokenString,
+                userRole = user.RoleId,
+                systemName = user.SystemName,
+                expiresIn
             });
         }
+
 
 
         [AllowAnonymous]

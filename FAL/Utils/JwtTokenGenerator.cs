@@ -14,7 +14,7 @@ namespace FAL.Utils
             _configuration = configuration;
         }
 
-        public string GenerateJwtToken(string username, string roleId, string systemName)
+        public JwtSecurityToken GenerateJwtToken(string username, string roleId, string systemName)
         {
             // Lấy khóa bí mật từ cấu hình
             var secretKey = _configuration["Jwt:Key"];
@@ -27,15 +27,12 @@ namespace FAL.Utils
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            // Tính thời gian phát hành token dưới dạng Unix time
-            var issuedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-
             // Thêm các claims cho token, bao gồm cả systemName
             var claims = new[]
             {
         new Claim(JwtRegisteredClaimNames.Sub, username),
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique token ID
-        new Claim(JwtRegisteredClaimNames.Iat, issuedAt, ClaimValueTypes.Integer64), // Thời điểm phát hành token
+        new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64), // Thời điểm phát hành token
         new Claim("roleId", roleId), // Thêm RoleId vào claims
         new Claim("systemName", systemName), // Thêm SystemName vào claims
         new Claim(ClaimTypes.Name, username) // Đặt username như tên người dùng
@@ -44,7 +41,7 @@ namespace FAL.Utils
             // Lấy thời gian hết hạn từ cấu hình (nếu có)
             var tokenExpiryMinutes = int.TryParse(_configuration["Jwt:ExpiryMinutes"], out int expiry) ? expiry : 30;
 
-            // Tạo token
+            // Tạo và trả về đối tượng JwtSecurityToken
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
@@ -53,9 +50,9 @@ namespace FAL.Utils
                 signingCredentials: creds
             );
 
-            // Trả về token dưới dạng chuỗi
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return token;
         }
+
 
 
     }
