@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.SystemModel;
 using System.IO.Compression;
+using Amazon.SQS.Model;
+using Amazon.SQS;
+using Newtonsoft.Json;
+using Amazon.S3.Model;
 
 namespace FAL.Controllers
 {
@@ -16,18 +20,23 @@ namespace FAL.Controllers
         public IFormFile SourceImage { get; set; }
         public IFormFile TargetImage { get; set; }
     }
+
     [Route("api/[controller]")]
     [ApiController]
     public class CompareController : ControllerBase
     {
         private readonly IAmazonRekognition _rekognitionClient;
+        private readonly IAmazonS3 _s3Client;
         private readonly CustomLog _logger;
         private readonly string SystermId = GlobalVarians.SystermId;
+        private readonly IAmazonSQS _sqsClient;
 
-        public CompareController(CustomLog logger, IAmazonRekognition rekognitionClient)
+        public CompareController(CustomLog logger, IAmazonRekognition rekognitionClient, IAmazonSQS sqsClient, IAmazonS3 s3Service)
         {
             _logger = logger;
             _rekognitionClient = rekognitionClient;
+            _sqsClient = sqsClient;
+            _s3Client = s3Service;
         }
         [HttpPost("compare")]
         public async Task<IActionResult> CompareFaces([FromForm] CompareFaceRequest request)
@@ -37,41 +46,89 @@ namespace FAL.Controllers
                 return BadRequest("Both images must be provided.");
             }
 
+            if (!IsImageFile(request.SourceImage) || !IsImageFile(request.TargetImage))
+            {
+                return BadRequest("Both files must be valid images.");
+            }
+
+            // Convert images to byte arrays
             var sourceImageBytes = await ConvertToBytes(request.SourceImage);
             var targetImageBytes = await ConvertToBytes(request.TargetImage);
 
-            var compareFacesRequest = new CompareFacesRequest
+            // Extract the file name without extension
+            var sourceFileName = Path.GetFileNameWithoutExtension(request.SourceImage.FileName);
+            var targetFileName = Path.GetFileNameWithoutExtension(request.TargetImage.FileName);
+
+            // Get content type from the uploaded files
+            var sourceContentType = request.SourceImage.ContentType;
+            var targetContentType = request.TargetImage.ContentType;
+
+            // Upload images to S3 with "si" and "ti" suffixes
+            var sourceImageUrl = await UploadImageToS3(sourceImageBytes, sourceFileName, "si", sourceContentType);
+            var targetImageUrl = await UploadImageToS3(targetImageBytes, targetFileName, "ti", targetContentType);
+
+            // Prepare the message for SQS with the S3 URLs
+            var message = new
             {
-                SourceImage = new Image
-                {
-                    Bytes = new MemoryStream(sourceImageBytes)
-                },
-                TargetImage = new Image
-                {
-                    Bytes = new MemoryStream(targetImageBytes)
-                },
+                SourceImageUrl = sourceImageUrl,
+                TargetImageUrl = targetImageUrl,
                 SimilarityThreshold = 80F
+            };
+
+            var sqsMessage = new SendMessageRequest
+            {
+                QueueUrl = "https://sqs.ap-southeast-1.amazonaws.com/257394496117/CompareFaces",  // Update with your SQS queue URL
+                MessageBody = JsonConvert.SerializeObject(message)
             };
 
             try
             {
-                var compareFacesResponse = await _rekognitionClient.CompareFacesAsync(compareFacesRequest);
+                // Send the message to SQS
+                var sendMessageResponse = await _sqsClient.SendMessageAsync(sqsMessage);
 
-                if (compareFacesResponse.FaceMatches.Count > 0)
+                if (sendMessageResponse.HttpStatusCode == System.Net.HttpStatusCode.OK)
                 {
-                    var similarity = compareFacesResponse.FaceMatches[0].Similarity;
-                    return Ok(new { message = "Faces matched", similarity });
+                    return Ok(new { message = "Request sent to queue successfully." });
                 }
                 else
                 {
-                    return Ok(new { message = "No match found" });
+                    return StatusCode(500, "Failed to send message to queue.");
                 }
             }
-            catch (AmazonRekognitionException ex)
+            catch (AmazonSQSException ex)
             {
-                return StatusCode(500, $"Error calling AWS Rekognition: {ex.Message}");
+                return StatusCode(500, $"Error sending message to SQS: {ex.Message}");
             }
         }
+
+        private bool IsImageFile(IFormFile file)
+        {
+            return file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        // Helper method to upload images to S3 with a unique key
+        private async Task<string> UploadImageToS3(byte[] imageBytes, string fileName, string suffix, string contentType)
+        {
+            // Generate a unique key using GUID
+            var uniqueFileName = $"{suffix}_{Guid.NewGuid()}";
+  // You can also use contentType's extension if preferred
+
+            // Create a PutObjectRequest with the unique key
+            var putRequest = new PutObjectRequest
+            {
+                BucketName = "comparefacestorage",  // Replace with your bucket name
+                Key = uniqueFileName,
+                InputStream = new MemoryStream(imageBytes),
+                ContentType = contentType
+            };
+
+            await _s3Client.PutObjectAsync(putRequest);
+
+            // Construct and return the S3 URL
+            return $"https://{putRequest.BucketName}.s3.amazonaws.com/{uniqueFileName}";
+        }
+
+
 
         [HttpPost("upload-zip")]
         public async Task<IActionResult> UploadAndProcessZipFile(IFormFile zipFile)

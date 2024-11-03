@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.Data;
 using Share.SystemModel;
+using System.IO.Compression;
 using System.Reflection;
 
 namespace FAL.Controllers
@@ -53,6 +54,123 @@ namespace FAL.Controllers
                     Message = "Internal Server Error"
                 });
             }
+        }
+
+        [Authorize]
+        [HttpPost("upload-zip")]
+        public async Task<IActionResult> UploadAndProcessZipFile(IFormFile zipFile)
+        {
+            if (zipFile == null || zipFile.Length == 0)
+            {
+                return BadRequest("No ZIP file uploaded.");
+            }
+
+            if (!Path.GetExtension(zipFile.FileName).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("Only ZIP files are supported.");
+            }
+
+            try
+            {
+                // Save the ZIP file to a temporary location
+                var tempZipFilePath = Path.GetTempFileName();
+                using (var stream = new FileStream(tempZipFilePath, FileMode.Create))
+                {
+                    await zipFile.CopyToAsync(stream);
+                }
+
+                // Extract ZIP file to a temporary folder
+                var extractPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                Directory.CreateDirectory(extractPath);
+                ZipFile.ExtractToDirectory(tempZipFilePath, extractPath);
+
+                // Find image files in the extracted folder
+                var imageFiles = Directory.GetFiles(extractPath)
+                    .Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+                                f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                                f.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                var systemId = User.Claims.FirstOrDefault(c => c.Type == SystermId)?.Value;
+
+                int successCount = 0;
+                int failureCount = 0;
+
+                foreach (var imageFile in imageFiles)
+                {
+                    var fileName = Path.GetFileNameWithoutExtension(imageFile);
+                    var imageName = Path.GetFileName(imageFile);
+
+                    // Read the image file and validate it
+                    using (var imageStream = new FileStream(imageFile, FileMode.Open, FileAccess.Read))
+                    {
+                        var formFile = new FormFile(imageStream, 0, imageStream.Length, null, imageName)
+                        {
+                            Headers = new HeaderDictionary(),
+                            ContentType = GetContentType(imageFile)
+                        };
+
+                        try
+                        {
+                            // Validate the file with Rekognition
+                            await ValidateFileWithRekognitionAsync(formFile);
+
+                            // Train the system for each user with the image
+                            var image = await GetImageAsync(formFile);
+                            await TrainAsync(image, fileName, systemId);
+                            successCount++; // Increment success count
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log the exception for this specific image
+                            _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                            failureCount++; // Increment failure count
+                        }
+                    }
+                }
+
+                // Cleanup
+                System.IO.File.Delete(tempZipFilePath);
+                Directory.Delete(extractPath, true);
+
+                return Ok(new ResultResponse
+                {
+                    Status = true,
+                    Message = $"Training completed. Success: {successCount}, Failed: {failureCount}."
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(400, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Bad Request. Invalid value."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Internal Server Error"
+                });
+            }
+        }
+
+
+        private string GetContentType(string path)
+        {
+            var types = new Dictionary<string, string>
+    {
+        { ".png", "image/png" },
+        { ".jpg", "image/jpeg" },
+        { ".jpeg", "image/jpeg" }
+    };
+
+            var ext = Path.GetExtension(path).ToLowerInvariant();
+            return types.ContainsKey(ext) ? types[ext] : "application/octet-stream";
         }
 
         [HttpPost("file")]
