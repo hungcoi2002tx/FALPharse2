@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Share.SystemModel;
 using System.Security;
 using System.Text;
+using Amazon.SQS;
 
 namespace FAL
 {
@@ -67,6 +68,7 @@ namespace FAL
             builder.Services.AddAWSService<IAmazonS3>();
             builder.Services.AddAWSService<IAmazonRekognition>();
             builder.Services.AddAWSService<IAmazonDynamoDB>();
+            builder.Services.AddAWSService<IAmazonSQS>();
             builder.Services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
             builder.Services.AddSingleton<CustomLog>(new CustomLog(Path.Combine(Directory.GetCurrentDirectory(), "bin", "ProgramLogs", "Log.txt")));
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
