@@ -42,7 +42,7 @@ public class FaceCompare
         return token;
     }
 
-    public static async Task<bool> CompareFaces(string sourceImagePath, string targetImagePath)
+    public static async Task<bool> CompareFaces(string sourceImagePath, string targetImagePath, int sourceId)
     {
         try
         {
@@ -55,6 +55,7 @@ public class FaceCompare
             var content = new MultipartFormDataContent();
             content.Add(new StreamContent(File.OpenRead(sourceImagePath)), "SourceImage", Path.GetFileName(sourceImagePath));
             content.Add(new StreamContent(File.OpenRead(targetImagePath)), "TargetImage", Path.GetFileName(targetImagePath));
+            content.Add(new StringContent(sourceId.ToString()), "SourceId");
 
             request.Content = content;
             using HttpClient client = new HttpClient();
