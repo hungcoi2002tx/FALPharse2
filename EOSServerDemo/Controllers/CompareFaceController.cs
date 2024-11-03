@@ -7,9 +7,13 @@ namespace EOSServerDemo.Controllers
     [ApiController]
     public class CompareFaceController : ControllerBase
     {
-        [HttpPost("compare")]
-        public async Task<IActionResult> Compare([FromForm] IFormFile sourceImage, [FromForm] IFormFile targetImage)
+        [HttpPost("register-compare")]
+        public async Task<IActionResult> RegisterCompare(string studenCode, [FromForm] IFormFile targetImage)
         {
+            // TODO: lấy sourceImage (ảnh thẻ) của sinh viên theo studenCode trong database
+            IFormFile sourceImage = null;
+
+
             if (sourceImage == null || targetImage == null)
             {
                 return BadRequest("Both source and target images are required.");
@@ -31,10 +35,10 @@ namespace EOSServerDemo.Controllers
                     await targetImage.CopyToAsync(stream);
                 }
 
-                // Gọi hàm CompareFaces để xử lý so sánh
-                var result = await FaceCompare.CompareFaces(sourceImagePath, targetImagePath);
-                
-                return Ok(result);
+                // TODO: Gọi hàm CompareFaces để đăng ký xử lý so sánh
+                await FaceCompare.CompareFaces(sourceImagePath, targetImagePath);
+                // cập nhật trạng thái đang đợi kết quả cho database
+                return Ok();
             }
             catch (Exception ex)
             {

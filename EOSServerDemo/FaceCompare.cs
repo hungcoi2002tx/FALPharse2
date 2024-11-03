@@ -44,33 +44,38 @@ public class FaceCompare
 
     public static async Task<bool> CompareFaces(string sourceImagePath, string targetImagePath)
     {
-        string token = await GetToken();
-
-        var request = new HttpRequestMessage(HttpMethod.Post, "https://localhost:7065/api/Compare/compare");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
-
-        var content = new MultipartFormDataContent();
-        content.Add(new StreamContent(File.OpenRead(sourceImagePath)), "SourceImage", Path.GetFileName(sourceImagePath));
-        content.Add(new StreamContent(File.OpenRead(targetImagePath)), "TargetImage", Path.GetFileName(targetImagePath));
-
-        request.Content = content;
-        using HttpClient client = new HttpClient();
-
-        var response = await client.SendAsync(request);
-
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        try
         {
-            // If token is expired, get new token and retry
-            token = await LoginAndGetToken();
+            string token = await GetToken();
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://localhost:7065/api/Compare/compare");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            response = await client.SendAsync(request);
-        }
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
 
-        response.EnsureSuccessStatusCode();
-        if (true)
-        {
-            return true;
+            var content = new MultipartFormDataContent();
+            content.Add(new StreamContent(File.OpenRead(sourceImagePath)), "SourceImage", Path.GetFileName(sourceImagePath));
+            content.Add(new StreamContent(File.OpenRead(targetImagePath)), "TargetImage", Path.GetFileName(targetImagePath));
+
+            request.Content = content;
+            using HttpClient client = new HttpClient();
+
+            var response = await client.SendAsync(request);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                // If token is expired, get new token and retry
+                token = await LoginAndGetToken();
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                response = await client.SendAsync(request);
+            }
+
+            response.EnsureSuccessStatusCode();
+
         }
+        catch (Exception)
+        {
+            return false;
+        }
+            return true;
     }
 }
