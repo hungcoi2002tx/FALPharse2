@@ -46,7 +46,10 @@ namespace EOSServerDemo.Controllers
                 {
                     result.Confidence = (float)payload.Similarity.Value;
                 }
-                result.Message = payload.SourceImageUrl + "|" + payload.TargetImageUrl;
+                result.Message = payload.SourceImageUrl + "|" +
+                    "" +
+                    "" +
+                    "" + payload.TargetImageUrl;
                 result.Time = DateTime.Now;
 
                 // Lưu thay đổi vào cơ sở dữ liệu
