@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddHttpClient("FaceDetectionAPI", client =>
 {
-    client.BaseAddress = new Uri("https://api.yourdomain.com/"); // TODO: sửa theo domain đúng
+    client.BaseAddress = new Uri("https://localhost:7065/"); // TODO: sửa theo domain đúng
     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
 builder.Services.AddAuthentication(options =>
@@ -31,9 +31,10 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
+builder.Services.AddSession();
 
 var app = builder.Build();
-
+app.UseSession();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

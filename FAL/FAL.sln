@@ -19,7 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Alumniphase2.Interface", ".
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Alumniphase2.Lambda.CompareFace", "..\Alumniphase2.Lambda.CompareFace\Alumniphase2.Lambda.CompareFace.csproj", "{06D86DC7-EDB9-49E2-8885-2E622BE6DCD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FAL.FrontEnd", "..\FAL.FrontEnd\FAL.FrontEnd.csproj", "{C0612E3E-F586-40FC-A63F-155E6AE93286}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FAL.FrontEnd", "..\FAL.FrontEnd\FAL.FrontEnd.csproj", "{C0612E3E-F586-40FC-A63F-155E6AE93286}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
