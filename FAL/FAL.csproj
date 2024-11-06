@@ -24,4 +24,10 @@
     <ProjectReference Include="..\Share\Share.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Authors\CustomAuthorizationFilter.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
+
 </Project>
