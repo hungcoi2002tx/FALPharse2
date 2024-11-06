@@ -14,8 +14,12 @@ namespace FAL.Services
             _dbContext = dbContext;
         }
 
-        public bool HasPermission(ClaimsPrincipal user, string resource, string action)
+        public bool HasPermission(ClaimsPrincipal user, string? resource, string? action)
         {
+            if (resource == null || action == null)
+            {
+                return false;
+            }
             // Lấy roleId từ custom claim "RoleId"
             var roleIdClaim = user.FindFirst("RoleId");
 
