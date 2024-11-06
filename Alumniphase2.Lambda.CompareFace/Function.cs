@@ -1,3 +1,4 @@
+
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Lambda.Core;
@@ -17,7 +18,7 @@ using System.Text.Json;
 namespace Alumniphase2.Lambda.CompareFace;
 
 public class Function
-{ 
+{
     private readonly IAmazonRekognition _rekognitionClient;
     private readonly IAmazonS3 _s3Client;
 
@@ -28,7 +29,8 @@ public class Function
     }
     public async Task FunctionHandler(SQSEvent evnt, ILambdaContext context)
     {
-        foreach(var message in evnt.Records)
+
+        foreach (var message in evnt.Records)
         {
             await ProcessMessageAsync(message, context);
         }
@@ -53,6 +55,8 @@ public class Function
             var sourceImageBytes = await DownloadImageFromS3Async(request.SourceImageUrl);
             var targetImageBytes = await DownloadImageFromS3Async(request.TargetImageUrl);
 
+            var resultId = request.ResultId;
+
             // Prepare Rekognition compare request
             var compareFacesRequest = new CompareFacesRequest
             {
@@ -70,7 +74,7 @@ public class Function
             // Call CompareFaces on Rekognition
             var response = await _rekognitionClient.CompareFacesAsync(compareFacesRequest);
 
-            string resultId = Guid.NewGuid().ToString(); // Generate a unique ID for the result
+            //string resultId = Guid.NewGuid().ToString(); // Generate a unique ID for the result
             string payloadString;
 
             if (response.FaceMatches.Count > 0)
@@ -79,14 +83,20 @@ public class Function
                 payloadString = $"Faces matched with similarity: {similarity}";
 
                 // Store the result in DynamoDB
-                await StoreComparisonResultInDynamoDB(resultId, request.SourceImageUrl, request.TargetImageUrl, similarity);
+                await StoreComparisonResultInDynamoDB(resultId.ToString(), request.SourceImageUrl, request.TargetImageUrl, similarity);
+
+                // TODO: VIẾT HÀM GỌI API TRẢ VỀ ComparisonResult
+
             }
             else
             {
                 payloadString = "No matching faces found.";
 
                 // Store the result in DynamoDB with similarity as null or 0
-                await StoreComparisonResultInDynamoDB(resultId, request.SourceImageUrl, request.TargetImageUrl, null);
+                await StoreComparisonResultInDynamoDB(resultId.ToString(), request.SourceImageUrl, request.TargetImageUrl, null);
+
+                // TODO: VIẾT HÀM GỌI API TRẢ VỀ ComparisonResult
+
             }
 
             // Delete images from S3 after processing
@@ -117,13 +127,14 @@ public class Function
         var timestamp = DateTime.UtcNow.ToString("o"); // ISO 8601 format
 
         var item = new Dictionary<string, AttributeValue>
-    {
-        { "Id", new AttributeValue { S = resultId } },
-        { "SourceImageUrl", new AttributeValue { S = sourceImageUrl } },
-        { "TargetImageUrl", new AttributeValue { S = targetImageUrl } },
-        { "Similarity", new AttributeValue { N = similarity.HasValue ? similarity.Value.ToString() : "0" } },
-        { "Timestamp", new AttributeValue { S = timestamp } } // Add the timestamp
-    };
+
+        {
+            { "Id", new AttributeValue { S = resultId } },
+            { "SourceImageUrl", new AttributeValue { S = sourceImageUrl } },
+            { "TargetImageUrl", new AttributeValue { S = targetImageUrl } },
+            { "Similarity", new AttributeValue { N = similarity.HasValue ? similarity.Value.ToString() : "0" } },
+            { "Timestamp", new AttributeValue { S = timestamp } } // Add the timestamp
+        };
 
         var putItemRequest = new PutItemRequest
         {
@@ -176,5 +187,15 @@ public class Function
         public string SourceImageUrl { get; set; }  // Base64 encoded source image
         public string TargetImageUrl { get; set; }  // Base64 encoded target image
         public float SimilarityThreshold { get; set; }
+        public int ResultId { get; set; }
+    }
+
+    public class ComparisonResult
+    {
+        public string? SourceImageUrl { get; set; }
+        public string? TargetImageUrl { get; set; }
+        public float? Similarity { get; set; }
+        public int? ResultId { get; set; }
+
     }
 }
