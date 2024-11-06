@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 using System.Security.Cryptography.Xml;
+using System.Text;
 
 namespace EOSServerDemo.Controllers
 {
@@ -10,25 +12,42 @@ namespace EOSServerDemo.Controllers
     [ApiController]
     public class WebhookReceiverCompareFaceController : ControllerBase
     {
+        private readonly string _secretKey;
         private readonly CompareFaceContext _compareFace;
-
-        public WebhookReceiverCompareFaceController(CompareFaceContext compareFace)
+        // Inject IConfiguration trực tiếp vào constructor
+        public WebhookReceiverCompareFaceController(IConfiguration configuration, CompareFaceContext compareFace)
         {
+            // Lấy giá trị SecretKey từ appsettings.json
+            _secretKey = "your-secret-key";
             _compareFace = compareFace;
+
         }
 
-        [HttpPost("ReceiveData")]
-        public async Task<IActionResult> ReceiveData([FromBody] ComparisonResult payload)
+        //[AllowAnonymous]
+        [HttpPost]
+        public async Task<IActionResult> ReceiveData([FromHeader(Name = "X-Signature")] string signature, [FromBody] ComparisonResult payload)
         {
-            try
+            // Tạo chữ ký HMAC từ payload
+            var payloadString = System.Text.Json.JsonSerializer.Serialize(payload);
+            var computedSignature = GenerateHMAC(payloadString, _secretKey);
+
+            // Kiểm tra chữ ký
+            if (signature != computedSignature)
             {
-                await UpdateResultAsync(payload);
-                var payloadString = System.Text.Json.JsonSerializer.Serialize(payload);
-                return Ok(payloadString);
+                return Unauthorized("Chữ ký không hợp lệ.");
             }
-            catch (Exception ex)
+            await UpdateResultAsync(payload);
+
+            // Trả về phản hồi cho client
+            return Ok(new { Message = "Webhook đã nhận dữ liệu thành công." });
+        }
+
+        private static string GenerateHMAC(string payload, string secret)
+        {
+            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret)))
             {
-                throw new Exception(ex.Message);
+                var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
+                return Convert.ToBase64String(hashBytes);
             }
         }
 
@@ -41,16 +60,22 @@ namespace EOSServerDemo.Controllers
             if (result != null)
             {
                 // Cập nhật các trường
-                result.Status = "Đã hoàn thành";
+                // TODO: hỏi thắng về kiểu data
                 if (payload.Similarity.HasValue)
                 {
-                    result.Confidence = (float)payload.Similarity.Value;
+                    result.Confidence = payload.Similarity.Value;
+                    if (payload.Similarity.Value > 60)
+                    {
+                        result.Status = "MATCH";
+                    }
+                    else
+                    {
+                        result.Status = "NOMATCH";
+                    }
                 }
-                result.Message = payload.SourceImageUrl + "|" +
-                    "" +
-                    "" +
-                    "" + payload.TargetImageUrl;
-                result.Time = DateTime.Now;
+
+                result.Message = "Đã hoàn thành";
+                //result.Time = DateTime.Now;
 
                 // Lưu thay đổi vào cơ sở dữ liệu
                 await _compareFace.SaveChangesAsync();
