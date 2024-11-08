@@ -427,5 +427,10 @@ namespace FAL.Services
                 throw;
             }
         }
+
+        public Task DisassociateFacesAsync(string systermId, List<string> list, string userId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

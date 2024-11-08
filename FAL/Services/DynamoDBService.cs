@@ -138,5 +138,45 @@ namespace FAL.Services
                 throw;
             }
         }
+
+        public async Task<bool> DeleteUserInformationAsync(string tableName, string userId, string faceId)
+        {
+            try
+            {
+                // Define the key (partition and sort keys if applicable) for the item to be deleted
+                var key = new Dictionary<string, AttributeValue>
+        {
+            {
+                nameof(FaceInformation.UserId), new AttributeValue
+                {
+                    S = userId
+                }
+            },
+            {
+                nameof(FaceInformation.FaceId), new AttributeValue
+                {
+                    S = faceId
+                }
+            }
+        };
+
+                var request = new DeleteItemRequest
+                {
+                    TableName = tableName,
+                    Key = key
+                };
+
+                var response = await _dynamoDBService.DeleteItemAsync(request);
+
+                // Check if the response is successful
+                return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting user information: {ex.Message}");
+                throw;
+            }
+        }
+
     }
 }
