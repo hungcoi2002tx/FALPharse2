@@ -14,27 +14,46 @@ namespace FAL.Utils
             _configuration = configuration;
         }
 
-        public string GenerateJwtToken(string username, int roleId, string systemName)
+        public JwtSecurityToken GenerateJwtToken(string username, string roleId, string systemName)
         {
-            var claims = new[]
+            // Lấy khóa bí mật từ cấu hình
+            var secretKey = _configuration["Jwt:Key"];
+            if (string.IsNullOrEmpty(secretKey))
             {
-            new Claim(JwtRegisteredClaimNames.Sub, username),
-            new Claim("roleId", roleId.ToString()),   // Thêm RoleId vào claims
-            new Claim("systemName", systemName),      // Thêm SystemName vào claims
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
+                throw new InvalidOperationException("Jwt:Key is missing in configuration.");
+            }
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            // Tạo khóa bảo mật
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            // Thêm các claims cho token, bao gồm cả systemName
+            var claims = new[]
+            {
+        new Claim(JwtRegisteredClaimNames.Sub, username),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique token ID
+        new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64), // Thời điểm phát hành token
+        new Claim("roleId", roleId), // Thêm RoleId vào claims
+        new Claim("systemName", systemName), // Thêm SystemName vào claims
+        new Claim(ClaimTypes.Name, username) // Đặt username như tên người dùng
+    };
+
+            // Lấy thời gian hết hạn từ cấu hình (nếu có)
+            var tokenExpiryMinutes = int.TryParse(_configuration["Jwt:ExpiryMinutes"], out int expiry) ? expiry : 30;
+
+            // Tạo và trả về đối tượng JwtSecurityToken
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(30),
-                signingCredentials: creds);
+                expires: DateTime.UtcNow.AddMinutes(tokenExpiryMinutes),
+                signingCredentials: creds
+            );
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return token;
         }
+
+
+
     }
 }

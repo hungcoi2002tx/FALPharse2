@@ -1,5 +1,6 @@
 ﻿using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
+using Amazon.Runtime.Internal.Util;
 using FAL.Services.IServices;
 using Share.SystemModel;
 using System.Reflection;
@@ -206,16 +207,10 @@ namespace FAL.Services
                 using (var memStream = new MemoryStream())
                 {
                     await file.CopyToAsync(memStream);
-                    memStream.Position = 0; // Đặt lại vị trí con trỏ của stream về 0
-
-                    // Gửi yêu cầu DetectLabels đến Amazon Rekognition
-                    return await _rekognitionClient.DetectFacesAsync(new DetectFacesRequest()
+                    memStream.Position = 0;
+                    return await GetFaceDetectAsync(new Amazon.Rekognition.Model.Image()
                     {
-                        Image = new Amazon.Rekognition.Model.Image()
-                        {
-                            Bytes = memStream
-                        },
-                        Attributes = new List<string>() { "DEFAULT" }
+                        Bytes = memStream
                     });
                 }
             }
@@ -224,6 +219,23 @@ namespace FAL.Services
                 throw;
             }
         }
+
+        private async Task<DetectFacesResponse> GetFaceDetectAsync(Image image)
+        {
+            try
+            {
+                return await _rekognitionClient.DetectFacesAsync(new DetectFacesRequest()
+                {
+                    Image = image,
+                    Attributes = new List<string>() { "DEFAULT" }
+                });
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
 
         public async Task<bool> AssociateFacesAsync(string systermId, List<string> faceIds, string key)
         {
@@ -421,6 +433,18 @@ namespace FAL.Services
             catch (ResourceNotFoundException ex)
             {
                 throw new Exception(message: "The resource specified in the request cannot be found.");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public Task<DetectFacesResponse> DetectFaceByFileAsync(Image file)
+        {
+            try
+            {
+                return GetFaceDetectAsync(file);
             }
             catch (Exception)
             {

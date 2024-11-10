@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Share.SystemModel;
 using System.Security;
 using System.Text;
+using Amazon.SQS;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace FAL
 {
@@ -67,6 +69,7 @@ namespace FAL
             builder.Services.AddAWSService<IAmazonS3>();
             builder.Services.AddAWSService<IAmazonRekognition>();
             builder.Services.AddAWSService<IAmazonDynamoDB>();
+            builder.Services.AddAWSService<IAmazonSQS>();
             builder.Services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
             builder.Services.AddSingleton<CustomLog>(new CustomLog(Path.Combine(Directory.GetCurrentDirectory(), "bin", "ProgramLogs", "Log.txt")));
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
@@ -99,31 +102,27 @@ namespace FAL
             });
 
             builder.Services.AddSingleton<IDynamoDBService, DynamoDBService>();
-            builder.Services.Configure<IISServerOptions>(options =>
-            {
-                options.MaxRequestBodySize = 100000000; // 50 MB, or set to any desired size
-            });
+            //builder.Services.Configure<IISServerOptions>(options =>
+            //{
+            //    options.MaxRequestBodySize = 100000000; // 50 MB, or set to any desired size
+            //});
 
-            builder.Services.Configure<KestrelServerOptions>(options =>
-            {
-                options.Limits.MaxRequestBodySize = 100000000; // 50 MB, or set to any desired size
-            });
+            //builder.Services.Configure<KestrelServerOptions>(options =>
+            //{
+            //    options.Limits.MaxRequestBodySize = 100000000; // 50 MB, or set to any desired size
+            //});
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
-            app.UseHttpsRedirection();
+            app.MapGet("/", () => "OK");
             app.UseAuthentication();
             app.UseAuthorization();
-
             app.MapControllers();
-
             app.Run();
         }
     }
