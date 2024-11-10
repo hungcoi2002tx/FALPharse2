@@ -353,6 +353,44 @@ namespace FAL.Controllers
             }
         }
 
+        [HttpPost("disassociate")]
+        public async Task<IActionResult> DisassociateByFaceIdAsync([FromBody] FaceTrainModel info)
+        {
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
+                //check faceId in dynamodb
+                var result = await _dynamoService.IsExistFaceIdAsync(systermId, info.FaceId);
+                if (result)
+                {
+                    return BadRequest(new ResultResponse
+                    {
+                        Status = false,
+                        Message = "FaceId is existed in systerm"
+                    });
+                }
+
+                //train
+                await DisassociateFaceIdAsync(info.UserId, info.FaceId, systermId);
+
+                //return 
+                return Ok(new ResultResponse
+                {
+                    Status = true,
+                    Message = "The disassociate was successful."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Internal Server Error"
+                });
+            }
+        }
+
         private async Task<bool> ValidateFileWithRekognitionAsync(IFormFile file)
         {
             try
@@ -406,6 +444,28 @@ namespace FAL.Controllers
                 #region Add user 
                 await _collectionService.AssociateFacesAsync(systermId, new List<string>() { faceId }, userId);
                 await _dynamoService.CreateUserInformationAsync(systermId, userId, faceId);
+                #endregion
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        private async Task DisassociateFaceIdAsync(string userId, string faceId, string systermId)
+        {
+            try
+            {
+                #region check exit UserId
+                var isUserExist = await _dynamoService.IsExistUserAsync(systermId, userId);
+                #endregion
+                if (!isUserExist)
+                {
+                    throw new InvalidOperationException("User does not exist, so face cannot be disassociated.");
+                }
+                #region Add user 
+                await _collectionService.DisassociatedFaceAsync(systermId, faceId, userId);
+                await _dynamoService.DeleteUserInformationAsync(systermId, userId, faceId);
                 #endregion
             }
             catch (Exception ex)

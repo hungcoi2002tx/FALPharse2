@@ -31,7 +31,7 @@ namespace FAL.Controllers
 
         [Authorize]
         [HttpPost("")]
-        public async Task<IActionResult> DetectAsync(IFormFile file)
+        public async Task<IActionResult> DetectAsync(IFormFile file,string mediaId)
         {
             try
             {
@@ -43,7 +43,7 @@ namespace FAL.Controllers
                 var bucketExists = await _s3Service.AddBudgetAsync(systermId);
                 if (!bucketExists) return NotFound($"Bucket {systermId} does not exist.");
                 var fileName = Guid.NewGuid().ToString();
-                var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging);
+                var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging,mediaId);
                 #endregion
                 return Ok(new ResultResponse
                 {
@@ -91,7 +91,7 @@ namespace FAL.Controllers
                 foreach (var file in files)
                 {
                     var fileName = Guid.NewGuid().ToString();
-                    var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging);
+                    var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging,fileName);
                 }
                 return Ok("Files uploaded successfully.");
             }
