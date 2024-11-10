@@ -514,5 +514,16 @@ namespace FAL.Services
             }
         }
 
+        public Task<DetectFacesResponse> DetectFaceByFileAsync(Image file)
+        {
+            try
+            {
+                return GetFaceDetectAsync(file);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
     }
 }
