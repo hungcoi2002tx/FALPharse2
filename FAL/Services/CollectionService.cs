@@ -1,4 +1,5 @@
-﻿using Amazon.Rekognition;
+﻿using Amazon.DynamoDBv2.Model;
+using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 using Amazon.Runtime.Internal.Util;
 using FAL.Services.IServices;
@@ -10,11 +11,14 @@ namespace FAL.Services
     public class CollectionService : ICollectionService
     {
         private readonly IAmazonRekognition _rekognitionClient;
+        private readonly IDynamoDBService _dynamoDBService;
         private readonly CustomLog _logger;
-        public CollectionService(IAmazonRekognition rekognitionClient, CustomLog logger)
+        public CollectionService(IAmazonRekognition rekognitionClient, CustomLog logger, IDynamoDBService dynamoDBService)
         {
             _rekognitionClient = rekognitionClient;
             _logger = logger;
+            _dynamoDBService = dynamoDBService;
+            _dynamoDBService = dynamoDBService;
         }
 
         public async Task<bool> CreateCollectionAsync(string systermId)
@@ -169,7 +173,7 @@ namespace FAL.Services
             {
                 throw new Exception(message: "S3 object does not exist.");
             }
-            catch (ResourceNotFoundException ex)
+            catch (Amazon.Rekognition.Model.ResourceNotFoundException ex)
             {
                 throw new Exception(message: "The resource specified in the request cannot be found.");
             }
@@ -430,7 +434,7 @@ namespace FAL.Services
             {
                 throw new Exception(message: "S3 object does not exist.");
             }
-            catch (ResourceNotFoundException ex)
+            catch (Amazon.Rekognition.Model.ResourceNotFoundException ex)
             {
                 throw new Exception(message: "The resource specified in the request cannot be found.");
             }
@@ -440,16 +444,75 @@ namespace FAL.Services
             }
         }
 
-        public Task<DetectFacesResponse> DetectFaceByFileAsync(Image file)
+        public async Task<bool> DeleteFromCollectionAsync(string userId, string systemId)
         {
             try
             {
-                return GetFaceDetectAsync(file);
+
+                // Step 1: Query DynamoDB to get face IDs associated with the userId
+                var faceIds = await _dynamoDBService.GetFaceIdsByUserIdAsync(userId,systemId);
+
+                // If there are no face IDs, delete the user record and return true
+                if (faceIds == null || !faceIds.Any())
+                {
+                    await _dynamoDBService.DeleteUserFromDynamoDbAsync(userId,systemId);
+                    await DeleteUserFromRekognitionCollectionAsync(systemId, userId);
+                    return true;
+                }
+                foreach(var face in faceIds)
+                {
+                    await DisassociatedFaceAsync(systemId, face, userId);
+                }
+                // Step 2: Delete faces from the Rekognition collection
+                var deleteFacesRequest = new DeleteFacesRequest
+                {
+                    CollectionId = systemId,
+                    FaceIds = faceIds
+                };
+
+                var deleteFacesResponse = await _rekognitionClient.DeleteFacesAsync(deleteFacesRequest);
+
+                // Step 3: Check if any faces were deleted
+                if (deleteFacesResponse.DeletedFaces.Any())
+                {
+                    // Step 4: Delete the user from DynamoDB
+                    await _dynamoDBService.DeleteUserFromDynamoDbAsync(userId, systemId);
+
+                    await DeleteUserFromRekognitionCollectionAsync(systemId, userId);
+                    return true;
+                }
+
+                // If no faces were deleted, return false
+                return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                Console.WriteLine($"Error deleting faces for userId {userId}: {ex.Message}");
+                return false;
             }
         }
+
+        private async Task DeleteUserFromRekognitionCollectionAsync(string systemId, string userId)
+        {
+            try
+            {
+                // Call AWS Rekognition to delete the user from the collection
+                var deleteUserRequest = new DeleteUserRequest
+                {
+                    CollectionId = systemId,
+                    UserId = userId
+                    
+                };
+
+                var deleteCollectionResponse = await _rekognitionClient.DeleteUserAsync(deleteUserRequest);
+
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting user from Rekognition collection: {userId}. Error: {ex.Message}");
+            }
+        }
+
     }
 }

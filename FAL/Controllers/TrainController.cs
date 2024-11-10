@@ -1,6 +1,7 @@
 ﻿using Amazon.Rekognition.Model;
 using Amazon.Runtime;
 using Amazon.S3;
+using FAL.Services;
 using FAL.Services.IServices;
 using FAL.Utils;
 using Microsoft.AspNetCore.Authorization;
@@ -46,6 +47,33 @@ namespace FAL.Controllers
             {
                 var result = await _collectionService.DeleteByUserIdAsync(userId, SystermId);
                 if (result) return Ok(new { Status = true });
+                return BadRequest(new { Status = false });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Internal Server Error"
+                });
+            }
+        }
+
+        [Authorize]
+        [HttpDelete("Reset")]
+        public async Task<IActionResult> ResetByUserId([FromBody] string userId)
+        {
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
+                // Step 1: Delete user from SQL collection
+                var collectionDeleted = await _collectionService.DeleteFromCollectionAsync(userId, systermId);
+
+                // Check if both deletions were successful
+                if (collectionDeleted)
+                    return Ok(new { Status = true });
+
                 return BadRequest(new { Status = false });
             }
             catch (Exception ex)

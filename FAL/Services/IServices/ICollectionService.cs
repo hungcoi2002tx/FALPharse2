@@ -20,5 +20,6 @@ namespace FAL.Services.IServices
         Task<List<Face>> GetFacesAsync(string systermId);
         Task<List<string>> GetCollectionAsync(string systermId);
         Task<bool> CreateCollectionByIdAsync(string collectionId);
+        Task<bool> DeleteFromCollectionAsync(string userId, string systermId);
     }
 }
