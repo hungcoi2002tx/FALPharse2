@@ -178,5 +178,81 @@ namespace FAL.Services
             }
         }
 
+        Task IDynamoDBService.DeleteUserInformationAsync(string systermId, string userId, string faceId)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<List<string>> GetFaceIdsByUserIdAsync(string userId, string systemId)
+        {
+            var request = new QueryRequest
+            {
+                TableName = systemId,
+                KeyConditionExpression = "UserId = :userId",
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+        {
+            { ":userId", new AttributeValue { S = userId } }
+        }
+            };
+
+            var response = await _dynamoDBService.QueryAsync(request);
+            return response.Items.Select(item => item["FaceId"].S).ToList();
+        }
+
+        public async Task DeleteUserFromDynamoDbAsync(string userId, string systemId)
+        {
+            try
+            {
+                // Step 1: Scan for all items with the given UserId
+                var scanRequest = new ScanRequest
+                {
+                    TableName = systemId,
+                    FilterExpression = "UserId = :userId",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                { ":userId", new AttributeValue { S = userId } }
+            }
+                };
+
+                var scanResponse = await _dynamoDBService.ScanAsync(scanRequest);
+
+                // Step 2: Delete each item found in the scan
+                foreach (var item in scanResponse.Items)
+                {
+                    // Assuming 'FaceId' is the sort key in the schema
+                    var faceId = item.ContainsKey("FaceId") ? item["FaceId"].S : null;
+
+                    if (faceId == null)
+                    {
+                        Console.WriteLine($"No FaceId found for UserId {userId}. Skipping item.");
+                        continue; // Skip this item if FaceId is not available
+                    }
+
+                    var deleteRequest = new DeleteItemRequest
+                    {
+                        TableName = systemId,
+                        Key = new Dictionary<string, AttributeValue>
+                {
+                    { "UserId", new AttributeValue { S = userId } }, // Partition key
+                    { "FaceId", new AttributeValue { S = faceId } }  // Sort key
+                }
+                    };
+
+                    // Delete the item
+                    await _dynamoDBService.DeleteItemAsync(deleteRequest);
+                }
+            }
+            catch (AmazonDynamoDBException dbEx)
+            {
+                // Handle DynamoDB-specific exceptions
+                Console.WriteLine($"DynamoDB error occurred: {dbEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                // Handle other types of exceptions
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+        }
+
+
     }
 }
