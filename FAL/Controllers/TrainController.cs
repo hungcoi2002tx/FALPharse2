@@ -1,4 +1,5 @@
 ﻿using Amazon.Rekognition.Model;
+using Amazon.Runtime;
 using Amazon.S3;
 using FAL.Services.IServices;
 using FAL.Utils;
@@ -6,7 +7,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Share.Data;
+using Share.DTO;
 using Share.SystemModel;
 using System.IO.Compression;
 using System.Reflection;
@@ -37,7 +40,7 @@ namespace FAL.Controllers
 
         [Authorize]
         [HttpDelete("delete")]
-        public async Task<IActionResult> DeleteByUserIdAsync([FromBody]string userId)
+        public async Task<IActionResult> DeleteByUserIdAsync([FromBody] string userId)
         {
             try
             {
@@ -189,7 +192,7 @@ namespace FAL.Controllers
                     Message = "The system training was successful."
                 });
             }
-            catch(ArgumentException ex)
+            catch (ArgumentException ex)
             {
                 _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
                 return StatusCode(400, new ResultResponse
@@ -209,8 +212,111 @@ namespace FAL.Controllers
             }
         }
 
+        [HttpPost("url")]
+        public async Task<IActionResult> TrainByUrlAsync([FromBody] TrainModel model)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(model.Data) || string.IsNullOrEmpty(model.UserId))
+                {
+                    throw new ArgumentException(message: "Image URL and User ID cannot be null or empty.");
+                }
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId)?.Value;
+                if(systermId == null)
+                {
+                    throw new ArgumentException(message: "Not exist system");
+                }
+                byte[] imageBytes = await DownloadImageAsync(model.Data);
+                if (! await CheckValidImageByByte(imageBytes))
+                {
+                    throw new ArgumentException(message: "Invalid image format or size or many face.");
+                }
+
+                using (var imageStream = new MemoryStream(imageBytes))
+                {
+                    await TrainAsync(new Image { Bytes = imageStream }, model.UserId, systermId);
+                }
+
+                return Ok(new ResultResponse
+                {
+                    Status = true,
+                    Message = "The system training was successful."
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return BadRequest(new ResultResponse
+                {
+                    Status = false,
+                    Message = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(500, new ResultResponse
+                {
+                    Status = false,
+                    Message = "Internal Server Error"
+                });
+            }
+        }
+
+        async Task<bool> CheckValidImageByByte(byte[] imageBytes)
+        {
+            try
+            {
+                return imageBytes.Length != 0 && imageBytes.Length > 15 * 1024 * 1024 && (imageBytes.IsJpeg() || imageBytes.IsPng()) && await CheckValidImageByByte(imageBytes);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+
+        async Task<bool> CheckValidImageByRecognition(byte[] imageBytes)
+        {
+            try
+            {
+                Image image;
+                using (var imageStream = new MemoryStream(imageBytes))
+                {
+                    image = new Image() { Bytes = imageStream };
+                }
+                var response = await _collectionService.DetectFaceByFileAsync(image);
+                if (response.FaceDetails.Count != 1)
+                {
+                    throw new ArgumentException(message: "File ảnh yêu cầu duy nhất 1 mặt");
+                }
+                return true;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        async Task<byte[]> DownloadImageAsync(string url)
+        {
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    return await httpClient.GetByteArrayAsync(url);
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         [HttpPost("faceId")]
-        public async Task<IActionResult> TrainByFaceIdAsync([FromBody] FaceTrainModel info )
+        public async Task<IActionResult> TrainByFaceIdAsync([FromBody] FaceTrainModel info)
         {
             try
             {
@@ -316,7 +422,7 @@ namespace FAL.Controllers
                 #region index face
                 var indexResponse = await _collectionService.IndexFaceByFileAsync(file, systermId, userId);
                 #endregion
-                await TrainFaceIdAsync(userId, indexResponse.FaceRecords[0].Face.FaceId,systermId);
+                await TrainFaceIdAsync(userId, indexResponse.FaceRecords[0].Face.FaceId, systermId);
             }
             catch (Exception ex)
             {

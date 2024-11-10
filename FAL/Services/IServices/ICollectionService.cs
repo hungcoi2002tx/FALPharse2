@@ -12,6 +12,7 @@ namespace FAL.Services.IServices
         Task<IndexFacesResponse> IndexFaceAsync(string systermId, string bucketName, string imageName, string key = null);
         Task<IndexFacesResponse> IndexFaceByFileAsync(Image file, string systermId, string key = null);
         Task<DetectFacesResponse> DetectFaceByFileAsync(IFormFile file);
+        Task<DetectFacesResponse> DetectFaceByFileAsync(Image file);
         Task<bool> AssociateFacesAsync(string systermId, List<string> faceIds, string key);
         Task<bool> IsUserExistByUserIdAsync(string systermId, string userId);
         Task<bool> CreateNewUserAsync(string systermId, string userId);
