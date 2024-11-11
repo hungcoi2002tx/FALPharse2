@@ -204,7 +204,34 @@ namespace FAL.Controllers
             return types.ContainsKey(ext) ? types[ext] : "application/octet-stream";
         }
 
-        [HttpPost("file")]
+        [HttpPost("/Check/IsTrained")]
+        public async Task<IActionResult> CheckIsTrained(string userId)
+        {
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
+                var response = await _dynamoService.GetFaceIdsByUserIdAsync(userId, systermId);
+                //return 
+                return Ok(new ResultIsTrainedModel
+                {
+                    Status = true,
+                    IsTrained = response.Count > 0,
+                    Message = "The system training was successful."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(500, new ResultIsTrainedModel
+                {
+                    Status = false,
+                    IsTrained= false,
+                    Message = "Internal Server Error"
+                });
+            }
+        }
+
+            [HttpPost("file")]
         public async Task<IActionResult> TrainByImageAsync(IFormFile file, string userId)
         {
             try

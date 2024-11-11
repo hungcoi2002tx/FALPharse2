@@ -490,6 +490,30 @@ public class Function
     }
     private async Task<AssociateFacesResponse> AssociateUser(string userId, string faceId, string collectionName)
     {
+        var logger = new CloudWatchLogger(); // Initialize your custom CloudWatchLogger
+        
+        var listFaceIDs = await GetFaceIdsByUserIdAsync(userId, collectionName);
+        var existingFaceId = await GetFaceIdForUserAndFaceAsync(userId, faceId, collectionName);
+        await logger.LogMessageAsync($"Existing face id : {existingFaceId}");
+        if (listFaceIDs.Count >= 100 && existingFaceId == null)
+        {
+            await logger.LogMessageAsync($"More than 100");
+            // Get the oldest face record
+            var oldestFaceId = await GetOldestFaceIdForUserAsync(userId, collectionName);
+
+            // Disassociate and delete the oldest face
+            await DisassociateAndDeleteOldestFaceAsync(userId, oldestFaceId, collectionName);
+        }
+        else if(faceId.CompareTo(existingFaceId) == 0)
+        {
+            await logger.LogMessageAsync($"Trung mat : {faceId}");
+            return new AssociateFacesResponse
+            {
+                HttpStatusCode = System.Net.HttpStatusCode.OK,
+                // Optional: You can set other fields as needed
+            };
+        }
+
         var response = await _rekognitionClient.AssociateFacesAsync(new AssociateFacesRequest
         {
             CollectionId = collectionName,
@@ -499,13 +523,33 @@ public class Function
             UserId = userId,
             UserMatchThreshold = (float)ConfidenceLevel.High,
         });
-
         return response;
+    }
+
+    private async Task<string> GetFaceIdForUserAndFaceAsync(string userId, string faceId, string tableName)
+    {
+        var queryRequest = new QueryRequest
+        {
+            TableName = tableName,
+            KeyConditionExpression = "UserId = :userId and FaceId = :faceId",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+        {
+            { ":userId", new AttributeValue { S = userId } },
+            { ":faceId", new AttributeValue { S = faceId } }
+        }
+        };
+
+        var queryResponse = await _dynamoDbClient.QueryAsync(queryRequest);
+
+        // If the faceId exists, return the FaceId, otherwise return null
+        return queryResponse.Items.Count > 0 ? queryResponse.Items.First()["FaceId"].S : null;
     }
     private async Task AssociateUser(List<(string, string, string)> userFaceIds, string collectionName)
     {
+
         foreach (var (userId, faceId, imageId) in userFaceIds)
         {
+            
             var response = await _rekognitionClient.AssociateFacesAsync(new AssociateFacesRequest
             {
                 CollectionId = collectionName,
@@ -516,6 +560,95 @@ public class Function
                 UserMatchThreshold = (float)ConfidenceLevel.High,
             });
         }
+    }
+
+    private async Task DisassociateAndDeleteOldestFaceAsync(string userId, string faceId, string collectionName)
+    {
+        // Disassociate the oldest face from Rekognition
+        await _rekognitionClient.DisassociateFacesAsync(new DisassociateFacesRequest
+        {
+            CollectionId = collectionName,
+            FaceIds = new List<string> { faceId },
+            UserId = userId
+        });
+
+        // Delete the oldest face record from DynamoDB
+        await _dynamoDbClient.DeleteItemAsync(new DeleteItemRequest
+        {
+            TableName = collectionName,
+            Key = new Dictionary<string, AttributeValue>
+        {
+            { "UserId", new AttributeValue { S = userId } },
+            { "FaceId", new AttributeValue { S = faceId } }
+        }
+        });
+    }
+
+    private async Task<string> GetOldestFaceIdForUserAsync(string userId, string tableName)
+    {
+        var logger = new CloudWatchLogger(); // Initialize your custom CloudWatchLogger
+        await logger.LogMessageAsync($"Starting GetOldestFaceIdForUserAsync for UserId: {userId} in Table: {tableName}");
+
+        var queryRequest = new QueryRequest
+        {
+            TableName = tableName,
+            KeyConditionExpression = "UserId = :userId",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+        {
+            { ":userId", new AttributeValue { S = userId } }
+        }
+        };
+
+        try
+        {
+            // Log the query request before executing
+            await logger.LogMessageAsync($"Querying DynamoDB for UserId: {userId}");
+
+            var queryResponse = await _dynamoDbClient.QueryAsync(queryRequest);
+
+            // Log the query result
+            await logger.LogMessageAsync($"Query successful. Retrieved {queryResponse.Items.Count} items for UserId: {userId}");
+
+            // Check if no items were found
+            if (queryResponse.Items.Count == 0)
+            {
+                await logger.LogMessageAsync($"No items found for UserId: {userId}");
+                return null;
+            }
+
+            // Sort items by CreatedDate in ascending order and get the oldest one
+            var oldestItem = queryResponse.Items
+            .OrderBy(item => DateTime.Parse(item["CreatedDate"].S)) // Sort by CreatedDate
+            .FirstOrDefault();
+
+            // Log the oldest FaceId found
+            var oldestFaceId = oldestItem?["FaceId"].S;
+            await logger.LogMessageAsync($"Oldest FaceId found: {oldestFaceId}");
+
+            return oldestFaceId;
+        }
+        catch (Exception ex)
+        {
+            // Log any exceptions that occur
+            await logger.LogMessageAsync($"Error occurred while retrieving the oldest face ID: {ex.Message}");
+            throw; // Re-throw the exception after logging it
+        }
+    }
+
+    private async Task<List<string>> GetFaceIdsByUserIdAsync(string userId, string systemId)
+    {
+        var request = new QueryRequest
+        {
+            TableName = systemId,
+            KeyConditionExpression = "UserId = :userId",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+        {
+            { ":userId", new AttributeValue { S = userId } }
+        }
+        };
+
+        var response = await _dynamoDbClient.QueryAsync(request);
+        return response.Items.Select(item => item["FaceId"].S).ToList();
     }
     private async Task<IndexFacesResponse> IndexFaces(string bucket, string key, string collectionName)
     {

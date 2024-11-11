@@ -11,5 +11,8 @@ namespace FAL.Services.IServices
         Task DeleteUserInformationAsync(string systermId, string userId, string faceId);
         Task<List<string>> GetFaceIdsByUserIdAsync(string userId, string systemId);
         Task DeleteUserFromDynamoDbAsync(string userId, string systemId);
+        Task<string?> GetFaceIdForUserAndFaceAsync(string userId, string faceId, string collectionName);
+        Task<string> GetOldestFaceIdForUserAsync(string userId, string collectionName);
+        Task DeleteItem(string userId, string faceId, string collectionName);
     }
 }
