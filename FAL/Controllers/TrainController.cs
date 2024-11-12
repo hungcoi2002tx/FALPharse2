@@ -285,7 +285,15 @@ namespace FAL.Controllers
                 {
                     throw new ArgumentException(message: "Not exist system");
                 }
-                byte[] imageBytes =  DownloadImageAsync(model.Data);
+                byte[] imageBytes = null;
+                try
+                {
+                    imageBytes = DownloadImageAsync(model.Data); // Await the asynchronous method
+                    if (imageBytes == null || imageBytes.Length == 0)
+                    {
+                        throw new ArgumentException("Downloaded image is empty or null.");
+                    }
+                }
                 if (! await CheckValidImageByByte(imageBytes))
                 {
                     throw new ArgumentException(message: "Invalid image format or size or many face.");
