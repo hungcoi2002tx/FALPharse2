@@ -405,19 +405,19 @@ namespace FAL.Controllers
                     string extImg = urlAvatar.Substring(lastIndImg);
                     var localAvatar = "HL" + "." + "HE170642" + extImg;
 
-                    var dir = Directory.GetCurrentDirectory();
-                    string fullFolderPath = Path.Combine(_environment.ContentRootPath, "UploadedFiles");
-                    string fullFilePath = Path.Combine(fullFolderPath, localAvatar);
-                    if (!System.IO.Directory.Exists(fullFolderPath))
-                    {
-                        System.IO.Directory.CreateDirectory(fullFolderPath);
-                    }
-                    if (!System.IO.File.Exists(fullFilePath))
-                    {
-                        return GetFileFromUrl(fullFilePath, urlAvatar);
-                    }
+                    //var dir = Directory.GetCurrentDirectory();
+                    //string fullFolderPath = Path.Combine(_environment.ContentRootPath, "UploadedFiles");
+                    //string fullFilePath = Path.Combine(fullFolderPath, localAvatar);
+                    //if (!System.IO.Directory.Exists(fullFolderPath))
+                    //{
+                    //    System.IO.Directory.CreateDirectory(fullFolderPath);
+                    //}
+                    //if (!System.IO.File.Exists(fullFilePath))
+                    //{
+                       
+                    //}
+                    return GetFileFromUrl("", urlAvatar);
 
-                    
                 }
                 //using (var httpClient = new HttpClient())
                 //{
