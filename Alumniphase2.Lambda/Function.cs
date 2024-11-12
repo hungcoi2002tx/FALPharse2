@@ -618,7 +618,7 @@ public class Function
 
             // Sort items by CreatedDate in ascending order and get the oldest one
             var oldestItem = queryResponse.Items
-            .OrderBy(item => DateTime.Parse(item["CreatedDate"].S)) // Sort by CreatedDate
+            .OrderBy(item => DateTime.Parse(item["CreateDate"].S)) // Sort by CreatedDate
             .FirstOrDefault();
 
             // Log the oldest FaceId found

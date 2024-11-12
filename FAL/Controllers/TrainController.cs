@@ -6,6 +6,7 @@ using FAL.Services.IServices;
 using FAL.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -13,6 +14,7 @@ using Share.Data;
 using Share.DTO;
 using Share.SystemModel;
 using System.IO.Compression;
+using System.Net;
 using System.Reflection;
 
 namespace FAL.Controllers
@@ -24,6 +26,7 @@ namespace FAL.Controllers
         private readonly IS3Service _s3Service;
         private readonly ICollectionService _collectionService;
         private readonly IDynamoDBService _dynamoService;
+        private readonly IWebHostEnvironment _environment;
         private readonly CustomLog _logger;
         private readonly string SystermId = GlobalVarians.SystermId;
 
@@ -31,12 +34,13 @@ namespace FAL.Controllers
             CustomLog logger,
             ICollectionService collectionService,
             IS3Service s3Service, IDynamoDBService
-            dynamoService)
+            dynamoService, IWebHostEnvironment environment)
         {
             _logger = logger;
             _collectionService = collectionService;
             _s3Service = s3Service;
             _dynamoService = dynamoService;
+            _environment = environment;
         }
 
         [Authorize]
@@ -281,7 +285,7 @@ namespace FAL.Controllers
                 {
                     throw new ArgumentException(message: "Not exist system");
                 }
-                byte[] imageBytes = await DownloadImageAsync(model.Data);
+                byte[] imageBytes =  DownloadImageAsync(model.Data);
                 if (! await CheckValidImageByByte(imageBytes))
                 {
                     throw new ArgumentException(message: "Invalid image format or size or many face.");
@@ -355,20 +359,71 @@ namespace FAL.Controllers
             }
         }
 
-        async Task<byte[]> DownloadImageAsync(string url)
+         byte[] DownloadImageAsync(string urlAvatar)
         {
             try
             {
-                using (var httpClient = new HttpClient())
+
+                if (!string.IsNullOrEmpty(urlAvatar))
                 {
-                    return await httpClient.GetByteArrayAsync(url);
+                    int lastIndImg = urlAvatar.LastIndexOf(".");
+                    string extImg = urlAvatar.Substring(lastIndImg);
+                    var localAvatar = "HL" + "." + "HE170642" + extImg;
+
+                    var dir = Directory.GetCurrentDirectory();
+                    string fullFolderPath = Path.Combine(_environment.ContentRootPath, "UploadedFiles");
+                    string fullFilePath = Path.Combine(fullFolderPath, localAvatar);
+                    if (!System.IO.Directory.Exists(fullFolderPath))
+                    {
+                        System.IO.Directory.CreateDirectory(fullFolderPath);
+                    }
+                    if (!System.IO.File.Exists(fullFilePath))
+                    {
+                        return GetFileFromUrl(fullFilePath, urlAvatar);
+                    }
+
+                    
                 }
+                //using (var httpClient = new HttpClient())
+                //{
+                //    return await httpClient.GetByteArrayAsync(url);
+                //}
+                return Array.Empty<byte>();
             }
             catch (Exception)
             {
                 throw;
             }
         }
+
+        byte[] GetFileFromUrl(string fileName, string url)
+        {
+            byte[] content;
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            WebResponse response = request.GetResponse();
+
+            Stream stream = response.GetResponseStream();
+            using (BinaryReader reader = new BinaryReader(stream))
+            {
+                content = reader.ReadBytes(500000);
+                reader.Close();
+            }
+            response.Close();
+            FileStream fs = new FileStream(fileName, FileMode.Create);
+            BinaryWriter bw = new BinaryWriter(fs);
+            try
+            {
+                bw.Write(content);
+                return content;
+            }
+            finally
+            {
+                bw.Close();
+                fs.Close();
+            }
+        }
+
+
 
         [HttpPost("faceId")]
         public async Task<IActionResult> TrainByFaceIdAsync([FromBody] FaceTrainModel info)
