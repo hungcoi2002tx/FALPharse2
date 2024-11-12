@@ -294,13 +294,31 @@ namespace FAL.Controllers
                         throw new ArgumentException("Downloaded image is empty or null.");
                     }
                 }
-                catch (Exception ex)
+                catch (HttpRequestException httpEx)
                 {
-                    
+                    // Check for specific HTTP status code (Forbidden 403)
+                    if (httpEx.Message.Contains("403"))
+                    {
+                        return BadRequest(new ResultResponse
+                        {
+                            Status = false,
+                            Message = $"Access to the image URL is forbidden (HTTP 403). Please check the URL permissions : {httpEx.Message}"
+                        });
+                    }
+                    // Log the HttpRequestException in case of network issues
                     return BadRequest(new ResultResponse
                     {
                         Status = false,
-                        Message = "Failed to download image. Please check the image URL and try again."
+                        Message = $"Failed to download image. Please check the image URL and try again: {httpEx.Message}"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    // Catch other exceptions
+                    return BadRequest(new ResultResponse
+                    {
+                        Status = false,
+                        Message = $"An error occurred while processing the image: {ex.Message}"
                     });
                 }
                 if (! await CheckValidImageByByte(imageBytes))
