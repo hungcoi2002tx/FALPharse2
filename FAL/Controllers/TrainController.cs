@@ -288,11 +288,20 @@ namespace FAL.Controllers
                 byte[] imageBytes = null;
                 try
                 {
-                    imageBytes = DownloadImageAsync(model.Data); // Await the asynchronous method
+                    imageBytes =  DownloadImageAsync(model.Data); // Await the asynchronous method
                     if (imageBytes == null || imageBytes.Length == 0)
                     {
                         throw new ArgumentException("Downloaded image is empty or null.");
                     }
+                }
+                catch (Exception ex)
+                {
+                    
+                    return BadRequest(new ResultResponse
+                    {
+                        Status = false,
+                        Message = "Failed to download image. Please check the image URL and try again."
+                    });
                 }
                 if (! await CheckValidImageByByte(imageBytes))
                 {
