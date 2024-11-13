@@ -540,7 +540,7 @@ namespace FAL.Services
             }
         }
 
-        private async Task DeleteUserFromRekognitionCollectionAsync(string systemId, string userId)
+        public async Task DeleteUserFromRekognitionCollectionAsync(string systemId, string userId)
         {
             try
             {

@@ -66,13 +66,13 @@ namespace FAL.Controllers
 
         [Authorize]
         [HttpDelete("Reset")]
-        public async Task<IActionResult> ResetByUserId([FromBody] string userId)
+        public async Task<IActionResult> ResetByUserId([FromBody] UserIdRequest userId)
         {
             try
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 // Step 1: Delete user from SQL collection
-                var collectionDeleted = await _collectionService.DeleteFromCollectionAsync(userId, systermId);
+                var collectionDeleted = await _collectionService.DeleteFromCollectionAsync(userId.UserId, systermId);
 
                 // Check if both deletions were successful
                 if (collectionDeleted)
@@ -610,6 +610,7 @@ namespace FAL.Controllers
                 }
                 #region Add user 
                 await _collectionService.DisassociatedFaceAsync(systermId, faceId, userId);
+                await _collectionService.DeleteUserFromRekognitionCollectionAsync(systermId, userId);
                 await _dynamoService.DeleteUserInformationAsync(systermId, userId, faceId);
                 #endregion
             }
