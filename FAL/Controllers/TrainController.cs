@@ -506,12 +506,12 @@ namespace FAL.Controllers
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 //check faceId in dynamodb
                 var result = await _dynamoService.IsExistFaceIdAsync(systermId, info.FaceId);
-                if (result)
+                if (!result)
                 {
                     return BadRequest(new ResultResponse
                     {
                         Status = false,
-                        Message = "FaceId is existed in systerm"
+                        Message = "FaceId is not existed in systerm"
                     });
                 }
 

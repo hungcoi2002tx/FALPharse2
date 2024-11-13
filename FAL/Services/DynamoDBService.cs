@@ -177,11 +177,6 @@ namespace FAL.Services
                 throw;
             }
         }
-
-        Task IDynamoDBService.DeleteUserInformationAsync(string systermId, string userId, string faceId)
-        {
-            throw new NotImplementedException();
-        }
         public async Task<List<string>> GetFaceIdsByUserIdAsync(string userId, string systemId)
         {
             var request = new QueryRequest
