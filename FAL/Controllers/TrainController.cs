@@ -610,7 +610,12 @@ namespace FAL.Controllers
                 }
                 #region Add user 
                 await _collectionService.DisassociatedFaceAsync(systermId, faceId, userId);
-                await _collectionService.DeleteUserFromRekognitionCollectionAsync(systermId, userId);
+                var response = await _dynamoService.GetFaceIdsByUserIdAsync(userId, systermId);
+                if (response.Count == 0)
+                {
+                    await _collectionService.DeleteUserFromRekognitionCollectionAsync(systermId, userId);
+                }
+                
                 await _dynamoService.DeleteUserInformationAsync(systermId, userId, faceId);
                 #endregion
             }
