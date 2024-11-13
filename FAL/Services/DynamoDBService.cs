@@ -27,7 +27,7 @@ namespace FAL.Services
                         {
                             nameof(FaceInformation.UserId), new AttributeValue
                             {
-                                S = userId
+                                S = userId.ToLower()
                             }
                         },
                         {
@@ -92,7 +92,7 @@ namespace FAL.Services
                     KeyConditionExpression = "UserId = :v_userId",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
                         {
-                            { ":v_userId", new AttributeValue { S = userId } }
+                            { ":v_userId", new AttributeValue { S = userId.ToLower() } }
                         },
                     Limit = 1
                 };
