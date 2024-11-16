@@ -241,28 +241,76 @@ namespace FAL.Services
         }
 
 
-        public async Task<bool> AssociateFacesAsync(string systermId, List<string> faceIds, string key)
+        public async Task<bool> AssociateFacesAsync(string systemId, List<string> faceIds, string key)
         {
             try
             {
-                var associateRequest = new AssociateFacesRequest()
+                // Iterate through each faceId
+                foreach (var faceId in faceIds)
                 {
-                    CollectionId = systermId,
-                    UserId = key,
-                    FaceIds = faceIds
-                };
-                var response = await _rekognitionClient.AssociateFacesAsync(associateRequest);
-                if (response.HttpStatusCode == System.Net.HttpStatusCode.BadRequest)
-                {
-                    throw new Exception(message: $"Accociate request fail");
+
+                    var response = await AssociateUser(key,faceId,systemId);
+
+                    // Check the response status code
+                    if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+                    {
+                        throw new Exception($"Associate request failed for faceId: {faceId}");
+                    }
                 }
+
+                // Return true if all associations are successful
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                // Log the exception (optional) and rethrow it
+                throw new Exception("An error occurred while associating faces.", ex);
             }
         }
+
+        private async Task<AssociateFacesResponse> AssociateUser(string userId, string faceId, string collectionName)
+        {
+            var listFaceIDs = await _dynamoDBService.GetFaceIdsByUserIdAsync(userId, collectionName);
+            var existingFaceId = await _dynamoDBService.GetFaceIdForUserAndFaceAsync(userId, faceId, collectionName);
+            if (listFaceIDs.Count >= 100 && existingFaceId == null)
+            {
+                // Get the oldest face record
+                var oldestFaceId = await _dynamoDBService.GetOldestFaceIdForUserAsync(userId, collectionName);
+
+                // Disassociate and delete the oldest face
+                await DisassociateAndDeleteOldestFaceAsync(userId, oldestFaceId, collectionName);
+            }
+            else if (faceId.CompareTo(existingFaceId) == 0)
+            {
+                return new AssociateFacesResponse
+                {
+                    HttpStatusCode = System.Net.HttpStatusCode.OK,
+                    // Optional: You can set other fields as needed
+                };
+            }
+
+            var response = await _rekognitionClient.AssociateFacesAsync(new AssociateFacesRequest
+            {
+                CollectionId = collectionName,
+                FaceIds = new List<string> {
+                faceId
+            },
+                UserId = userId,
+                UserMatchThreshold = 80F,
+            });
+            return response;
+        }
+
+        private async Task DisassociateAndDeleteOldestFaceAsync(string userId, string faceId, string collectionName)
+        {
+            // Disassociate the oldest face from Rekognition
+            await DisassociatedFaceAsync(collectionName,faceId, userId);
+
+            // Delete the oldest face record from DynamoDB
+            await _dynamoDBService.DeleteItem(userId,faceId,collectionName);
+        }
+
+        
 
         public async Task<bool> IsUserExistByUserIdAsync(string systermId, string userId)
         {
@@ -492,7 +540,7 @@ namespace FAL.Services
             }
         }
 
-        private async Task DeleteUserFromRekognitionCollectionAsync(string systemId, string userId)
+        public async Task DeleteUserFromRekognitionCollectionAsync(string systemId, string userId)
         {
             try
             {

@@ -6,6 +6,7 @@ using FAL.Services.IServices;
 using FAL.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -13,6 +14,7 @@ using Share.Data;
 using Share.DTO;
 using Share.SystemModel;
 using System.IO.Compression;
+using System.Net;
 using System.Reflection;
 
 namespace FAL.Controllers
@@ -24,6 +26,7 @@ namespace FAL.Controllers
         private readonly IS3Service _s3Service;
         private readonly ICollectionService _collectionService;
         private readonly IDynamoDBService _dynamoService;
+        private readonly IWebHostEnvironment _environment;
         private readonly CustomLog _logger;
         private readonly string SystermId = GlobalVarians.SystermId;
 
@@ -31,12 +34,13 @@ namespace FAL.Controllers
             CustomLog logger,
             ICollectionService collectionService,
             IS3Service s3Service, IDynamoDBService
-            dynamoService)
+            dynamoService, IWebHostEnvironment environment)
         {
             _logger = logger;
             _collectionService = collectionService;
             _s3Service = s3Service;
             _dynamoService = dynamoService;
+            _environment = environment;
         }
 
         [Authorize]
@@ -62,13 +66,13 @@ namespace FAL.Controllers
 
         [Authorize]
         [HttpDelete("Reset")]
-        public async Task<IActionResult> ResetByUserId([FromBody] string userId)
+        public async Task<IActionResult> ResetByUserId([FromBody] UserIdRequest userId)
         {
             try
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 // Step 1: Delete user from SQL collection
-                var collectionDeleted = await _collectionService.DeleteFromCollectionAsync(userId, systermId);
+                var collectionDeleted = await _collectionService.DeleteFromCollectionAsync(userId.UserId, systermId);
 
                 // Check if both deletions were successful
                 if (collectionDeleted)
@@ -204,7 +208,34 @@ namespace FAL.Controllers
             return types.ContainsKey(ext) ? types[ext] : "application/octet-stream";
         }
 
-        [HttpPost("file")]
+        [HttpPost("/Check/IsTrained")]
+        public async Task<IActionResult> CheckIsTrained(string userId)
+        {
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
+                var response = await _dynamoService.GetFaceIdsByUserIdAsync(userId, systermId);
+                //return 
+                return Ok(new ResultIsTrainedModel
+                {
+                    Status = true,
+                    IsTrained = response.Count > 0,
+                    Message = "The system training was successful."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
+                return StatusCode(500, new ResultIsTrainedModel
+                {
+                    Status = false,
+                    IsTrained= false,
+                    Message = "Internal Server Error"
+                });
+            }
+        }
+
+            [HttpPost("file")]
         public async Task<IActionResult> TrainByImageAsync(IFormFile file, string userId)
         {
             try
@@ -254,7 +285,42 @@ namespace FAL.Controllers
                 {
                     throw new ArgumentException(message: "Not exist system");
                 }
-                byte[] imageBytes = await DownloadImageAsync(model.Data);
+                byte[] imageBytes = null;
+                try
+                {
+                    imageBytes =  DownloadImageAsync(model.Data); // Await the asynchronous method
+                    if (imageBytes == null || imageBytes.Length == 0)
+                    {
+                        throw new ArgumentException("Downloaded image is empty or null.");
+                    }
+                }
+                catch (HttpRequestException httpEx)
+                {
+                    // Check for specific HTTP status code (Forbidden 403)
+                    if (httpEx.Message.Contains("403"))
+                    {
+                        return BadRequest(new ResultResponse
+                        {
+                            Status = false,
+                            Message = $"Access to the image URL is forbidden (HTTP 403). Please check the URL permissions : {httpEx.Message}"
+                        });
+                    }
+                    // Log the HttpRequestException in case of network issues
+                    return BadRequest(new ResultResponse
+                    {
+                        Status = false,
+                        Message = $"Failed to download image. Please check the image URL and try again: {httpEx.Message}"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    // Catch other exceptions
+                    return BadRequest(new ResultResponse
+                    {
+                        Status = false,
+                        Message = $"An error occurred while processing the image: {ex.Message}"
+                    });
+                }
                 if (! await CheckValidImageByByte(imageBytes))
                 {
                     throw new ArgumentException(message: "Invalid image format or size or many face.");
@@ -328,20 +394,71 @@ namespace FAL.Controllers
             }
         }
 
-        async Task<byte[]> DownloadImageAsync(string url)
+         byte[] DownloadImageAsync(string urlAvatar)
         {
             try
             {
-                using (var httpClient = new HttpClient())
+
+                if (!string.IsNullOrEmpty(urlAvatar))
                 {
-                    return await httpClient.GetByteArrayAsync(url);
+                    int lastIndImg = urlAvatar.LastIndexOf(".");
+                    string extImg = urlAvatar.Substring(lastIndImg);
+                    var localAvatar = "HL" + "." + "HE170642" + extImg;
+
+                    //var dir = Directory.GetCurrentDirectory();
+                    //string fullFolderPath = Path.Combine(_environment.ContentRootPath, "UploadedFiles");
+                    //string fullFilePath = Path.Combine(fullFolderPath, localAvatar);
+                    //if (!System.IO.Directory.Exists(fullFolderPath))
+                    //{
+                    //    System.IO.Directory.CreateDirectory(fullFolderPath);
+                    //}
+                    //if (!System.IO.File.Exists(fullFilePath))
+                    //{
+                       
+                    //}
+                    return GetFileFromUrl("", urlAvatar);
+
                 }
+                //using (var httpClient = new HttpClient())
+                //{
+                //    return await httpClient.GetByteArrayAsync(url);
+                //}
+                return Array.Empty<byte>();
             }
             catch (Exception)
             {
                 throw;
             }
         }
+
+        byte[] GetFileFromUrl(string fileName, string url)
+        {
+            byte[] content;
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            WebResponse response = request.GetResponse();
+
+            Stream stream = response.GetResponseStream();
+            using (BinaryReader reader = new BinaryReader(stream))
+            {
+                content = reader.ReadBytes(500000);
+                reader.Close();
+            }
+            response.Close();
+            FileStream fs = new FileStream(fileName, FileMode.Create);
+            BinaryWriter bw = new BinaryWriter(fs);
+            try
+            {
+                bw.Write(content);
+                return content;
+            }
+            finally
+            {
+                bw.Close();
+                fs.Close();
+            }
+        }
+
+
 
         [HttpPost("faceId")]
         public async Task<IActionResult> TrainByFaceIdAsync([FromBody] FaceTrainModel info)
@@ -389,12 +506,12 @@ namespace FAL.Controllers
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 //check faceId in dynamodb
                 var result = await _dynamoService.IsExistFaceIdAsync(systermId, info.FaceId);
-                if (result)
+                if (!result)
                 {
                     return BadRequest(new ResultResponse
                     {
                         Status = false,
-                        Message = "FaceId is existed in systerm"
+                        Message = "FaceId is not existed in systerm"
                     });
                 }
 
@@ -494,6 +611,13 @@ namespace FAL.Controllers
                 #region Add user 
                 await _collectionService.DisassociatedFaceAsync(systermId, faceId, userId);
                 await _dynamoService.DeleteUserInformationAsync(systermId, userId, faceId);
+                var response = await _dynamoService.GetFaceIdsByUserIdAsync(userId, systermId);
+                if (response.Count == 0)
+                {
+                    await _collectionService.DeleteUserFromRekognitionCollectionAsync(systermId, userId);
+                }
+                
+                
                 #endregion
             }
             catch (Exception ex)

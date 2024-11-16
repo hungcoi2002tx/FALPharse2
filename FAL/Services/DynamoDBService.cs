@@ -27,7 +27,7 @@ namespace FAL.Services
                         {
                             nameof(FaceInformation.UserId), new AttributeValue
                             {
-                                S = userId
+                                S = userId.ToLower()
                             }
                         },
                         {
@@ -92,7 +92,7 @@ namespace FAL.Services
                     KeyConditionExpression = "UserId = :v_userId",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
                         {
-                            { ":v_userId", new AttributeValue { S = userId } }
+                            { ":v_userId", new AttributeValue { S = userId.ToLower() } }
                         },
                     Limit = 1
                 };
@@ -177,11 +177,6 @@ namespace FAL.Services
                 throw;
             }
         }
-
-        Task IDynamoDBService.DeleteUserInformationAsync(string systermId, string userId, string faceId)
-        {
-            throw new NotImplementedException();
-        }
         public async Task<List<string>> GetFaceIdsByUserIdAsync(string userId, string systemId)
         {
             var request = new QueryRequest
@@ -253,6 +248,76 @@ namespace FAL.Services
             }
         }
 
+        public async Task<string> GetFaceIdForUserAndFaceAsync(string userId, string faceId, string tableName)
+        {
+            var queryRequest = new QueryRequest
+            {
+                TableName = tableName,
+                KeyConditionExpression = "UserId = :userId and FaceId = :faceId",
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+        {
+            { ":userId", new AttributeValue { S = userId } },
+            { ":faceId", new AttributeValue { S = faceId } }
+        }
+            };
 
+            var queryResponse = await _dynamoDBService.QueryAsync(queryRequest);
+
+            // If the faceId exists, return the FaceId, otherwise return null
+            return queryResponse.Items.Count > 0 ? queryResponse.Items.First()["FaceId"].S : null;
+        }
+
+        public async Task<string> GetOldestFaceIdForUserAsync(string userId, string tableName)
+        {
+            var queryRequest = new QueryRequest
+            {
+                TableName = tableName,
+                KeyConditionExpression = "UserId = :userId",
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+        {
+            { ":userId", new AttributeValue { S = userId } }
+        }
+            };
+
+            try
+            {
+
+                var queryResponse = await _dynamoDBService.QueryAsync(queryRequest);
+
+
+                // Check if no items were found
+                if (queryResponse.Items.Count == 0)
+                {
+                    return null;
+                }
+
+                // Sort items by CreatedDate in ascending order and get the oldest one
+                var oldestItem = queryResponse.Items
+                .OrderBy(item => DateTime.Parse(item["CreateDate"].S)) // Sort by CreatedDate
+                .FirstOrDefault();
+
+                // Log the oldest FaceId found
+                var oldestFaceId = oldestItem?["FaceId"].S;
+
+                return oldestFaceId;
+            }
+            catch (Exception ex)
+            {
+                throw; // Re-throw the exception after logging it
+            }
+        }
+
+        public async Task DeleteItem(string userId, string faceId, string collectionName)
+        {
+            await _dynamoDBService.DeleteItemAsync(new DeleteItemRequest
+            {
+                TableName = collectionName,
+                Key = new Dictionary<string, AttributeValue>
+        {
+            { "UserId", new AttributeValue { S = userId } },
+            { "FaceId", new AttributeValue { S = faceId } }
+        }
+            });
+        }
     }
 }
