@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2.Model;
 using Amazon.Rekognition.Model;
 using FAL.Services.IServices;
 using Share.Data;
+using System.Text.Json;
 
 namespace FAL.Services
 {
@@ -318,6 +319,58 @@ namespace FAL.Services
             { "FaceId", new AttributeValue { S = faceId } }
         }
             });
+        }
+
+        public async Task<List<FaceDetectionResult>> GetWebhookResult(string systermId)
+        {
+            List<FaceDetectionResult> results = new List<FaceDetectionResult>();
+
+            try
+            {
+                // Define the scan request to get all items from the table
+                var scanRequest = new ScanRequest
+                {
+                    TableName = systermId
+                };
+
+                // Execute the scan
+                var scanResponse = await _dynamoDBService.ScanAsync(scanRequest);
+
+                foreach (var item in scanResponse.Items)
+                {
+                    try
+                    {
+                        if (item.TryGetValue("Data", out var dataAttribute))
+                        {
+                            // Deserialize the Data attribute into FaceDetectionResult
+                            FaceDetectionResult result = JsonSerializer.Deserialize<FaceDetectionResult>(dataAttribute.S);
+                            results.Add(result);
+                        }
+
+                        // Delete the item after processing
+                        var deleteRequest = new DeleteItemRequest
+                        {
+                            TableName = systermId,
+                            Key = new Dictionary<string, AttributeValue>
+                        {
+                            { "FileName", item["FileName"] }
+                        }
+                        };
+
+                        await _dynamoDBService.DeleteItemAsync(deleteRequest);
+                    }
+                    catch (Exception innerEx)
+                    {
+                        Console.WriteLine($"Error processing item with FileName: {item["FileName"]?.S}. Error: {innerEx.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error scanning table {systermId}. Error: {ex.Message}");
+            }
+
+            return results;
         }
     }
 }
