@@ -76,7 +76,7 @@ public class Function
                     result.Key = key;
                     var (webhookUrlImage, webhookSecretkeyImage) = await CreateResponseResult(bucket, result);
                     await SendResult(result, logger, webhookSecretkeyImage, webhookUrlImage);
-                    await StoreResponseResult(result, fileName);
+                    await StoreResponseResult(result, fileName, bucket);
                     break;
                 case (true):
                     result = await DetectVideoProcess(bucket, key, fileName);
@@ -87,7 +87,7 @@ public class Function
                     await logger.LogMessageAsync($"Add vao db {webhookUrlVideo}");
                     await logger.LogMessageAsync($"Add vao db {webhookSecretkeyVideo}");
                     await SendResult(result, logger, webhookSecretkeyVideo, webhookUrlVideo);
-                    await StoreResponseResult(result, fileName);
+                    await StoreResponseResult(result, fileName, bucket);
                     await logger.LogMessageAsync($"Add vao db {result.RegisteredFaces.Count}");
                     break;
             }
@@ -189,12 +189,26 @@ public class Function
     {
         return JsonConvert.SerializeObject(obj);
     }
-    private async Task StoreResponseResult(FaceDetectionResult result, string fileName)
+    private async Task StoreResponseResult(FaceDetectionResult result, string fileName,string systemName)
     {
         string jsonResult = ConvertToJson(result);
         var dictionaryResponseResult = CreateDictionaryFualumniResponeResult(fileName, jsonResult);
-        await CreateNewRecord(Utils.Constants.FUALUMNI_RESPONSE_RESULT_TABLE, dictionaryResponseResult);
+        await CreateNewRecord(GetDBResultBySystemName(systemName), dictionaryResponseResult);
     }
+
+    private string GetDBResultBySystemName(string systemName)
+    {
+        try
+        {
+            return systemName + "-result";
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
     private Dictionary<string, AttributeValue> CreateDictionaryFualumniResponeResult(string fileName, string data)
     {
         return new Dictionary<string, AttributeValue>
