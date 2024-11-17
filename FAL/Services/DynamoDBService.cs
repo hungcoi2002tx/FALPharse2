@@ -321,56 +321,51 @@ namespace FAL.Services
             });
         }
 
-        public async Task<List<FaceDetectionResult>> GetWebhookResult(string systermId)
+        public async Task<FaceDetectionResult> GetWebhookResult(string systermId, string mediaId)
         {
-            List<FaceDetectionResult> results = new List<FaceDetectionResult>();
+            FaceDetectionResult result = null;
 
             try
             {
-                // Define the scan request to get all items from the table
-                var scanRequest = new ScanRequest
+                // Define the query request to get the specific item by partition key (fileName)
+                var queryRequest = new QueryRequest
                 {
-                    TableName = systermId
+                    TableName = systermId,
+                    KeyConditionExpression = "FileName = :fileName",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                { ":fileName", new AttributeValue { S = mediaId.ToLower() } }
+            }
                 };
 
-                // Execute the scan
-                var scanResponse = await _dynamoDBService.ScanAsync(scanRequest);
+                // Execute the query
+                var queryResponse = await _dynamoDBService.QueryAsync(queryRequest);
 
-                foreach (var item in scanResponse.Items)
+                if (queryResponse.Items.Count > 0 && queryResponse.Items[0].TryGetValue("Data", out var dataAttribute))
                 {
-                    try
-                    {
-                        if (item.TryGetValue("Data", out var dataAttribute))
-                        {
-                            // Deserialize the Data attribute into FaceDetectionResult
-                            FaceDetectionResult result = JsonSerializer.Deserialize<FaceDetectionResult>(dataAttribute.S);
-                            results.Add(result);
-                        }
+                    // Deserialize the Data attribute into FaceDetectionResult
+                    result = JsonSerializer.Deserialize<FaceDetectionResult>(dataAttribute.S);
 
-                        // Delete the item after processing
-                        var deleteRequest = new DeleteItemRequest
-                        {
-                            TableName = systermId,
-                            Key = new Dictionary<string, AttributeValue>
-                        {
-                            { "FileName", item["FileName"] }
-                        }
-                        };
-
-                        await _dynamoDBService.DeleteItemAsync(deleteRequest);
-                    }
-                    catch (Exception innerEx)
+                    // Delete the item after processing
+                    var deleteRequest = new DeleteItemRequest
                     {
-                        Console.WriteLine($"Error processing item with FileName: {item["FileName"]?.S}. Error: {innerEx.Message}");
-                    }
+                        TableName = systermId,
+                        Key = new Dictionary<string, AttributeValue>
+                {
+                    { "FileName", new AttributeValue { S = mediaId.ToLower() } }
+                }
+                    };
+
+                    await _dynamoDBService.DeleteItemAsync(deleteRequest);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error scanning table {systermId}. Error: {ex.Message}");
+                Console.WriteLine($"Error processing item with FileName: {mediaId}. Error: {ex.Message}");
             }
 
-            return results;
+            return result;
         }
+
     }
 }

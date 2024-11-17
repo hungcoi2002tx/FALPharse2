@@ -15,6 +15,6 @@ namespace FAL.Services.IServices
         Task<string?> GetFaceIdForUserAndFaceAsync(string userId, string faceId, string collectionName);
         Task<string> GetOldestFaceIdForUserAsync(string userId, string collectionName);
         Task DeleteItem(string userId, string faceId, string collectionName);
-        Task<List<FaceDetectionResult>> GetWebhookResult(string systermId);
+        Task<FaceDetectionResult> GetWebhookResult(string systermId,string mediaId);
     }
 }

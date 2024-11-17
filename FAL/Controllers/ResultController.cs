@@ -22,14 +22,14 @@ namespace FAL.Controllers
         }
 
         [Authorize]
-        [HttpGet("WebhookResult")]
-        public async Task<IActionResult> GetWebhookResult()
+        [HttpGet("WebhookResult/{mediaId}")]
+        public async Task<IActionResult> GetWebhookResult(string mediaId)
         {
             try
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
                 
-                var result = await _dynamoService.GetWebhookResult(GetDBResultBySystemName(systermId));
+                var result = await _dynamoService.GetWebhookResult(GetDBResultBySystemName(systermId),mediaId);
 
                 return Ok(result);
             }
