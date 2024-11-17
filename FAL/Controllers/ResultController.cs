@@ -22,6 +22,37 @@ namespace FAL.Controllers
         }
 
         [Authorize]
+        [HttpGet("WebhookResult")]
+        public async Task<IActionResult> GetWebhookResult()
+        {
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
+                
+                var result = await _dynamoService.GetWebhookResult(GetDBResultBySystemName(systermId));
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        private string GetDBResultBySystemName(string systemName)
+        {
+            try
+            {
+                return systemName + "-result";
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetResult(string fileName)
         {
