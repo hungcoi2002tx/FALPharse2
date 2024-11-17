@@ -23,6 +23,24 @@ namespace FAL.Controllers
 
         [Authorize]
         [HttpGet]
+        public async Task<IActionResult> GetWebhookResult()
+        {
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
+                
+                var result = await _dynamoService.GetWebhookResult(systermId);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Authorize]
+        [HttpGet]
         public async Task<IActionResult> GetResult(string fileName)
         {
             try
