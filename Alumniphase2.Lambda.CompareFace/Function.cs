@@ -17,7 +17,7 @@ using System.Text.Json;
 
 namespace Alumniphase2.Lambda.CompareFace;
 
-public class Function
+public class Function { 
     private readonly IAmazonRekognition _rekognitionClient;
     private readonly IAmazonS3 _s3Client;
 
@@ -54,7 +54,7 @@ public class Function
             var sourceImageBytes = await DownloadImageFromS3Async(request.SourceImageUrl);
             var targetImageBytes = await DownloadImageFromS3Async(request.TargetImageUrl);
 
-            var resultId = request.ResultId;
+            //var resultId = request.ResultId;
 
             // Prepare Rekognition compare request
             var compareFacesRequest = new CompareFacesRequest
