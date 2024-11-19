@@ -11,12 +11,12 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace TakePictureDemo
 {
-    public partial class Form1 : Form
+    public partial class InfoForm : Form
     {
         private CameraCapture cameraCapture;
         private ApiClient apiClient;
 
-        public Form1()
+        public InfoForm()
         {
             InitializeComponent();
             cameraCapture = new CameraCapture();
@@ -35,7 +35,7 @@ namespace TakePictureDemo
             {
                 // Cập nhật giao diện trên UI thread
                 MessageBox.Show($"Đã chụp ảnh và lưu vào {imagePath}");
-                textBox1.Text = imagePath;
+                //textBox1.Text = imagePath;
             }
         }
 
@@ -43,18 +43,26 @@ namespace TakePictureDemo
         private void sendBtn_Click(object sender, EventArgs e)
         {
             string studentNo = textBox2.Text;
-            string response = apiClient.RegisterCompare(textBox1.Text, studentNo);
-            MessageBox.Show(response);
+            //string response = apiClient.RegisterCompare(textBox1.Text, studentNo);
+            //MessageBox.Show(response);
         }
 
         private void captureBtn_Click(object sender, EventArgs e)
         {
-            cameraCapture.StartCamera();
+            //cameraCapture.StartCamera();
+
+            using (CameraForm formCamera = new CameraForm())
+            {
+                if (formCamera.ShowDialog() == DialogResult.OK)
+                {
+                    //string savedImagePath = formCamera.SavedImagePath;
+                    //MessageBox.Show("Đường dẫn ảnh đã lưu: " + savedImagePath);
+                }
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
         }
 
         //private void OnFormClosing(object sender, FormClosingEventArgs e)
