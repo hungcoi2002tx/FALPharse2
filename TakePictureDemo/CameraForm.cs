@@ -26,6 +26,7 @@ namespace TakePictureDemo
             InitializeComponent();
             pictureBox.Width = 1280;
             pictureBox.Height = 720;
+            pictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
             this.Resize += CameraForm_Resize;
             CreateRoundButton();
             CreateSendButton();
@@ -144,25 +145,32 @@ namespace TakePictureDemo
             // Lấy frame hiện tại
             Bitmap frame = (Bitmap)eventArgs.Frame.Clone();
 
-            // Tạo Graphics để vẽ lên frame
-            using (Graphics g = Graphics.FromImage(frame))
+            // Resize frame để vừa với PictureBox (1280x720)
+            Bitmap resizedFrame = new Bitmap(pictureBox.Width, pictureBox.Height);
+            using (Graphics g = Graphics.FromImage(resizedFrame))
             {
+                g.DrawImage(frame, 0, 0, pictureBox.Width, pictureBox.Height);
+
                 // Thiết lập màu và độ dày nét vẽ
                 Pen orangePen = new Pen(Color.Orange, 2);
 
                 // Tính toán tọa độ và kích thước khung hình chữ nhật ở giữa
                 int rectWidth = 350; // Chiều rộng của khung
                 int rectHeight = 500; // Chiều cao của khung
-                int rectX = (frame.Width - rectWidth) / 2; // Tọa độ X
-                int rectY = (frame.Height - rectHeight) / 2; // Tọa độ Y
+                int rectX = (resizedFrame.Width - rectWidth) / 2; // Tọa độ X
+                int rectY = (resizedFrame.Height - rectHeight) / 2; // Tọa độ Y
 
                 // Vẽ hình chữ nhật
                 g.DrawRectangle(orangePen, rectX, rectY, rectWidth, rectHeight);
             }
 
-            // Gán frame đã chỉnh sửa vào PictureBox
-            pictureBox.Image = frame;
+            // Hiển thị hình ảnh đã chỉnh sửa lên PictureBox
+            pictureBox.Image = resizedFrame;
+
+            // Giải phóng tài nguyên cũ
+            frame.Dispose();
         }
+
 
         private void CameraForm_FormClosing(object sender, FormClosingEventArgs e)
         {
