@@ -54,7 +54,7 @@ namespace TakePictureDemo
             // Gắn sự kiện click
             captureButton.Click += (s, e) =>
             {
-                CaptureAndSaveImage();
+                CaptureAndSaveAndCropImage();
             };
 
             // Thêm nút vào form
@@ -117,7 +117,6 @@ namespace TakePictureDemo
             // Đặt vị trí nút căn giữa form
             sendButton.Left = (this.ClientSize.Width - sendButton.Width + 250) / 2;
             sendButton.Top = this.ClientSize.Height - sendButton.Height + 63;
-
         }
 
 
@@ -193,41 +192,70 @@ namespace TakePictureDemo
             CenterButton();
         }
 
-        private void CaptureAndSaveImage()
+        private void CaptureAndSaveAndCropImage()
         {
             // Kiểm tra xem pictureBox có hình ảnh hay không
             if (pictureBox.Image != null)
             {
                 try
                 {
-                    // Đường dẫn thư mục lưu ảnh (có thể thay đổi theo nhu cầu)
-                    string folderPath = @"C:\CapturedImages";  // Đảm bảo thư mục này tồn tại
+                    // Đường dẫn thư mục lưu ảnh
+                    string folderPath = @"C:\CapturedImages"; // Đảm bảo thư mục này tồn tại
                     if (!System.IO.Directory.Exists(folderPath))
                     {
                         System.IO.Directory.CreateDirectory(folderPath);
                     }
 
-                    // Tạo tên file cho ảnh
-                    string fileName = $"image_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
-                    string filePath = System.IO.Path.Combine(folderPath, fileName);
+                    // Tạo tên file cho ảnh gốc
+                    string originalFileName = $"original_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+                    string originalFilePath = System.IO.Path.Combine(folderPath, originalFileName);
 
-                    // Lưu ảnh vào thư mục
-                    pictureBox.Image.Save(filePath, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    // Lưu ảnh gốc vào thư mục
+                    pictureBox.Image.Save(originalFilePath, System.Drawing.Imaging.ImageFormat.Jpeg);
 
-                    // Thông báo lưu ảnh thành công
-                    MessageBox.Show($"Ảnh đã được lưu tại: {filePath}");
+                    // Tải lại ảnh gốc để thực hiện cắt
+                    Bitmap originalImage = new Bitmap(originalFilePath);
+
+                    // Tính toán tọa độ và kích thước cắt
+                    int rectWidth = 350; // Chiều rộng của khung
+                    int rectHeight = 500; // Chiều cao của khung
+                    int rectX = (originalImage.Width - rectWidth) / 2; // Tọa độ X
+                    int rectY = (originalImage.Height - rectHeight) / 2; // Tọa độ Y
+
+                    // Tạo hình chữ nhật cắt
+                    Rectangle cropRect = new Rectangle(rectX, rectY, rectWidth, rectHeight);
+
+                    // Cắt ảnh
+                    Bitmap croppedImage = originalImage.Clone(cropRect, originalImage.PixelFormat);
+
+                    // Tạo tên file cho ảnh đã cắt
+                    string croppedFileName = $"cropped_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+                    string croppedFilePath = System.IO.Path.Combine(folderPath, croppedFileName);
+
+                    // Lưu ảnh đã cắt
+                    croppedImage.Save(croppedFilePath, System.Drawing.Imaging.ImageFormat.Jpeg);
+
+                    // Gán ảnh đã cắt vào PictureBox
+                    pictureBox.Image = croppedImage;
+
+                    // Giải phóng tài nguyên
+                    originalImage.Dispose();
+
+                    // Thông báo thành công
+                    MessageBox.Show($"Ảnh gốc được lưu tại: {originalFilePath}\nẢnh đã cắt được lưu tại: {croppedFilePath}");
                 }
                 catch (Exception ex)
                 {
                     // Xử lý lỗi
-                    MessageBox.Show($"Lỗi khi lưu ảnh: {ex.Message}");
+                    MessageBox.Show($"Lỗi khi lưu và cắt ảnh: {ex.Message}");
                 }
             }
             else
             {
-                MessageBox.Show("Không có hình ảnh để lưu.");
+                MessageBox.Show("Không có hình ảnh để lưu và cắt.");
             }
         }
+
     }
 
 
