@@ -346,17 +346,6 @@ namespace FAL.Services
                     // Deserialize the Data attribute into FaceDetectionResult
                     result = JsonSerializer.Deserialize<FaceDetectionResult>(dataAttribute.S);
 
-                    // Delete the item after processing
-                    var deleteRequest = new DeleteItemRequest
-                    {
-                        TableName = systermId,
-                        Key = new Dictionary<string, AttributeValue>
-                {
-                    { "FileName", new AttributeValue { S = mediaId.ToLower() } }
-                }
-                    };
-
-                    await _dynamoDBService.DeleteItemAsync(deleteRequest);
                 }
             }
             catch (Exception ex)
