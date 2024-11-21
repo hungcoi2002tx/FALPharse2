@@ -28,6 +28,7 @@ namespace TakePictureDemo
             pictureBox.Height = 720;
             pictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
             this.Resize += CameraForm_Resize;
+            this.FormClosing += CameraForm_FormClosing;
             CreateRoundButton();
             CreateSendButton();
         }
@@ -178,7 +179,11 @@ namespace TakePictureDemo
             {
                 videoCaptureDevice.SignalToStop();
                 videoCaptureDevice.WaitForStop();
+                videoCaptureDevice = null;
             }
+
+            // Thoát toàn bộ ứng dụng
+            Application.Exit();
         }
 
         private void CenterPictureBox()

@@ -53,11 +53,14 @@ namespace TakePictureDemo
 
             using (CameraForm formCamera = new CameraForm())
             {
+                this.Hide(); // Ẩn form hiện tại
                 if (formCamera.ShowDialog() == DialogResult.OK)
                 {
-                    //string savedImagePath = formCamera.SavedImagePath;
-                    //MessageBox.Show("Đường dẫn ảnh đã lưu: " + savedImagePath);
+                    // Xử lý khi formCamera trả về kết quả OK
+                    // string savedImagePath = formCamera.SavedImagePath;
+                    // MessageBox.Show("Đường dẫn ảnh đã lưu: " + savedImagePath);
                 }
+                this.Close(); // Đóng form hiện tại
             }
         }
 
