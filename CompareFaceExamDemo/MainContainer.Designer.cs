@@ -67,7 +67,7 @@
             viewResultToolStripMenuItem.Name = "viewResultToolStripMenuItem";
             viewResultToolStripMenuItem.Size = new Size(99, 24);
             viewResultToolStripMenuItem.Text = "View Result";
-            viewResultToolStripMenuItem.Click += viewResultToolStripMenuItem_Click;
+            viewResultToolStripMenuItem.Click += ViewResultButtonClick;
             // 
             // settingToolStripMenuItem
             // 

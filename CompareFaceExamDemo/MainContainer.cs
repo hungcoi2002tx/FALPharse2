@@ -12,75 +12,13 @@ namespace CompareFaceExamDemo
 {
     public partial class MainContainer : Form
     {
+        private ImageCaptureForm imageCaptureForm;
+        private ImageSourceForm imageSourceForm;
+        private SettingForm settingForm;
+        private Main mainForm;
         public MainContainer()
         {
             InitializeComponent();
-        }
-
-        private void viewImageSourceToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                ImageSourceForm sourceForm = new ImageSourceForm();
-                sourceForm.MdiParent = this;
-                sourceForm.Show();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-                throw;
-            }
-        }
-
-        private void viewImageCaptureToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                ImageCaptureForm captureForm = new ImageCaptureForm();
-                captureForm.MdiParent = this;
-                captureForm.Show();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-                throw;
-            }
-        }
-
-        private void viewResultToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            try
-            {
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-                throw;
-            }
-        }
-
-        private void settingToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void settingToolStripMenuItem1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            try
-            {
-
-            }
-            catch (Exception ex)
-            {
-
-                throw;
-            }
         }
 
         private void ImageSourceButtonClick(object sender, EventArgs e)
@@ -123,12 +61,82 @@ namespace CompareFaceExamDemo
         {
             try
             {
-                childForm.MdiParent = this;
-                childForm.Show();
+                // Kiểm tra xem form đã được khởi tạo hay chưa
+                if (childForm is ImageSourceForm)
+                {
+                    if (imageSourceForm == null || imageSourceForm.IsDisposed)
+                    {
+                        imageSourceForm = new ImageSourceForm();
+                        imageSourceForm.FormBorderStyle = FormBorderStyle.None;
+                        imageSourceForm.MdiParent = this; // Thiết lập MDI Parent
+                        imageSourceForm.Dock = DockStyle.Fill; // Dock vào form cha
+                        imageSourceForm.Show(); // Hiển thị form
+                    }
+                    else
+                    {
+                        imageSourceForm.BringToFront(); // Mang form đã mở lên phía trước
+                    }
+                }
+                else if (childForm is ImageCaptureForm)
+                {
+                    if (imageCaptureForm == null || imageCaptureForm.IsDisposed)
+                    {
+                        imageCaptureForm = new ImageCaptureForm();
+                        imageCaptureForm.FormBorderStyle = FormBorderStyle.None;
+                        imageCaptureForm.MdiParent = this; // Thiết lập MDI Parent
+                        imageCaptureForm.Dock = DockStyle.Fill; // Dock vào form cha
+                        imageCaptureForm.Show(); // Hiển thị form
+                    }
+                    else
+                    {
+                        imageCaptureForm.BringToFront(); // Mang form đã mở lên phía trước
+                    }
+                }
+                else if (childForm is SettingForm)
+                {
+                    if (settingForm == null || settingForm.IsDisposed)
+                    {
+                        settingForm = new SettingForm();
+                        settingForm.FormBorderStyle = FormBorderStyle.None;
+                        settingForm.MdiParent = this; // Thiết lập MDI Parent
+                        settingForm.Dock = DockStyle.Fill; // Dock vào form cha
+                        settingForm.Show(); // Hiển thị form
+                    }
+                    else
+                    {
+                        settingForm.BringToFront(); // Mang form đã mở lên phía trước
+                    }
+                }
+                else if (childForm is Main)
+                {
+                    if (mainForm == null || mainForm.IsDisposed)
+                    {
+                        mainForm = new Main();
+                        mainForm.FormBorderStyle = FormBorderStyle.None;
+                        mainForm.MdiParent = this; // Thiết lập MDI Parent
+                        mainForm.Dock = DockStyle.Fill; // Dock vào form cha
+                        mainForm.Show(); // Hiển thị form
+                    }
+                    else
+                    {
+                        mainForm.BringToFront(); // Mang form đã mở lên phía trước
+                    }
+                }
             }
             catch (Exception ex)
             {
                 throw;
+            }
+        }
+        private void ViewResultButtonClick(object sender, EventArgs e)
+        {
+            try
+            {
+                OpenChildForm(new Main());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
             }
         }
 
@@ -147,5 +155,35 @@ namespace CompareFaceExamDemo
                 MessageBox.Show(ex.Message);
             }
         }
+
+        #region NOT DELETE THESE METHOD
+        private void viewImageSourceToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+        }
+
+        private void viewImageCaptureToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+        }
+
+        private void viewResultToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+        }
+
+        private void settingToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void settingToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+        }
+        #endregion
+
+
     }
 }
