@@ -1,4 +1,8 @@
-﻿namespace TakePictureDemo
+﻿using System;
+using System.Windows.Forms;
+using System.Drawing;
+
+namespace TakePictureDemo
 {
     partial class CameraForm
     {

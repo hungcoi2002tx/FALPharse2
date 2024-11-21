@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Windows.Forms;
 using AForge.Video;
 using AForge.Video.DirectShow;

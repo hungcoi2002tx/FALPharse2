@@ -1,4 +1,9 @@
-﻿namespace TakePictureDemo
+﻿using System;
+using System.Threading;
+using System.Windows.Forms;
+using System.Drawing;
+
+namespace TakePictureDemo
 {
     partial class InfoForm
     {
