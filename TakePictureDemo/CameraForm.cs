@@ -189,6 +189,10 @@ namespace TakePictureDemo
 
         private void CenterButton()
         {
+            if(captureButton == null)
+            {
+                return;
+            }
             int bottomMargin = 50;
             captureButton.Left = (this.ClientSize.Width - captureButton.Width) / 2;
             captureButton.Top = this.ClientSize.Height - captureButton.Height - bottomMargin;
