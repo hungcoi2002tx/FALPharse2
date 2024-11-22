@@ -23,13 +23,11 @@ namespace TakePictureDemo
         public CameraForm()
         {
             InitializeComponent();
-            pictureBox.Width = 1280;
-            pictureBox.Height = 720;
             pictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
-            this.Resize += CameraForm_Resize;
-            this.FormClosing += CameraForm_FormClosing;
             CreateRoundButton();
             CreateSendButton();
+            this.Resize += CameraForm_Resize;
+            this.FormClosing += CameraForm_FormClosing;
         }
 
         private void CreateRoundButton()
@@ -60,19 +58,15 @@ namespace TakePictureDemo
 
             // Thêm nút vào form
             this.Controls.Add(captureButton);
-
-            // Đặt vị trí căn giữa form
-            captureButton.Left = (this.ClientSize.Width - captureButton.Width) / 2;
-            captureButton.Top = this.ClientSize.Height - captureButton.Height - 50;
         }
 
         private void CreateSendButton()
         {
             // Tạo nút hình tròn
-            Button sendButton = new Button
+            sendButton = new Button
             {
-                Width = 57,  // Đường kính nút
-                Height = 57,
+                Width = 60,  // Đường kính nút
+                Height = 60,
                 BackColor = Color.LightBlue, // Màu nền
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Arial", 10, FontStyle.Bold),
@@ -114,13 +108,7 @@ namespace TakePictureDemo
 
             // Thêm nút vào form
             this.Controls.Add(sendButton);
-
-            // Đặt vị trí nút căn giữa form
-            sendButton.Left = (this.ClientSize.Width - sendButton.Width + 250) / 2;
-            sendButton.Top = this.ClientSize.Height - sendButton.Height + 63;
         }
-
-
 
 
         private void CameraForm_Load(object sender, EventArgs e)
@@ -187,26 +175,112 @@ namespace TakePictureDemo
 
         private void CenterPictureBox()
         {
+            // Đặt tỷ lệ mong muốn cho PictureBox, ví dụ: chiếm 80% chiều rộng và 80% chiều cao của form.
+            double widthRatio = 0.7;
+            double heightRatio = 0.7;
+
+            // Tính kích thước mới của PictureBox
+            int newWidth = (int)(this.ClientSize.Width * widthRatio);
+            int newHeight = (int)(this.ClientSize.Height * heightRatio);
+
+            // Cập nhật kích thước PictureBox
+            pictureBox.Width = newWidth;
+            pictureBox.Height = newHeight;
+
             pictureBox.Left = (this.ClientSize.Width - pictureBox.Width) / 2;
             pictureBox.Top = (this.ClientSize.Height - pictureBox.Height) / 2;
         }
 
-        private void CenterButton()
-        {
-            if(captureButton == null)
-            {
-                return;
-            }
-            int bottomMargin = 50;
-            captureButton.Left = (this.ClientSize.Width - captureButton.Width) / 2;
-            captureButton.Top = this.ClientSize.Height - captureButton.Height - bottomMargin;
-        }
-
         private void CameraForm_Resize(object sender, EventArgs e)
         {
+            ResizeControls();
             CenterPictureBox();
-            CenterButton();
         }
+
+        private void ResizeControls()
+        {
+
+            if (label1 != null)
+            {
+                label1.Font = new Font(label1.Font.FontFamily, (float)(this.ClientSize.Height * 0.015));
+                label1.Left = (int)(this.ClientSize.Width * 0.168); 
+                label1.Top = (int)(this.ClientSize.Height * 0.05); 
+            }
+
+            if(label2 != null)
+            {
+                label2.Font = new Font(label1.Font.FontFamily, (float)(this.ClientSize.Height * 0.015));
+                label2.Left = (int)(this.ClientSize.Width * 0.15);
+                label2.Top = (int)(this.ClientSize.Height * 0.09);
+            }
+
+
+            if (comboBoxCamera != null)
+            {
+                comboBoxCamera.Width = (int)(this.ClientSize.Width * 0.2);
+                comboBoxCamera.Left = label1 != null ? label1.Right + 10 : 0;
+                comboBoxCamera.Top = label1 != null ? label1.Top : 0;
+            }
+
+            if (textBox1 != null)
+            {
+                textBox1.Width = (int)(this.ClientSize.Width * 0.2);
+                textBox1.Left = label2 != null ? label2.Right + 10 : 0;
+                textBox1.Top = label2 != null ? label2.Top : 0;
+            }
+
+            if (textBox1 != null && label3 != null && comboBoxCamera != null)
+            {
+                label3.Font = new Font(label3.Font.FontFamily, (float)(this.ClientSize.Height * 0.009));
+
+                label3.Left = textBox1.Right + 20;
+                label3.Top = (int)(this.ClientSize.Height * 0.03);
+            }
+
+
+            if (captureButton != null && pictureBox != null)
+            {
+                // Đặt kích thước của nút captureButton là hình vuông
+                captureButton.Width = (int)(this.ClientSize.Width * 0.04);
+                captureButton.Height = captureButton.Width;
+
+                // Căn giữa nút theo chiều ngang so với form
+                captureButton.Left = (this.ClientSize.Width - captureButton.Width) / 2;
+
+                // Đặt vị trí nút cách 20px phía dưới pictureBox
+                captureButton.Top = pictureBox.Bottom + 30;
+
+                // Gọi hàm cập nhật hình dạng nút nếu cần
+                UpdateButtonShape(captureButton);
+            }
+
+
+            if (sendButton != null && captureButton != null && pictureBox != null)
+            {
+                // Đặt kích thước của nút sendButton là hình vuông
+                sendButton.Width = (int)(this.ClientSize.Width * 0.04);
+                sendButton.Height = sendButton.Width;
+
+                // Đặt vị trí nút sendButton cách 20px bên trái so với captureButton
+                sendButton.Left = captureButton.Left + 100;
+
+                // Đặt vị trí nút sendButton cách 30px phía dưới pictureBox
+                sendButton.Top = pictureBox.Bottom + 30;
+
+
+                // Gọi hàm cập nhật hình dạng nút nếu cần
+                UpdateButtonShape(sendButton);
+            }
+
+        }
+
+        private void UpdateButtonShape(Button button)
+        {
+            var graphicsPath = new System.Drawing.Drawing2D.GraphicsPath();
+            graphicsPath.AddEllipse(0, 0, button.Width, button.Height);
+            button.Region = new Region(graphicsPath);
+        }
+
 
         private void CaptureAndSaveAndCropImage()
         {
@@ -272,6 +346,10 @@ namespace TakePictureDemo
             }
         }
 
+        private void CameraForm_Load_1(object sender, EventArgs e)
+        {
+
+        }
     }
 
 
