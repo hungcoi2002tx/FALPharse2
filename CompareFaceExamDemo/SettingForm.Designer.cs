@@ -1,16 +1,11 @@
-﻿namespace CompareFaceExamDemo
+﻿using System;
+
+namespace CompareFaceExamDemo
 {
     partial class SettingForm
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -20,20 +15,156 @@
             base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
-
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Text = "SettingForm";
+            labelConfident = new Label();
+            labelDirectory = new Label();
+            txtDirectorySource = new TextBox();
+            labelLanguage = new Label();
+            btnSave = new Button();
+            txtDiretoryCapture = new TextBox();
+            btnBrowseCapture = new Button();
+            btnBrowseSource = new Button();
+            numberConfident = new NumericUpDown();
+            label1 = new Label();
+            numberThread = new NumericUpDown();
+            ((System.ComponentModel.ISupportInitialize)numberConfident).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numberThread).BeginInit();
+            SuspendLayout();
+            // 
+            // labelConfident
+            // 
+            labelConfident.Location = new Point(25, 42);
+            labelConfident.Name = "labelConfident";
+            labelConfident.Size = new Size(134, 30);
+            labelConfident.TabIndex = 1;
+            labelConfident.Text = "Confident:";
+            // 
+            // labelDirectory
+            // 
+            labelDirectory.Location = new Point(25, 92);
+            labelDirectory.Name = "labelDirectory";
+            labelDirectory.Size = new Size(134, 30);
+            labelDirectory.TabIndex = 3;
+            labelDirectory.Text = "Directory Image Source:";
+            labelDirectory.Click += labelDirectory_Click;
+            // 
+            // txtDirectorySource
+            // 
+            txtDirectorySource.Location = new Point(175, 92);
+            txtDirectorySource.Name = "txtDirectorySource";
+            txtDirectorySource.ReadOnly = true;
+            txtDirectorySource.Size = new Size(890, 23);
+            txtDirectorySource.TabIndex = 4;
+            txtDirectorySource.TextChanged += textBoxDirectorySource_TextChanged;
+            // 
+            // labelLanguage
+            // 
+            labelLanguage.Location = new Point(25, 142);
+            labelLanguage.Name = "labelLanguage";
+            labelLanguage.Size = new Size(146, 30);
+            labelLanguage.TabIndex = 6;
+            labelLanguage.Text = "Directory Image Capture";
+            // 
+            // btnSave
+            // 
+            btnSave.Location = new Point(497, 215);
+            btnSave.Name = "btnSave";
+            btnSave.Size = new Size(200, 50);
+            btnSave.TabIndex = 10;
+            btnSave.Text = "Save";
+            btnSave.Click += Btn_Save_Click;
+            // 
+            // txtDiretoryCapture
+            // 
+            txtDiretoryCapture.Location = new Point(175, 142);
+            txtDiretoryCapture.Name = "txtDiretoryCapture";
+            txtDiretoryCapture.ReadOnly = true;
+            txtDiretoryCapture.Size = new Size(890, 23);
+            txtDiretoryCapture.TabIndex = 11;
+            // 
+            // btnBrowseCapture
+            // 
+            btnBrowseCapture.Location = new Point(1085, 143);
+            btnBrowseCapture.Name = "btnBrowseCapture";
+            btnBrowseCapture.Size = new Size(100, 23);
+            btnBrowseCapture.TabIndex = 12;
+            btnBrowseCapture.Text = "Browse";
+            btnBrowseCapture.UseVisualStyleBackColor = true;
+            btnBrowseCapture.Click += Btn_Browse_Capture_Click;
+            // 
+            // btnBrowseSource
+            // 
+            btnBrowseSource.Location = new Point(1085, 91);
+            btnBrowseSource.Name = "btnBrowseSource";
+            btnBrowseSource.Size = new Size(100, 23);
+            btnBrowseSource.TabIndex = 13;
+            btnBrowseSource.Text = "Browse";
+            btnBrowseSource.UseVisualStyleBackColor = true;
+            btnBrowseSource.Click += Btn_Browse_Source_Click;
+            // 
+            // numberConfident
+            // 
+            numberConfident.Location = new Point(175, 40);
+            numberConfident.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
+            numberConfident.Name = "numberConfident";
+            numberConfident.Size = new Size(120, 23);
+            numberConfident.TabIndex = 14;
+            numberConfident.Value = new decimal(new int[] { 10, 0, 0, 0 });
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(364, 42);
+            label1.Name = "label1";
+            label1.Size = new Size(70, 15);
+            label1.TabIndex = 15;
+            label1.Text = "Thread Run:";
+            // 
+            // numberThread
+            // 
+            numberThread.Location = new Point(468, 40);
+            numberThread.Maximum = new decimal(new int[] { 10, 0, 0, 0 });
+            numberThread.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            numberThread.Name = "numberThread";
+            numberThread.Size = new Size(120, 23);
+            numberThread.TabIndex = 16;
+            numberThread.Value = new decimal(new int[] { 1, 0, 0, 0 });
+            // 
+            // SettingForm
+            // 
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(1200, 800);
+            Controls.Add(numberThread);
+            Controls.Add(label1);
+            Controls.Add(numberConfident);
+            Controls.Add(btnBrowseSource);
+            Controls.Add(btnBrowseCapture);
+            Controls.Add(txtDiretoryCapture);
+            Controls.Add(labelConfident);
+            Controls.Add(labelDirectory);
+            Controls.Add(txtDirectorySource);
+            Controls.Add(labelLanguage);
+            Controls.Add(btnSave);
+            Name = "SettingForm";
+            Text = "Setting Form";
+            ((System.ComponentModel.ISupportInitialize)numberConfident).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numberThread).EndInit();
+            ResumeLayout(false);
+            PerformLayout();
         }
 
-        #endregion
+        private System.Windows.Forms.Label labelConfident;
+        private System.Windows.Forms.Label labelDirectory;
+        private System.Windows.Forms.TextBox txtDirectorySource;
+        private System.Windows.Forms.Label labelLanguage;
+        private System.Windows.Forms.Button btnSave;
+        private TextBox txtDiretoryCapture;
+        private Button btnBrowseCapture;
+        private Button btnBrowseSource;
+        private NumericUpDown numberConfident;
+        private Label label1;
+        private NumericUpDown numberThread;
     }
 }

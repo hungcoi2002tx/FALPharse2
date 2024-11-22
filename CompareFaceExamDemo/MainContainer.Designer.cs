@@ -44,28 +44,29 @@
             menuStrip1.Items.AddRange(new ToolStripItem[] { viewImageSourceToolStripMenuItem, viewImageCaptureToolStripMenuItem, viewResultToolStripMenuItem, settingToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(800, 28);
+            menuStrip1.Padding = new Padding(5, 2, 0, 2);
+            menuStrip1.Size = new Size(700, 24);
             menuStrip1.TabIndex = 1;
             menuStrip1.Text = "menuStrip1";
             // 
             // viewImageSourceToolStripMenuItem
             // 
             viewImageSourceToolStripMenuItem.Name = "viewImageSourceToolStripMenuItem";
-            viewImageSourceToolStripMenuItem.Size = new Size(150, 24);
+            viewImageSourceToolStripMenuItem.Size = new Size(119, 20);
             viewImageSourceToolStripMenuItem.Text = "View Image Source";
             viewImageSourceToolStripMenuItem.Click += ImageSourceButtonClick;
             // 
             // viewImageCaptureToolStripMenuItem
             // 
             viewImageCaptureToolStripMenuItem.Name = "viewImageCaptureToolStripMenuItem";
-            viewImageCaptureToolStripMenuItem.Size = new Size(157, 24);
+            viewImageCaptureToolStripMenuItem.Size = new Size(125, 20);
             viewImageCaptureToolStripMenuItem.Text = "View Image Capture";
             viewImageCaptureToolStripMenuItem.Click += ImageCaptureButtonClick;
             // 
             // viewResultToolStripMenuItem
             // 
             viewResultToolStripMenuItem.Name = "viewResultToolStripMenuItem";
-            viewResultToolStripMenuItem.Size = new Size(99, 24);
+            viewResultToolStripMenuItem.Size = new Size(79, 20);
             viewResultToolStripMenuItem.Text = "View Result";
             viewResultToolStripMenuItem.Click += ViewResultButtonClick;
             // 
@@ -73,34 +74,35 @@
             // 
             settingToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { settingToolStripMenuItem1, exitToolStripMenuItem });
             settingToolStripMenuItem.Name = "settingToolStripMenuItem";
-            settingToolStripMenuItem.Size = new Size(55, 24);
+            settingToolStripMenuItem.Size = new Size(44, 20);
             settingToolStripMenuItem.Text = "Help";
             settingToolStripMenuItem.Click += settingToolStripMenuItem_Click;
             // 
             // settingToolStripMenuItem1
             // 
             settingToolStripMenuItem1.Name = "settingToolStripMenuItem1";
-            settingToolStripMenuItem1.Size = new Size(224, 26);
+            settingToolStripMenuItem1.Size = new Size(111, 22);
             settingToolStripMenuItem1.Text = "Setting";
             settingToolStripMenuItem1.Click += SettingButtonClick;
             // 
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(224, 26);
+            exitToolStripMenuItem.Size = new Size(111, 22);
             exitToolStripMenuItem.Text = "Exit";
             exitToolStripMenuItem.Click += ExitButtonClick;
             // 
             // MainContainer
             // 
-            AutoScaleDimensions = new SizeF(8F, 20F);
+            AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(700, 338);
             Controls.Add(menuStrip1);
             IsMdiContainer = true;
             MainMenuStrip = menuStrip1;
+            Margin = new Padding(3, 2, 3, 2);
             Name = "MainContainer";
-            Text = "MainContainer";
+            Text = "EOS Face Verification";
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             ResumeLayout(false);

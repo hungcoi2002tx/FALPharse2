@@ -19,6 +19,21 @@ namespace CompareFaceExamDemo
         public MainContainer()
         {
             InitializeComponent();
+            // Cố định chiều rộng và chiều cao của form
+            this.Size = new Size(1200, 800); // Thay đổi kích thước theo ý muốn
+
+            // Đặt kiểu viền cố định
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+
+            // Tắt nút phóng to
+            this.MaximizeBox = false;
+
+            // Cho phép thu nhỏ (nếu cần)
+            this.MinimizeBox = true;
+
+            // Tắt khả năng thay đổi kích thước
+            this.MaximumSize = this.Size;
+            this.MinimumSize = this.Size;
         }
 
         private void ImageSourceButtonClick(object sender, EventArgs e)

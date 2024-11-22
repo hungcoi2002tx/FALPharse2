@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CompareFaceExamDemo.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,14 +8,14 @@ using System.Threading.Tasks;
 
 namespace CompareFaceExamDemo.Utils
 {
-    internal class Config
+    public class Config
     {
         public string? DataDirectory { get; set; }
         public string SourceImageDirectory { get; set; } = string.Empty;
 
         public static Config LoadConfig()
         {
-            var configPath = "settings.json";
+            var configPath = "appsettings.json";
             var configContent = File.ReadAllText(configPath);
             var config = JsonSerializer.Deserialize<Config>(configContent);
 
@@ -51,6 +52,87 @@ namespace CompareFaceExamDemo.Utils
             }
 
             return config;
+        }
+
+        public static SettingModel GetSetting()
+        {
+            try
+            {
+                SettingModel _settingModel = new SettingModel();
+                // Đường dẫn đến file appsettings.json
+                string jsonFilePath = Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json");
+
+                if (File.Exists(jsonFilePath))
+                {
+                    // Đọc nội dung file JSON
+                    string jsonContent = File.ReadAllText(jsonFilePath);
+
+                    // Chuyển đổi JSON thành đối tượng AppSettings
+                    _settingModel = JsonSerializer.Deserialize<SettingModel>(jsonContent);
+                }
+                else
+                {
+                    MessageBox.Show("File appsettings.json không tồn tại!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                return _settingModel;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        private static void ValidateAndCreateDirectories(SettingModel settingModel)
+        {
+            // Đường dẫn mặc định
+            string baseFolder = Path.Combine("C:\\", "EOSFPTUFR");
+            string imageSourceFolder = Path.Combine(baseFolder, "ImageSource");
+            string imageCaptureFolder = Path.Combine(baseFolder, "ImageCapture");
+
+            bool needToUpdateJson = false;
+
+            // Kiểm tra và tạo thư mục DirectoryImageSource
+            if (string.IsNullOrEmpty(settingModel.DirectoryImageSource) || !Directory.Exists(settingModel.DirectoryImageSource))
+            {
+                Directory.CreateDirectory(imageSourceFolder); // Tạo thư mục mặc định
+                settingModel.DirectoryImageSource = imageSourceFolder; // Cập nhật đường dẫn
+                needToUpdateJson = true;
+            }
+
+            // Kiểm tra và tạo thư mục DirectoryImageCapture
+            if (string.IsNullOrEmpty(settingModel.DirectoryImageCapture) || !Directory.Exists(settingModel.DirectoryImageCapture))
+            {
+                Directory.CreateDirectory(imageCaptureFolder); // Tạo thư mục mặc định
+                settingModel.DirectoryImageCapture = imageCaptureFolder; // Cập nhật đường dẫn
+                needToUpdateJson = true;
+            }
+
+            // Nếu cần cập nhật JSON, ghi lại file
+            if (needToUpdateJson)
+            {
+                SaveSetting(settingModel);
+            }
+        }
+
+        private static void SaveSetting(SettingModel settingModel)
+        {
+            try
+            {
+                string jsonFilePath = Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json");
+
+                // Chuyển đổi đối tượng SettingModel thành JSON
+                string jsonContent = JsonSerializer.Serialize(settingModel, new JsonSerializerOptions
+                {
+                    WriteIndented = true // Format JSON đẹp hơn
+                });
+
+                // Ghi nội dung JSON vào file
+                File.WriteAllText(jsonFilePath, jsonContent);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi lưu cài đặt: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
