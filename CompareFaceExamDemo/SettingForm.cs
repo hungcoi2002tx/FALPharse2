@@ -23,7 +23,6 @@ namespace CompareFaceExamDemo
                 numberConfident.Value = _settingModel.Confident;
                 numberThread.Value = _settingModel.NumberOfThread;
                 txtDirectorySource.Text = _settingModel.DirectoryImageSource;
-                txtDiretoryCapture.Text = _settingModel.DirectoryImageCapture;
             }
             catch (Exception ex)
             {
@@ -51,29 +50,7 @@ namespace CompareFaceExamDemo
         private void btnClose_Click(object sender, EventArgs e)
         {
             this.Close();
-        }
-
-        private void Btn_Browse_Capture_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                using (FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog())
-                {
-                    folderBrowserDialog.Description = "Select the folder to save files";
-                    folderBrowserDialog.ShowNewFolderButton = true;
-
-                    if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        // Set the selected path to the textbox
-                        txtDiretoryCapture.Text = folderBrowserDialog.SelectedPath;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-        }
+        }       
 
         private void Btn_Browse_Source_Click(object sender, EventArgs e)
         {
@@ -98,6 +75,10 @@ namespace CompareFaceExamDemo
         }
 
         #region NOT DELETE
+        private void Btn_Browse_Capture_Click(object sender, EventArgs e)
+        {
+
+        }
         private void labelDirectory_Click(object sender, EventArgs e)
         {
 
@@ -145,7 +126,6 @@ namespace CompareFaceExamDemo
                 _settingModel.Confident = Convert.ToInt32(numberConfident.Value);
                 _settingModel.NumberOfThread = Convert.ToInt32(numberThread.Value);
                 _settingModel.DirectoryImageSource = txtDirectorySource.Text;
-                _settingModel.DirectoryImageCapture = txtDiretoryCapture.Text;
             }
             catch (Exception)
             {

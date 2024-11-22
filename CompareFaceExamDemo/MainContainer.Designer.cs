@@ -30,18 +30,19 @@
         {
             menuStrip1 = new MenuStrip();
             viewImageSourceToolStripMenuItem = new ToolStripMenuItem();
-            viewImageCaptureToolStripMenuItem = new ToolStripMenuItem();
-            viewResultToolStripMenuItem = new ToolStripMenuItem();
             settingToolStripMenuItem = new ToolStripMenuItem();
             settingToolStripMenuItem1 = new ToolStripMenuItem();
             exitToolStripMenuItem = new ToolStripMenuItem();
+            imageSourceToolStripMenuItem = new ToolStripMenuItem();
+            imageCaptureToolStripMenuItem = new ToolStripMenuItem();
+            resultToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // menuStrip1
             // 
             menuStrip1.ImageScalingSize = new Size(20, 20);
-            menuStrip1.Items.AddRange(new ToolStripItem[] { viewImageSourceToolStripMenuItem, viewImageCaptureToolStripMenuItem, viewResultToolStripMenuItem, settingToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { viewImageSourceToolStripMenuItem, settingToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Padding = new Padding(5, 2, 0, 2);
@@ -51,24 +52,11 @@
             // 
             // viewImageSourceToolStripMenuItem
             // 
+            viewImageSourceToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { imageSourceToolStripMenuItem, imageCaptureToolStripMenuItem, resultToolStripMenuItem });
             viewImageSourceToolStripMenuItem.Name = "viewImageSourceToolStripMenuItem";
-            viewImageSourceToolStripMenuItem.Size = new Size(119, 20);
-            viewImageSourceToolStripMenuItem.Text = "View Image Source";
+            viewImageSourceToolStripMenuItem.Size = new Size(62, 20);
+            viewImageSourceToolStripMenuItem.Text = "Manage";
             viewImageSourceToolStripMenuItem.Click += ImageSourceButtonClick;
-            // 
-            // viewImageCaptureToolStripMenuItem
-            // 
-            viewImageCaptureToolStripMenuItem.Name = "viewImageCaptureToolStripMenuItem";
-            viewImageCaptureToolStripMenuItem.Size = new Size(125, 20);
-            viewImageCaptureToolStripMenuItem.Text = "View Image Capture";
-            viewImageCaptureToolStripMenuItem.Click += ImageCaptureButtonClick;
-            // 
-            // viewResultToolStripMenuItem
-            // 
-            viewResultToolStripMenuItem.Name = "viewResultToolStripMenuItem";
-            viewResultToolStripMenuItem.Size = new Size(79, 20);
-            viewResultToolStripMenuItem.Text = "View Result";
-            viewResultToolStripMenuItem.Click += ViewResultButtonClick;
             // 
             // settingToolStripMenuItem
             // 
@@ -81,16 +69,37 @@
             // settingToolStripMenuItem1
             // 
             settingToolStripMenuItem1.Name = "settingToolStripMenuItem1";
-            settingToolStripMenuItem1.Size = new Size(111, 22);
+            settingToolStripMenuItem1.Size = new Size(180, 22);
             settingToolStripMenuItem1.Text = "Setting";
             settingToolStripMenuItem1.Click += SettingButtonClick;
             // 
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(111, 22);
+            exitToolStripMenuItem.Size = new Size(180, 22);
             exitToolStripMenuItem.Text = "Exit";
             exitToolStripMenuItem.Click += ExitButtonClick;
+            // 
+            // imageSourceToolStripMenuItem
+            // 
+            imageSourceToolStripMenuItem.Name = "imageSourceToolStripMenuItem";
+            imageSourceToolStripMenuItem.Size = new Size(180, 22);
+            imageSourceToolStripMenuItem.Text = "ImageSource";
+            imageSourceToolStripMenuItem.Click += ImageSourceButtonClick;
+            // 
+            // imageCaptureToolStripMenuItem
+            // 
+            imageCaptureToolStripMenuItem.Name = "imageCaptureToolStripMenuItem";
+            imageCaptureToolStripMenuItem.Size = new Size(180, 22);
+            imageCaptureToolStripMenuItem.Text = "ImageCapture";
+            imageCaptureToolStripMenuItem.Click += ImageCaptureButtonClick;
+            // 
+            // resultToolStripMenuItem
+            // 
+            resultToolStripMenuItem.Name = "resultToolStripMenuItem";
+            resultToolStripMenuItem.Size = new Size(180, 22);
+            resultToolStripMenuItem.Text = "Result";
+            resultToolStripMenuItem.Click += ViewResultButtonClick;
             // 
             // MainContainer
             // 
@@ -113,10 +122,11 @@
 
         private MenuStrip menuStrip1;
         private ToolStripMenuItem viewImageSourceToolStripMenuItem;
-        private ToolStripMenuItem viewImageCaptureToolStripMenuItem;
-        private ToolStripMenuItem viewResultToolStripMenuItem;
         private ToolStripMenuItem settingToolStripMenuItem;
         private ToolStripMenuItem settingToolStripMenuItem1;
         private ToolStripMenuItem exitToolStripMenuItem;
+        private ToolStripMenuItem imageSourceToolStripMenuItem;
+        private ToolStripMenuItem imageCaptureToolStripMenuItem;
+        private ToolStripMenuItem resultToolStripMenuItem;
     }
 }

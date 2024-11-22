@@ -1,6 +1,7 @@
 ﻿using CompareFaceExamDemo.DAO;
 using CompareFaceExamDemo.Dtos;
 using CompareFaceExamDemo.Entities;
+using CompareFaceExamDemo.Models;
 using CompareFaceExamDemo.Utils;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,7 @@ namespace CompareFaceExamDemo
         private readonly string _sourceImageFolder;
         private readonly string _dataFolder;
         private readonly Config _config;
+        private SettingModel _settingForm;
 
         public Main()
         {
@@ -26,7 +28,7 @@ namespace CompareFaceExamDemo
             try
             {
                 // Tải cấu hình từ settings.json
-                _config = Config.LoadConfig();
+                _settingForm = Config.GetSetting();
             }
             catch (FileNotFoundException ex)
             {
@@ -48,8 +50,8 @@ namespace CompareFaceExamDemo
                 MessageBox.Show($"Lỗi không xác định khi tải cấu hình: {ex.Message}", "Lỗi cấu hình", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Environment.Exit(1); // Thoát chương trình nếu có lỗi khác
             }
-            _sourceImageFolder = _config.SourceImageDirectory!; // Folder của SourceImage
-            _dataFolder = _config.DataDirectory!; // Folder chứa dữ liệu TargetImage
+            _sourceImageFolder = _settingForm.DirectoryImageSource; // Folder của SourceImage
+             // Folder chứa dữ liệu TargetImage
 
             // Sử dụng đường dẫn từ file cấu hình
             _examDao = new ExamDAO<EOSComparisonResult>(_dataFolder);

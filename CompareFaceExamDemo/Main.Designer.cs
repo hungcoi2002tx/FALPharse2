@@ -309,11 +309,9 @@
         private TextBox txtExamCode;
         private Label label6;
         private DateTimePicker dtpExamDate;
-        private NumericUpDown numericUpDown1;
         private NumericUpDown txtShift;
         private Label label7;
         private Label label8;
-        private NumericUpDown numericUpDown2;
         private NumericUpDown txtMinConfidence;
         private NumericUpDown txtMaxConfidence;
         private PictureBox pictureBoxTargetImage;

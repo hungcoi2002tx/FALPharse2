@@ -99,14 +99,6 @@ namespace CompareFaceExamDemo.Utils
                 needToUpdateJson = true;
             }
 
-            // Kiểm tra và tạo thư mục DirectoryImageCapture
-            if (string.IsNullOrEmpty(settingModel.DirectoryImageCapture) || !Directory.Exists(settingModel.DirectoryImageCapture))
-            {
-                Directory.CreateDirectory(imageCaptureFolder); // Tạo thư mục mặc định
-                settingModel.DirectoryImageCapture = imageCaptureFolder; // Cập nhật đường dẫn
-                needToUpdateJson = true;
-            }
-
             // Nếu cần cập nhật JSON, ghi lại file
             if (needToUpdateJson)
             {

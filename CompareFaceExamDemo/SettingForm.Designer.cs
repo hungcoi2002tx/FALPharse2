@@ -20,10 +20,7 @@ namespace CompareFaceExamDemo
             labelConfident = new Label();
             labelDirectory = new Label();
             txtDirectorySource = new TextBox();
-            labelLanguage = new Label();
             btnSave = new Button();
-            txtDiretoryCapture = new TextBox();
-            btnBrowseCapture = new Button();
             btnBrowseSource = new Button();
             numberConfident = new NumericUpDown();
             label1 = new Label();
@@ -58,14 +55,6 @@ namespace CompareFaceExamDemo
             txtDirectorySource.TabIndex = 4;
             txtDirectorySource.TextChanged += textBoxDirectorySource_TextChanged;
             // 
-            // labelLanguage
-            // 
-            labelLanguage.Location = new Point(25, 142);
-            labelLanguage.Name = "labelLanguage";
-            labelLanguage.Size = new Size(146, 30);
-            labelLanguage.TabIndex = 6;
-            labelLanguage.Text = "Directory Image Capture";
-            // 
             // btnSave
             // 
             btnSave.Location = new Point(497, 215);
@@ -74,24 +63,6 @@ namespace CompareFaceExamDemo
             btnSave.TabIndex = 10;
             btnSave.Text = "Save";
             btnSave.Click += Btn_Save_Click;
-            // 
-            // txtDiretoryCapture
-            // 
-            txtDiretoryCapture.Location = new Point(175, 142);
-            txtDiretoryCapture.Name = "txtDiretoryCapture";
-            txtDiretoryCapture.ReadOnly = true;
-            txtDiretoryCapture.Size = new Size(890, 23);
-            txtDiretoryCapture.TabIndex = 11;
-            // 
-            // btnBrowseCapture
-            // 
-            btnBrowseCapture.Location = new Point(1085, 143);
-            btnBrowseCapture.Name = "btnBrowseCapture";
-            btnBrowseCapture.Size = new Size(100, 23);
-            btnBrowseCapture.TabIndex = 12;
-            btnBrowseCapture.Text = "Browse";
-            btnBrowseCapture.UseVisualStyleBackColor = true;
-            btnBrowseCapture.Click += Btn_Browse_Capture_Click;
             // 
             // btnBrowseSource
             // 
@@ -140,12 +111,9 @@ namespace CompareFaceExamDemo
             Controls.Add(label1);
             Controls.Add(numberConfident);
             Controls.Add(btnBrowseSource);
-            Controls.Add(btnBrowseCapture);
-            Controls.Add(txtDiretoryCapture);
             Controls.Add(labelConfident);
             Controls.Add(labelDirectory);
             Controls.Add(txtDirectorySource);
-            Controls.Add(labelLanguage);
             Controls.Add(btnSave);
             Name = "SettingForm";
             Text = "Setting Form";
@@ -158,10 +126,7 @@ namespace CompareFaceExamDemo
         private System.Windows.Forms.Label labelConfident;
         private System.Windows.Forms.Label labelDirectory;
         private System.Windows.Forms.TextBox txtDirectorySource;
-        private System.Windows.Forms.Label labelLanguage;
         private System.Windows.Forms.Button btnSave;
-        private TextBox txtDiretoryCapture;
-        private Button btnBrowseCapture;
         private Button btnBrowseSource;
         private NumericUpDown numberConfident;
         private Label label1;
