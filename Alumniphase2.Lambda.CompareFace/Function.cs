@@ -1,5 +1,5 @@
 
-﻿using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.SQSEvents;
@@ -17,7 +17,8 @@ using System.Text.Json;
 
 namespace Alumniphase2.Lambda.CompareFace;
 
-public class Function { 
+public class Function
+{
     private readonly IAmazonRekognition _rekognitionClient;
     private readonly IAmazonS3 _s3Client;
 
@@ -73,7 +74,7 @@ public class Function {
             // Call CompareFaces on Rekognition
             var response = await _rekognitionClient.CompareFacesAsync(compareFacesRequest);
 
-            string resultId = Guid.NewGuid().ToString(); // Generate a unique ID for the result
+            //string resultId = Guid.NewGuid().ToString(); // Generate a unique ID for the result
             string payloadString;
 
             if (response.FaceMatches.Count > 0)

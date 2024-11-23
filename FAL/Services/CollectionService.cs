@@ -1,5 +1,7 @@
-﻿using Amazon.Rekognition;
+﻿using Amazon.DynamoDBv2.Model;
+using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
+using Amazon.Runtime.Internal.Util;
 using FAL.Services.IServices;
 using Share.SystemModel;
 using System.Reflection;
@@ -9,11 +11,14 @@ namespace FAL.Services
     public class CollectionService : ICollectionService
     {
         private readonly IAmazonRekognition _rekognitionClient;
+        private readonly IDynamoDBService _dynamoDBService;
         private readonly CustomLog _logger;
-        public CollectionService(IAmazonRekognition rekognitionClient, CustomLog logger)
+        public CollectionService(IAmazonRekognition rekognitionClient, CustomLog logger, IDynamoDBService dynamoDBService)
         {
             _rekognitionClient = rekognitionClient;
             _logger = logger;
+            _dynamoDBService = dynamoDBService;
+            _dynamoDBService = dynamoDBService;
         }
 
         public async Task<bool> CreateCollectionAsync(string systermId)
@@ -168,7 +173,7 @@ namespace FAL.Services
             {
                 throw new Exception(message: "S3 object does not exist.");
             }
-            catch (ResourceNotFoundException ex)
+            catch (Amazon.Rekognition.Model.ResourceNotFoundException ex)
             {
                 throw new Exception(message: "The resource specified in the request cannot be found.");
             }
@@ -206,16 +211,10 @@ namespace FAL.Services
                 using (var memStream = new MemoryStream())
                 {
                     await file.CopyToAsync(memStream);
-                    memStream.Position = 0; // Đặt lại vị trí con trỏ của stream về 0
-
-                    // Gửi yêu cầu DetectLabels đến Amazon Rekognition
-                    return await _rekognitionClient.DetectFacesAsync(new DetectFacesRequest()
+                    memStream.Position = 0;
+                    return await GetFaceDetectAsync(new Amazon.Rekognition.Model.Image()
                     {
-                        Image = new Amazon.Rekognition.Model.Image()
-                        {
-                            Bytes = memStream
-                        },
-                        Attributes = new List<string>() { "DEFAULT" }
+                        Bytes = memStream
                     });
                 }
             }
@@ -225,28 +224,93 @@ namespace FAL.Services
             }
         }
 
-        public async Task<bool> AssociateFacesAsync(string systermId, List<string> faceIds, string key)
+        private async Task<DetectFacesResponse> GetFaceDetectAsync(Image image)
         {
             try
             {
-                var associateRequest = new AssociateFacesRequest()
+                return await _rekognitionClient.DetectFacesAsync(new DetectFacesRequest()
                 {
-                    CollectionId = systermId,
-                    UserId = key,
-                    FaceIds = faceIds
-                };
-                var response = await _rekognitionClient.AssociateFacesAsync(associateRequest);
-                if (response.HttpStatusCode == System.Net.HttpStatusCode.BadRequest)
-                {
-                    throw new Exception(message: $"Accociate request fail");
-                }
-                return true;
+                    Image = image,
+                    Attributes = new List<string>() { "DEFAULT" }
+                });
             }
             catch (Exception)
             {
                 throw;
             }
         }
+
+
+        public async Task<bool> AssociateFacesAsync(string systemId, List<string> faceIds, string key)
+        {
+            try
+            {
+                // Iterate through each faceId
+                foreach (var faceId in faceIds)
+                {
+
+                    var response = await AssociateUser(key,faceId,systemId);
+
+                    // Check the response status code
+                    if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+                    {
+                        throw new Exception($"Associate request failed for faceId: {faceId}");
+                    }
+                }
+
+                // Return true if all associations are successful
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (optional) and rethrow it
+                throw new Exception("An error occurred while associating faces.", ex);
+            }
+        }
+
+        private async Task<AssociateFacesResponse> AssociateUser(string userId, string faceId, string collectionName)
+        {
+            var listFaceIDs = await _dynamoDBService.GetFaceIdsByUserIdAsync(userId, collectionName);
+            var existingFaceId = await _dynamoDBService.GetFaceIdForUserAndFaceAsync(userId, faceId, collectionName);
+            if (listFaceIDs.Count >= 100 && existingFaceId == null)
+            {
+                // Get the oldest face record
+                var oldestFaceId = await _dynamoDBService.GetOldestFaceIdForUserAsync(userId, collectionName);
+
+                // Disassociate and delete the oldest face
+                await DisassociateAndDeleteOldestFaceAsync(userId, oldestFaceId, collectionName);
+            }
+            else if (faceId.CompareTo(existingFaceId) == 0)
+            {
+                return new AssociateFacesResponse
+                {
+                    HttpStatusCode = System.Net.HttpStatusCode.OK,
+                    // Optional: You can set other fields as needed
+                };
+            }
+
+            var response = await _rekognitionClient.AssociateFacesAsync(new AssociateFacesRequest
+            {
+                CollectionId = collectionName,
+                FaceIds = new List<string> {
+                faceId
+            },
+                UserId = userId,
+                UserMatchThreshold = 80F,
+            });
+            return response;
+        }
+
+        private async Task DisassociateAndDeleteOldestFaceAsync(string userId, string faceId, string collectionName)
+        {
+            // Disassociate the oldest face from Rekognition
+            await DisassociatedFaceAsync(collectionName,faceId, userId);
+
+            // Delete the oldest face record from DynamoDB
+            await _dynamoDBService.DeleteItem(userId,faceId,collectionName);
+        }
+
+        
 
         public async Task<bool> IsUserExistByUserIdAsync(string systermId, string userId)
         {
@@ -418,9 +482,91 @@ namespace FAL.Services
             {
                 throw new Exception(message: "S3 object does not exist.");
             }
-            catch (ResourceNotFoundException ex)
+            catch (Amazon.Rekognition.Model.ResourceNotFoundException ex)
             {
                 throw new Exception(message: "The resource specified in the request cannot be found.");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteFromCollectionAsync(string userId, string systemId)
+        {
+            try
+            {
+
+                // Step 1: Query DynamoDB to get face IDs associated with the userId
+                var faceIds = await _dynamoDBService.GetFaceIdsByUserIdAsync(userId,systemId);
+
+                // If there are no face IDs, delete the user record and return true
+                if (faceIds == null || !faceIds.Any())
+                {
+                    await _dynamoDBService.DeleteUserFromDynamoDbAsync(userId,systemId);
+                    await DeleteUserFromRekognitionCollectionAsync(systemId, userId);
+                    return true;
+                }
+                foreach(var face in faceIds)
+                {
+                    await DisassociatedFaceAsync(systemId, face, userId);
+                }
+                // Step 2: Delete faces from the Rekognition collection
+                var deleteFacesRequest = new DeleteFacesRequest
+                {
+                    CollectionId = systemId,
+                    FaceIds = faceIds
+                };
+
+                var deleteFacesResponse = await _rekognitionClient.DeleteFacesAsync(deleteFacesRequest);
+
+                // Step 3: Check if any faces were deleted
+                if (deleteFacesResponse.DeletedFaces.Any())
+                {
+                    // Step 4: Delete the user from DynamoDB
+                    await _dynamoDBService.DeleteUserFromDynamoDbAsync(userId, systemId);
+
+                    await DeleteUserFromRekognitionCollectionAsync(systemId, userId);
+                    return true;
+                }
+
+                // If no faces were deleted, return false
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting faces for userId {userId}: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task DeleteUserFromRekognitionCollectionAsync(string systemId, string userId)
+        {
+            try
+            {
+                // Call AWS Rekognition to delete the user from the collection
+                var deleteUserRequest = new DeleteUserRequest
+                {
+                    CollectionId = systemId,
+                    UserId = userId
+                    
+                };
+
+                var deleteCollectionResponse = await _rekognitionClient.DeleteUserAsync(deleteUserRequest);
+
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting user from Rekognition collection: {userId}. Error: {ex.Message}");
+            }
+        }
+
+        public Task<DetectFacesResponse> DetectFaceByFileAsync(Image file)
+        {
+            try
+            {
+                return GetFaceDetectAsync(file);
             }
             catch (Exception)
             {
