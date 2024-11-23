@@ -101,6 +101,83 @@ namespace FAL.Controllers
             }
         }
 
+        [HttpPost("compare/result")]
+        public async Task<IActionResult> CompareFacesReturnResult([FromForm] CompareFaceRequest request)
+        {
+            // Validate if both images are provided
+            if (request.SourceImage == null || request.TargetImage == null)
+            {
+                return BadRequest("Both images must be provided.");
+            }
+
+            // Validate file types
+            if (!IsImageFile(request.SourceImage) || !IsImageFile(request.TargetImage))
+            {
+                return BadRequest("Both files must be valid images.");
+            }
+
+            try
+            {
+                // Read IFormFile into byte arrays
+                byte[] sourceImageBytes;
+                byte[] targetImageBytes;
+
+                using (var sourceStream = new MemoryStream())
+                {
+                    await request.SourceImage.CopyToAsync(sourceStream);
+                    sourceImageBytes = sourceStream.ToArray();
+                }
+
+                using (var targetStream = new MemoryStream())
+                {
+                    await request.TargetImage.CopyToAsync(targetStream);
+                    targetImageBytes = targetStream.ToArray();
+                }
+
+                // Create CompareFacesRequest object
+                var compareFacesRequest = new Amazon.Rekognition.Model.CompareFacesRequest
+                {
+                    SourceImage = new Amazon.Rekognition.Model.Image
+                    {
+                        Bytes = new MemoryStream(sourceImageBytes)
+                    },
+                    TargetImage = new Amazon.Rekognition.Model.Image
+                    {
+                        Bytes = new MemoryStream(targetImageBytes)
+                    },
+                    SimilarityThreshold = 80 // Default to 80% similarity if not provided
+                };
+
+                // Call AWS Rekognition CompareFaces API
+                var response = await _rekognitionClient.CompareFacesAsync(compareFacesRequest);
+
+                // Prepare the result
+                var results = response.FaceMatches.Select(match => new
+                {
+                    Similarity = match.Similarity,
+                    BoundingBox = match.Face.BoundingBox
+                });
+
+                return Ok(new
+                {
+                    Status = response.FaceMatches.Any() && response.FaceMatches.Max(match => match.Similarity) >= 80,
+                    Percentage = response.FaceMatches.Any()
+         ? response.FaceMatches.Max(match => match.Similarity)
+         : (float?)null // Return null if no matches
+                });
+            }
+            catch (AmazonRekognitionException ex)
+            {
+                // Handle AWS Rekognition exceptions
+                return StatusCode(500, $"AWS Rekognition error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                // Handle generic exceptions
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }
+        }
+
         private bool IsImageFile(IFormFile file)
         {
             return file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);

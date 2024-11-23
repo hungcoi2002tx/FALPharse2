@@ -9,9 +9,6 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<CompareFaceContext>(
-    opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("MyDatabase"))
-);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

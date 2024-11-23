@@ -6,6 +6,6 @@ namespace FAL.Services.IServices
     {
         Task<bool> IsExistBudgetAsync(string budgetName);
         Task<bool> AddBudgetAsync(string budgetName);
-        Task<bool> AddFileToS3Async(IFormFile file, string imageName, string bucketName, TypeOfRequest type, string userId = null);
+        Task<bool> AddFileToS3Async(IFormFile file, string imageName, string bucketName, TypeOfRequest type, string mediaId, string userId = null);
     }
 }

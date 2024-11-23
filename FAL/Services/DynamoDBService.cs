@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2.Model;
 using Amazon.Rekognition.Model;
 using FAL.Services.IServices;
 using Share.Data;
+using System.Text.Json;
 
 namespace FAL.Services
 {
@@ -27,7 +28,7 @@ namespace FAL.Services
                         {
                             nameof(FaceInformation.UserId), new AttributeValue
                             {
-                                S = userId
+                                S = userId.ToLower()
                             }
                         },
                         {
@@ -92,7 +93,7 @@ namespace FAL.Services
                     KeyConditionExpression = "UserId = :v_userId",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
                         {
-                            { ":v_userId", new AttributeValue { S = userId } }
+                            { ":v_userId", new AttributeValue { S = userId.ToLower() } }
                         },
                     Limit = 1
                 };
@@ -138,5 +139,222 @@ namespace FAL.Services
                 throw;
             }
         }
+
+        public async Task<bool> DeleteUserInformationAsync(string tableName, string userId, string faceId)
+        {
+            try
+            {
+                // Define the key (partition and sort keys if applicable) for the item to be deleted
+                var key = new Dictionary<string, AttributeValue>
+        {
+            {
+                nameof(FaceInformation.UserId), new AttributeValue
+                {
+                    S = userId
+                }
+            },
+            {
+                nameof(FaceInformation.FaceId), new AttributeValue
+                {
+                    S = faceId
+                }
+            }
+        };
+
+                var request = new DeleteItemRequest
+                {
+                    TableName = tableName,
+                    Key = key
+                };
+
+                var response = await _dynamoDBService.DeleteItemAsync(request);
+
+                // Check if the response is successful
+                return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting user information: {ex.Message}");
+                throw;
+            }
+        }
+        public async Task<List<string>> GetFaceIdsByUserIdAsync(string userId, string systemId)
+        {
+            var request = new QueryRequest
+            {
+                TableName = systemId,
+                KeyConditionExpression = "UserId = :userId",
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+        {
+            { ":userId", new AttributeValue { S = userId } }
+        }
+            };
+
+            var response = await _dynamoDBService.QueryAsync(request);
+            return response.Items.Select(item => item["FaceId"].S).ToList();
+        }
+
+        public async Task DeleteUserFromDynamoDbAsync(string userId, string systemId)
+        {
+            try
+            {
+                // Step 1: Scan for all items with the given UserId
+                var scanRequest = new ScanRequest
+                {
+                    TableName = systemId,
+                    FilterExpression = "UserId = :userId",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                { ":userId", new AttributeValue { S = userId } }
+            }
+                };
+
+                var scanResponse = await _dynamoDBService.ScanAsync(scanRequest);
+
+                // Step 2: Delete each item found in the scan
+                foreach (var item in scanResponse.Items)
+                {
+                    // Assuming 'FaceId' is the sort key in the schema
+                    var faceId = item.ContainsKey("FaceId") ? item["FaceId"].S : null;
+
+                    if (faceId == null)
+                    {
+                        Console.WriteLine($"No FaceId found for UserId {userId}. Skipping item.");
+                        continue; // Skip this item if FaceId is not available
+                    }
+
+                    var deleteRequest = new DeleteItemRequest
+                    {
+                        TableName = systemId,
+                        Key = new Dictionary<string, AttributeValue>
+                {
+                    { "UserId", new AttributeValue { S = userId } }, // Partition key
+                    { "FaceId", new AttributeValue { S = faceId } }  // Sort key
+                }
+                    };
+
+                    // Delete the item
+                    await _dynamoDBService.DeleteItemAsync(deleteRequest);
+                }
+            }
+            catch (AmazonDynamoDBException dbEx)
+            {
+                // Handle DynamoDB-specific exceptions
+                Console.WriteLine($"DynamoDB error occurred: {dbEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                // Handle other types of exceptions
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+        }
+
+        public async Task<string> GetFaceIdForUserAndFaceAsync(string userId, string faceId, string tableName)
+        {
+            var queryRequest = new QueryRequest
+            {
+                TableName = tableName,
+                KeyConditionExpression = "UserId = :userId and FaceId = :faceId",
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+        {
+            { ":userId", new AttributeValue { S = userId } },
+            { ":faceId", new AttributeValue { S = faceId } }
+        }
+            };
+
+            var queryResponse = await _dynamoDBService.QueryAsync(queryRequest);
+
+            // If the faceId exists, return the FaceId, otherwise return null
+            return queryResponse.Items.Count > 0 ? queryResponse.Items.First()["FaceId"].S : null;
+        }
+
+        public async Task<string> GetOldestFaceIdForUserAsync(string userId, string tableName)
+        {
+            var queryRequest = new QueryRequest
+            {
+                TableName = tableName,
+                KeyConditionExpression = "UserId = :userId",
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+        {
+            { ":userId", new AttributeValue { S = userId } }
+        }
+            };
+
+            try
+            {
+
+                var queryResponse = await _dynamoDBService.QueryAsync(queryRequest);
+
+
+                // Check if no items were found
+                if (queryResponse.Items.Count == 0)
+                {
+                    return null;
+                }
+
+                // Sort items by CreatedDate in ascending order and get the oldest one
+                var oldestItem = queryResponse.Items
+                .OrderBy(item => DateTime.Parse(item["CreateDate"].S)) // Sort by CreatedDate
+                .FirstOrDefault();
+
+                // Log the oldest FaceId found
+                var oldestFaceId = oldestItem?["FaceId"].S;
+
+                return oldestFaceId;
+            }
+            catch (Exception ex)
+            {
+                throw; // Re-throw the exception after logging it
+            }
+        }
+
+        public async Task DeleteItem(string userId, string faceId, string collectionName)
+        {
+            await _dynamoDBService.DeleteItemAsync(new DeleteItemRequest
+            {
+                TableName = collectionName,
+                Key = new Dictionary<string, AttributeValue>
+        {
+            { "UserId", new AttributeValue { S = userId } },
+            { "FaceId", new AttributeValue { S = faceId } }
+        }
+            });
+        }
+
+        public async Task<FaceDetectionResult> GetWebhookResult(string systermId, string mediaId)
+        {
+            FaceDetectionResult result = null;
+
+            try
+            {
+                // Define the query request to get the specific item by partition key (fileName)
+                var queryRequest = new QueryRequest
+                {
+                    TableName = systermId,
+                    KeyConditionExpression = "FileName = :fileName",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                { ":fileName", new AttributeValue { S = mediaId.ToLower() } }
+            }
+                };
+
+                // Execute the query
+                var queryResponse = await _dynamoDBService.QueryAsync(queryRequest);
+
+                if (queryResponse.Items.Count > 0 && queryResponse.Items[0].TryGetValue("Data", out var dataAttribute))
+                {
+                    // Deserialize the Data attribute into FaceDetectionResult
+                    result = JsonSerializer.Deserialize<FaceDetectionResult>(dataAttribute.S);
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing item with FileName: {mediaId}. Error: {ex.Message}");
+            }
+
+            return result;
+        }
+
     }
 }

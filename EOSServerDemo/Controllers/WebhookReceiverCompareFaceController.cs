@@ -1,10 +1,13 @@
 ﻿using EOSServerDemo.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.Security.Cryptography;
-using System.Security.Cryptography.Xml;
+using Microsoft.Extensions.Configuration;
+using CompareFaceExamDemo.DAO;
+using CompareFaceExamDemo.Entities;
+using System.IO;
 using System.Text;
+using System.Threading.Tasks;
+using System.Security.Cryptography;
 
 namespace EOSServerDemo.Controllers
 {
@@ -13,14 +16,13 @@ namespace EOSServerDemo.Controllers
     public class WebhookReceiverCompareFaceController : ControllerBase
     {
         private readonly string _secretKey;
-        private readonly CompareFaceContext _compareFace;
-        // Inject IConfiguration trực tiếp vào constructor
-        public WebhookReceiverCompareFaceController(IConfiguration configuration, CompareFaceContext compareFace)
-        {
-            // Lấy giá trị SecretKey từ appsettings.json
-            _secretKey = "your-secret-key";
-            _compareFace = compareFace;
+        private readonly ExamDAO<EOSComparisonResult> _examDAO;
 
+        // Inject IConfiguration và ExamDAO vào constructor
+        public WebhookReceiverCompareFaceController(IConfiguration configuration, ExamDAO<EOSComparisonResult> examDAO)
+        {
+            _secretKey = "your-secret-key";
+            _examDAO = examDAO;
         }
 
         //[AllowAnonymous]
@@ -36,6 +38,7 @@ namespace EOSServerDemo.Controllers
             {
                 return Unauthorized("Chữ ký không hợp lệ.");
             }
+
             await UpdateResultAsync(payload);
 
             // Trả về phản hồi cho client
@@ -53,32 +56,27 @@ namespace EOSServerDemo.Controllers
 
         private async Task UpdateResultAsync(ComparisonResult payload)
         {
-            // Tìm bản ghi Result theo ResultID
-            var result = await _compareFace.Results.FindAsync(payload.ResultId);
+            // Xử lý payload và cập nhật thông tin vào file sử dụng ExamDAO
+            string examDate = "2024-11-10"; // Cần lấy thông tin đợt thi từ payload hoặc qua tham số
+            int shift = 1; // Cần lấy thông tin ca thi từ payload hoặc qua tham số
 
-            // Kiểm tra xem bản ghi có tồn tại không
+            // Lấy danh sách kết quả từ file
+            var results = _examDAO.GetAll(examDate, shift);
+
+            var result = results.FirstOrDefault(r => r.Id == payload.ResultId);
             if (result != null)
             {
                 // Cập nhật các trường
-                // TODO: hỏi thắng về kiểu data
                 if (payload.Similarity.HasValue)
                 {
                     result.Confidence = payload.Similarity.Value;
-                    if (payload.Similarity.Value > 60)
-                    {
-                        result.Status = "MATCH";
-                    }
-                    else
-                    {
-                        result.Status = "NOMATCH";
-                    }
+                    result.Status = payload.Similarity.Value > 60 ? ResultStatus.MATCHED : ResultStatus.NOTMATCHED;
                 }
 
                 result.Message = "Đã hoàn thành";
-                //result.Time = DateTime.Now;
 
-                // Lưu thay đổi vào cơ sở dữ liệu
-                await _compareFace.SaveChangesAsync();
+                // Cập nhật lại thông tin trong file
+                _examDAO.Update(examDate, shift, result);
             }
             else
             {
@@ -86,6 +84,5 @@ namespace EOSServerDemo.Controllers
                 throw new KeyNotFoundException($"Result with ID {payload.ResultId} not found.");
             }
         }
-
     }
 }
