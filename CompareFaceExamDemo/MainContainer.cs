@@ -16,7 +16,10 @@ namespace CompareFaceExamDemo
         private ImageSourceForm imageSourceForm;
         private SettingForm settingForm;
         private Main mainForm;
-        public MainContainer()
+        public MainContainer(ImageCaptureForm imageCaptureForm,
+            ImageSourceForm imageSourceForm, 
+            SettingForm settingForm, 
+            Main mainForm)
         {
             InitializeComponent();
             // Cố định chiều rộng và chiều cao của form
@@ -34,13 +37,17 @@ namespace CompareFaceExamDemo
             // Tắt khả năng thay đổi kích thước
             this.MaximumSize = this.Size;
             this.MinimumSize = this.Size;
+            this.imageCaptureForm = imageCaptureForm;
+            this.imageSourceForm = imageSourceForm;
+            this.settingForm = settingForm;
+            this.mainForm = mainForm;
         }
 
         private void ImageSourceButtonClick(object sender, EventArgs e)
         {
             try
             {
-                OpenChildForm(new ImageSourceForm());
+                OpenChildForm(imageSourceForm);
             }
             catch (Exception ex)
             {
@@ -52,7 +59,7 @@ namespace CompareFaceExamDemo
         {
             try
             {
-                OpenChildForm(new ImageCaptureForm());
+                OpenChildForm(imageCaptureForm);
             }
             catch (Exception ex)
             {
@@ -64,7 +71,7 @@ namespace CompareFaceExamDemo
         {
             try
             {
-                OpenChildForm(new SettingForm());
+                OpenChildForm(settingForm);
             }
             catch (Exception ex)
             {
@@ -76,67 +83,10 @@ namespace CompareFaceExamDemo
         {
             try
             {
-                // Kiểm tra xem form đã được khởi tạo hay chưa
-                if (childForm is ImageSourceForm)
-                {
-                    if (imageSourceForm == null || imageSourceForm.IsDisposed)
-                    {
-                        imageSourceForm = new ImageSourceForm();
-                        imageSourceForm.FormBorderStyle = FormBorderStyle.None;
-                        imageSourceForm.MdiParent = this; // Thiết lập MDI Parent
-                        imageSourceForm.Dock = DockStyle.Fill; // Dock vào form cha
-                        imageSourceForm.Show(); // Hiển thị form
-                    }
-                    else
-                    {
-                        imageSourceForm.BringToFront(); // Mang form đã mở lên phía trước
-                    }
-                }
-                else if (childForm is ImageCaptureForm)
-                {
-                    if (imageCaptureForm == null || imageCaptureForm.IsDisposed)
-                    {
-                        imageCaptureForm = new ImageCaptureForm();
-                        imageCaptureForm.FormBorderStyle = FormBorderStyle.None;
-                        imageCaptureForm.MdiParent = this; // Thiết lập MDI Parent
-                        imageCaptureForm.Dock = DockStyle.Fill; // Dock vào form cha
-                        imageCaptureForm.Show(); // Hiển thị form
-                    }
-                    else
-                    {
-                        imageCaptureForm.BringToFront(); // Mang form đã mở lên phía trước
-                    }
-                }
-                else if (childForm is SettingForm)
-                {
-                    if (settingForm == null || settingForm.IsDisposed)
-                    {
-                        settingForm = new SettingForm();
-                        settingForm.FormBorderStyle = FormBorderStyle.None;
-                        settingForm.MdiParent = this; // Thiết lập MDI Parent
-                        settingForm.Dock = DockStyle.Fill; // Dock vào form cha
-                        settingForm.Show(); // Hiển thị form
-                    }
-                    else
-                    {
-                        settingForm.BringToFront(); // Mang form đã mở lên phía trước
-                    }
-                }
-                else if (childForm is Main)
-                {
-                    if (mainForm == null || mainForm.IsDisposed)
-                    {
-                        mainForm = new Main();
-                        mainForm.FormBorderStyle = FormBorderStyle.None;
-                        mainForm.MdiParent = this; // Thiết lập MDI Parent
-                        mainForm.Dock = DockStyle.Fill; // Dock vào form cha
-                        mainForm.Show(); // Hiển thị form
-                    }
-                    else
-                    {
-                        mainForm.BringToFront(); // Mang form đã mở lên phía trước
-                    }
-                }
+                childForm.FormBorderStyle = FormBorderStyle.None;
+                childForm.MdiParent = this; // Thiết lập MDI Parent
+                childForm.Dock = DockStyle.Fill; // Dock vào form cha
+                childForm.Show();
             }
             catch (Exception ex)
             {
@@ -147,7 +97,7 @@ namespace CompareFaceExamDemo
         {
             try
             {
-                OpenChildForm(new Main());
+                OpenChildForm(mainForm);
             }
             catch (Exception ex)
             {
@@ -171,10 +121,7 @@ namespace CompareFaceExamDemo
             }
         }
 
-        #region NOT DELETE THESE METHOD
-        private void viewImageSourceToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-        }
+#region NOT DELETE THESE METHOD
 
         private void viewImageCaptureToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -187,15 +134,6 @@ namespace CompareFaceExamDemo
         private void settingToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
-        }
-
-        private void settingToolStripMenuItem1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
-        {
         }
         #endregion
 

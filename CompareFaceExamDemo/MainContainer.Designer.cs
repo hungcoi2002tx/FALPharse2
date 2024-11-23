@@ -30,12 +30,12 @@
         {
             menuStrip1 = new MenuStrip();
             viewImageSourceToolStripMenuItem = new ToolStripMenuItem();
-            settingToolStripMenuItem = new ToolStripMenuItem();
-            settingToolStripMenuItem1 = new ToolStripMenuItem();
-            exitToolStripMenuItem = new ToolStripMenuItem();
             imageSourceToolStripMenuItem = new ToolStripMenuItem();
             imageCaptureToolStripMenuItem = new ToolStripMenuItem();
             resultToolStripMenuItem = new ToolStripMenuItem();
+            settingToolStripMenuItem = new ToolStripMenuItem();
+            settingToolStripMenuItem1 = new ToolStripMenuItem();
+            exitToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -56,29 +56,6 @@
             viewImageSourceToolStripMenuItem.Name = "viewImageSourceToolStripMenuItem";
             viewImageSourceToolStripMenuItem.Size = new Size(62, 20);
             viewImageSourceToolStripMenuItem.Text = "Manage";
-            viewImageSourceToolStripMenuItem.Click += ImageSourceButtonClick;
-            // 
-            // settingToolStripMenuItem
-            // 
-            settingToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { settingToolStripMenuItem1, exitToolStripMenuItem });
-            settingToolStripMenuItem.Name = "settingToolStripMenuItem";
-            settingToolStripMenuItem.Size = new Size(44, 20);
-            settingToolStripMenuItem.Text = "Help";
-            settingToolStripMenuItem.Click += settingToolStripMenuItem_Click;
-            // 
-            // settingToolStripMenuItem1
-            // 
-            settingToolStripMenuItem1.Name = "settingToolStripMenuItem1";
-            settingToolStripMenuItem1.Size = new Size(180, 22);
-            settingToolStripMenuItem1.Text = "Setting";
-            settingToolStripMenuItem1.Click += SettingButtonClick;
-            // 
-            // exitToolStripMenuItem
-            // 
-            exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(180, 22);
-            exitToolStripMenuItem.Text = "Exit";
-            exitToolStripMenuItem.Click += ExitButtonClick;
             // 
             // imageSourceToolStripMenuItem
             // 
@@ -100,6 +77,28 @@
             resultToolStripMenuItem.Size = new Size(180, 22);
             resultToolStripMenuItem.Text = "Result";
             resultToolStripMenuItem.Click += ViewResultButtonClick;
+            // 
+            // settingToolStripMenuItem
+            // 
+            settingToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { settingToolStripMenuItem1, exitToolStripMenuItem });
+            settingToolStripMenuItem.Name = "settingToolStripMenuItem";
+            settingToolStripMenuItem.Size = new Size(44, 20);
+            settingToolStripMenuItem.Text = "Help";
+            settingToolStripMenuItem.Click += settingToolStripMenuItem_Click;
+            // 
+            // settingToolStripMenuItem1
+            // 
+            settingToolStripMenuItem1.Name = "settingToolStripMenuItem1";
+            settingToolStripMenuItem1.Size = new Size(111, 22);
+            settingToolStripMenuItem1.Text = "Setting";
+            settingToolStripMenuItem1.Click += SettingButtonClick;
+            // 
+            // exitToolStripMenuItem
+            // 
+            exitToolStripMenuItem.Name = "exitToolStripMenuItem";
+            exitToolStripMenuItem.Size = new Size(111, 22);
+            exitToolStripMenuItem.Text = "Exit";
+            exitToolStripMenuItem.Click += ExitButtonClick;
             // 
             // MainContainer
             // 

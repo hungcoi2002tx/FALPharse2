@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CompareFaceExamDemo.ExternalService.Recognition;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -12,14 +13,26 @@ namespace CompareFaceExamDemo
 {
     public partial class ImageCaptureForm : Form
     {
-        public ImageCaptureForm()
+        private CompareFaceAdapterRecognitionService _compareFaceService;
+        public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService)
         {
             InitializeComponent();
+            _compareFaceService = compareFaceService;
         }
 
         private void label1_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void ImageCaptureForm_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnTestClick(object sender, EventArgs e)
+        {
+            _compareFaceService.TestAsync();
         }
     }
 }
