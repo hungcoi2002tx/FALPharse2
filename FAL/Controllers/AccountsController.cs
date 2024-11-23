@@ -10,13 +10,11 @@ namespace FAL.Controllers
     [ApiController]
     public class AccountsController : ControllerBase
     {
-        private readonly IAmazonDynamoDB _dynamoDbClient;
-        private readonly DynamoDBContext _dbContext;
+        private readonly IDynamoDBContext _dbContext;
 
-        public AccountsController(IAmazonDynamoDB dynamoDbClient)
+        public AccountsController(IDynamoDBContext dbContext)
         {
-            _dynamoDbClient = dynamoDbClient;
-            _dbContext = new DynamoDBContext(dynamoDbClient);
+            _dbContext = dbContext;
         }
 
         // GET: api/users

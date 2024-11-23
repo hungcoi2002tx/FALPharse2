@@ -29,7 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraCaptureLibrary", "..\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompareFaceExamDemo", "..\CompareFaceExamDemo\CompareFaceExamDemo.csproj", "{899E4D9C-C853-45E0-A262-D63747CD8A0F}"
 EndProject
-
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FAL-UT", "..\FAL-UT\FAL-UT.csproj", "{6481B5E9-9CA8-4BCF-B915-EF23AAB83F76}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -84,7 +85,10 @@ Global
 		{899E4D9C-C853-45E0-A262-D63747CD8A0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{899E4D9C-C853-45E0-A262-D63747CD8A0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{899E4D9C-C853-45E0-A262-D63747CD8A0F}.Release|Any CPU.Build.0 = Release|Any CPU
-
+		{6481B5E9-9CA8-4BCF-B915-EF23AAB83F76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6481B5E9-9CA8-4BCF-B915-EF23AAB83F76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6481B5E9-9CA8-4BCF-B915-EF23AAB83F76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6481B5E9-9CA8-4BCF-B915-EF23AAB83F76}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

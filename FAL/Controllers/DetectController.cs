@@ -21,7 +21,7 @@ namespace FAL.Controllers
         private readonly CustomLog _logger;
         private readonly string SystermId = GlobalVarians.SystermId;
 
-        public DetectController(IAmazonS3 s3Client, CustomLog logger, ICollectionService collectionService, IS3Service s3Service)
+        public DetectController(CustomLog logger, ICollectionService collectionService, IS3Service s3Service)
         {
             _logger = logger;
             _collectionService = collectionService;
