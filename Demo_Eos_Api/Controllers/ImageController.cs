@@ -1,0 +1,20 @@
+﻿using Demo_Eos_Api.Service.Implement;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Demo_Eos_Api.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ImageController : ControllerBase
+    {
+        private IImageService _imageService;
+
+        public ImageController(IImageService imageService)
+        {
+            _imageService = imageService;
+        }
+
+        public async Task<IActionResult> SaveImageFile() 
+    }
+}
