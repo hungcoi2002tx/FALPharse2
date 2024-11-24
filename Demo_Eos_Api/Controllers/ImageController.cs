@@ -16,6 +16,7 @@ namespace Demo_Eos_Api.Controllers
             _imageService = imageService;
         }
 
+        [HttpPost("SaveFile")]
         public async Task<IActionResult> SaveImageFile(SaveImageDTO request)
         {
             var res = await _imageService.SaveImageToFile(request);
