@@ -13,17 +13,15 @@ using System.Windows.Forms;
 namespace CompareFaceExamDemo
 {
 
-    public partial class Main : Form
+    public partial class ResultForm : Form
     {
         private ExamDAO<EOSComparisonResult> examDao;
-        private List<EOSComparisonResult> results = new List<EOSComparisonResult>();
+        private List<EOSComparisonResult> results = [];
         private readonly string _sourceImageFolder;
-        private readonly string _dataFolder;
-        private readonly Config _config;
         private SettingModel _settingForm;
         private string fileDataPath;
 
-        public Main()
+        public ResultForm()
         {
             InitializeComponent();
 

@@ -27,7 +27,7 @@ namespace CompareFaceExamDemo
             try
             {
                 services.AddMemoryCache();
-                services.AddSingleton<Main>();
+                services.AddSingleton<ResultForm>();
                 services.AddSingleton<MainContainer>();
                 services.AddSingleton<ImageCaptureForm>();
                 services.AddSingleton<ImageSourceForm>();

@@ -1,6 +1,6 @@
 ﻿namespace CompareFaceExamDemo
 {
-    partial class Main
+    partial class ResultForm
     {
         /// <summary>
         ///  Required designer variable.

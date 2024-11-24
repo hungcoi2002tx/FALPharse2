@@ -15,11 +15,11 @@ namespace CompareFaceExamDemo
         private ImageCaptureForm imageCaptureForm;
         private ImageSourceForm imageSourceForm;
         private SettingForm settingForm;
-        private Main mainForm;
+        private ResultForm mainForm;
         public MainContainer(ImageCaptureForm imageCaptureForm,
             ImageSourceForm imageSourceForm, 
             SettingForm settingForm, 
-            Main mainForm)
+            ResultForm mainForm)
         {
             InitializeComponent();
             // Cố định chiều rộng và chiều cao của form
