@@ -34,24 +34,24 @@
             label1 = new Label();
             label2 = new Label();
             cmbStatus = new ComboBox();
-            dtpExamDate = new DateTimePicker();
-            label3 = new Label();
             cmbSortField = new ComboBox();
             label5 = new Label();
             chkSortDesc = new CheckBox();
             txtExamCode = new TextBox();
             label6 = new Label();
-            txtShift = new NumericUpDown();
-            label7 = new Label();
             label4 = new Label();
             txtMinConfidence = new NumericUpDown();
             label8 = new Label();
             txtMaxConfidence = new NumericUpDown();
             pictureBoxTargetImage = new PictureBox();
             pictureBoxSourceImage = new PictureBox();
-            button2 = new Button();
+            txtDataFolder = new TextBox();
+            label9 = new Label();
+            button3 = new Button();
+            cmbFileList = new ComboBox();
+            label3 = new Label();
+            btnExport = new Button();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)txtShift).BeginInit();
             ((System.ComponentModel.ISupportInitialize)txtMinConfidence).BeginInit();
             ((System.ComponentModel.ISupportInitialize)txtMaxConfidence).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBoxTargetImage).BeginInit();
@@ -71,7 +71,7 @@
             // 
             // button1
             // 
-            button1.Location = new Point(939, 160);
+            button1.Location = new Point(939, 165);
             button1.Name = "button1";
             button1.Size = new Size(94, 29);
             button1.TabIndex = 1;
@@ -112,23 +112,6 @@
             cmbStatus.Size = new Size(250, 28);
             cmbStatus.TabIndex = 5;
             // 
-            // dtpExamDate
-            // 
-            dtpExamDate.Location = new Point(116, 12);
-            dtpExamDate.Name = "dtpExamDate";
-            dtpExamDate.Size = new Size(250, 27);
-            dtpExamDate.TabIndex = 6;
-            dtpExamDate.Value = new DateTime(2024, 11, 8, 0, 0, 0, 0);
-            // 
-            // label3
-            // 
-            label3.AutoSize = true;
-            label3.Location = new Point(54, 17);
-            label3.Name = "label3";
-            label3.Size = new Size(41, 20);
-            label3.TabIndex = 7;
-            label3.Text = "Date";
-            // 
             // cmbSortField
             // 
             cmbSortField.FormattingEnabled = true;
@@ -162,6 +145,7 @@
             txtExamCode.Name = "txtExamCode";
             txtExamCode.Size = new Size(250, 27);
             txtExamCode.TabIndex = 2;
+            txtExamCode.Visible = false;
             // 
             // label6
             // 
@@ -171,24 +155,7 @@
             label6.Size = new Size(84, 20);
             label6.TabIndex = 3;
             label6.Text = "Exam Code";
-            // 
-            // txtShift
-            // 
-            txtShift.Location = new Point(510, 10);
-            txtShift.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-            txtShift.Name = "txtShift";
-            txtShift.Size = new Size(125, 27);
-            txtShift.TabIndex = 10;
-            txtShift.Value = new decimal(new int[] { 1, 0, 0, 0 });
-            // 
-            // label7
-            // 
-            label7.AutoSize = true;
-            label7.Location = new Point(468, 12);
-            label7.Name = "label7";
-            label7.Size = new Size(39, 20);
-            label7.TabIndex = 8;
-            label7.Text = "Shift";
+            label6.Visible = false;
             // 
             // label4
             // 
@@ -241,33 +208,78 @@
             pictureBoxSourceImage.TabIndex = 11;
             pictureBoxSourceImage.TabStop = false;
             // 
-            // button2
+            // txtDataFolder
             // 
-            button2.Location = new Point(683, 161);
-            button2.Name = "button2";
-            button2.Size = new Size(119, 29);
-            button2.TabIndex = 12;
-            button2.Text = "Source Image";
-            button2.UseVisualStyleBackColor = true;
-            button2.Click += button2_Click;
+            txtDataFolder.Location = new Point(116, 27);
+            txtDataFolder.Name = "txtDataFolder";
+            txtDataFolder.ReadOnly = true;
+            txtDataFolder.Size = new Size(250, 27);
+            txtDataFolder.TabIndex = 13;
+            // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Location = new Point(26, 30);
+            label9.Name = "label9";
+            label9.Size = new Size(85, 20);
+            label9.TabIndex = 7;
+            label9.Text = "Data folder";
+            // 
+            // button3
+            // 
+            button3.Location = new Point(372, 26);
+            button3.Name = "button3";
+            button3.Size = new Size(94, 29);
+            button3.TabIndex = 14;
+            button3.Text = "Choose";
+            button3.UseVisualStyleBackColor = true;
+            button3.Click += button3_Click;
+            // 
+            // cmbFileList
+            // 
+            cmbFileList.FormattingEnabled = true;
+            cmbFileList.Location = new Point(583, 26);
+            cmbFileList.Name = "cmbFileList";
+            cmbFileList.Size = new Size(278, 28);
+            cmbFileList.TabIndex = 15;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(497, 30);
+            label3.Name = "label3";
+            label3.Size = new Size(80, 20);
+            label3.TabIndex = 16;
+            label3.Text = "ExamCode";
+            // 
+            // btnExport
+            // 
+            btnExport.Location = new Point(793, 165);
+            btnExport.Name = "btnExport";
+            btnExport.Size = new Size(140, 29);
+            btnExport.TabIndex = 17;
+            btnExport.Text = "Export to Excel";
+            btnExport.UseVisualStyleBackColor = true;
+            btnExport.Click += btnExport_Click;
             // 
             // Main
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1420, 690);
-            Controls.Add(button2);
+            Controls.Add(btnExport);
+            Controls.Add(label3);
+            Controls.Add(cmbFileList);
+            Controls.Add(button3);
+            Controls.Add(txtDataFolder);
             Controls.Add(pictureBoxSourceImage);
             Controls.Add(pictureBoxTargetImage);
             Controls.Add(txtMaxConfidence);
             Controls.Add(txtMinConfidence);
             Controls.Add(label8);
-            Controls.Add(txtShift);
             Controls.Add(label4);
             Controls.Add(chkSortDesc);
-            Controls.Add(label7);
-            Controls.Add(label3);
-            Controls.Add(dtpExamDate);
+            Controls.Add(label9);
             Controls.Add(cmbSortField);
             Controls.Add(cmbStatus);
             Controls.Add(label5);
@@ -282,7 +294,6 @@
             Text = "Form1";
             Load += Main_Load;
             ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)txtShift).EndInit();
             ((System.ComponentModel.ISupportInitialize)txtMinConfidence).EndInit();
             ((System.ComponentModel.ISupportInitialize)txtMaxConfidence).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBoxTargetImage).EndInit();
@@ -301,21 +312,22 @@
         private ComboBox cmbStatus;
         private DateTimePicker dtpStartDate;
         private DateTimePicker dtpEndDate;
-        private Label label3;
         private Label label4;
         private ComboBox cmbSortField;
         private Label label5;
         private CheckBox chkSortDesc;
         private TextBox txtExamCode;
         private Label label6;
-        private DateTimePicker dtpExamDate;
-        private NumericUpDown txtShift;
-        private Label label7;
         private Label label8;
         private NumericUpDown txtMinConfidence;
         private NumericUpDown txtMaxConfidence;
         private PictureBox pictureBoxTargetImage;
         private PictureBox pictureBoxSourceImage;
-        private Button button2;
+        private TextBox txtDataFolder;
+        private Label label9;
+        private Button button3;
+        private ComboBox cmbFileList;
+        private Label label3;
+        private Button btnExport;
     }
 }
