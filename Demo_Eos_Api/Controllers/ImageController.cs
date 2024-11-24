@@ -1,4 +1,5 @@
-﻿using Demo_Eos_Api.Service.Implement;
+﻿using Demo_Eos_Api.DTOs;
+using Demo_Eos_Api.Service.Implement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,6 +16,10 @@ namespace Demo_Eos_Api.Controllers
             _imageService = imageService;
         }
 
-        public async Task<IActionResult> SaveImageFile() 
+        public async Task<IActionResult> SaveImageFile(SaveImageDTO request)
+        {
+            var res = await _imageService.SaveImageToFile(request);
+            return StatusCode((int)res.StatusCode!, res);
+        } 
     }
 }
