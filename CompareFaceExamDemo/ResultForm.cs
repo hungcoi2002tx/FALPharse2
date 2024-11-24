@@ -1,14 +1,7 @@
 ﻿using CompareFaceExamDemo.DAO;
-using CompareFaceExamDemo.Dtos;
 using CompareFaceExamDemo.Entities;
 using CompareFaceExamDemo.Models;
 using CompareFaceExamDemo.Utils;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text.Json;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace CompareFaceExamDemo
 {
