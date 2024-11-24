@@ -13,11 +13,11 @@ namespace CompareFaceExamDemo
     public partial class MainContainer : Form
     {
         private ImageCaptureForm imageCaptureForm;
-        private ImageSourceForm imageSourceForm;
+        private SourceImageForm imageSourceForm;
         private SettingForm settingForm;
         private ResultForm mainForm;
         public MainContainer(ImageCaptureForm imageCaptureForm,
-            ImageSourceForm imageSourceForm, 
+            SourceImageForm imageSourceForm, 
             SettingForm settingForm, 
             ResultForm mainForm)
         {
