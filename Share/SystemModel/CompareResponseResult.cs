@@ -14,9 +14,5 @@ namespace Share.SystemModel
         /// API data 
         /// </summary>
         public string? Message { get; set; }
-        /// <summary>
-        /// api status Code
-        /// </summary>
-        public HttpStatusCode? StatusCode { get; set; }
     }
 }
