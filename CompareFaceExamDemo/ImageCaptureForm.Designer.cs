@@ -2,15 +2,13 @@
 {
     partial class ImageCaptureForm
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
+        private System.Windows.Forms.Button btnSelectFolder;
+        private System.Windows.Forms.DataGridView dataGridViewImages;
+        private System.Windows.Forms.Button btnSelectAll;
+        private System.Windows.Forms.Button btnSend;
+        private System.Windows.Forms.TextBox txtFolderPath;
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -20,57 +18,65 @@
             base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
-
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
-            label1 = new Label();
-            button1 = new Button();
-            SuspendLayout();
+            this.btnSelectFolder = new System.Windows.Forms.Button();
+            this.btnSend = new System.Windows.Forms.Button();
+            this.dataGridViewImages = new System.Windows.Forms.DataGridView();
+            this.txtFolderPath = new System.Windows.Forms.TextBox();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewImages)).BeginInit();
+            this.SuspendLayout();
             // 
-            // label1
+            // btnSelectFolder
             // 
-            label1.AutoEllipsis = true;
-            label1.AutoSize = true;
-            label1.Location = new Point(273, 132);
-            label1.Name = "label1";
-            label1.Size = new Size(49, 15);
-            label1.TabIndex = 0;
-            label1.Text = "Hungdz";
-            label1.Click += label1_Click;
+            this.btnSelectFolder.Location = new System.Drawing.Point(12, 12);
+            this.btnSelectFolder.Name = "btnSelectFolder";
+            this.btnSelectFolder.Size = new System.Drawing.Size(150, 30);
+            this.btnSelectFolder.TabIndex = 0;
+            this.btnSelectFolder.Text = "Select Folder";
+            this.btnSelectFolder.UseVisualStyleBackColor = true;
+            this.btnSelectFolder.Click += new System.EventHandler(this.btnSelectFolder_Click);
             // 
-            // button1
+            // btnSend
             // 
-            button1.Location = new Point(429, 53);
-            button1.Name = "button1";
-            button1.Size = new Size(75, 23);
-            button1.TabIndex = 1;
-            button1.Text = "Test";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += btnTestClick;
+            this.btnSend.Location = new System.Drawing.Point(180, 12);
+            this.btnSend.Name = "btnSend";
+            this.btnSend.Size = new System.Drawing.Size(150, 30);
+            this.btnSend.TabIndex = 1;
+            this.btnSend.Text = "Send";
+            this.btnSend.UseVisualStyleBackColor = true;
+            this.btnSend.Click += new System.EventHandler(this.btnSend_Click);
             // 
-            // ImageCaptureForm
+            // txtFolderPath
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(700, 338);
-            Controls.Add(button1);
-            Controls.Add(label1);
-            Margin = new Padding(3, 2, 3, 2);
-            Name = "ImageCaptureForm";
-            Text = "ImageCaptureForm";
-            Load += ImageCaptureForm_Load;
-            ResumeLayout(false);
-            PerformLayout();
+            this.txtFolderPath.Location = new System.Drawing.Point(12, 50);
+            this.txtFolderPath.Name = "txtFolderPath";
+            this.txtFolderPath.ReadOnly = true; // Chỉ đọc
+            this.txtFolderPath.Size = new System.Drawing.Size(500, 20);
+            this.txtFolderPath.TabIndex = 2;
+            // 
+            // dataGridViewImages
+            // 
+            this.dataGridViewImages.AllowUserToAddRows = false;
+            this.dataGridViewImages.AllowUserToDeleteRows = false;
+            this.dataGridViewImages.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridViewImages.Location = new System.Drawing.Point(12, 80);
+            this.dataGridViewImages.Name = "dataGridViewImages";
+            this.dataGridViewImages.Size = new System.Drawing.Size(500, 270);
+            this.dataGridViewImages.TabIndex = 3;
+            // 
+            // Form1
+            // 
+            this.ClientSize = new System.Drawing.Size(534, 361);
+            this.Controls.Add(this.txtFolderPath);
+            this.Controls.Add(this.dataGridViewImages);
+            this.Controls.Add(this.btnSend);
+            this.Controls.Add(this.btnSelectFolder);
+            this.Name = "Form1";
+            this.Text = "Image File Reader with Send";
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewImages)).EndInit();
+            this.ResumeLayout(false);
+            this.PerformLayout();
         }
-
-        #endregion
-
-        private Label label1;
-        private Button button1;
     }
 }
