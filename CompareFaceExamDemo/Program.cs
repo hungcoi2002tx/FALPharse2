@@ -45,8 +45,6 @@ namespace CompareFaceExamDemo
                 })
                 { BaseAddress = new Uri("https://dev.demorecognition.click") })));
 
-
-                services.AddSingleton<MainContainer>();
                 #region register Rekognition service
                 var recognitionService = typeof(BaseRecognitionServices<>).Assembly.ExportedTypes
                    .Where(a => a.FullName.EndsWith("AdapterRecognitionService"));
