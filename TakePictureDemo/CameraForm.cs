@@ -25,9 +25,8 @@ namespace TakePictureDemo
         private Timer frameCheckTimer;
         private string _base64Image;
         string folderPath = @"C:\CapturedImages";
-        string apiUrl = "https://your-api-url.com/SaveFile";
+        string apiUrl = "https://localhost:7237/api/Image/SaveFile";
 
-        public string Semester { get; set; } = "FALL24";
         public string ExamCode { get; set; }
         public string StudentCode { get; set; }
 
@@ -113,14 +112,9 @@ namespace TakePictureDemo
 
         private void SendDataToServer()
         {
-            // Thông báo trước khi gửi dữ liệu
-            MessageBox.Show("Data sending started...");
-
-            // Tạo đối tượng SaveImageDTO
             var saveImageDTO = new SaveImageDTO
             {
                 ImageBase = _base64Image, // Biến toàn cục chứa ảnh Base64
-                Semester = Semester,
                 ExamCode = ExamCode,
                 StudentCode = StudentCode
             };

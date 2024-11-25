@@ -49,7 +49,7 @@ namespace TakePictureDemo
         {
             using (CameraForm formCamera = new CameraForm())
             {
-                formCamera.Semester = textBox3.Text;
+                formCamera.ExamCode = textBox3.Text;
                 formCamera.StudentCode = textBox2.Text;
 
                 this.Hide();
