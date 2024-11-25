@@ -1,4 +1,4 @@
-﻿namespace EOSServerDemo.Models
+﻿namespace CompareFaceExamDemo.Models
 {
     public class ComparisonResult
     {

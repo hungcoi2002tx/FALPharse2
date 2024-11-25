@@ -1,3 +1,4 @@
+using CompareFaceExamDemo.ExternalService;
 using CompareFaceExamDemo.ExternalService.Recognition;
 using Microsoft.Extensions.DependencyInjection;
 using RestSharp;
@@ -33,6 +34,7 @@ namespace CompareFaceExamDemo
                 services.AddSingleton<ImageCaptureForm>();
                 services.AddSingleton<SettingForm>();
                 services.AddSingleton<Test>();
+                services.AddSingleton<AuthService>();
 
                 services.AddSingleton<IRecognitionRestClient>(r => new RecognitionRestClient(
                 new RestClient(new HttpClient(new HttpClientHandler
