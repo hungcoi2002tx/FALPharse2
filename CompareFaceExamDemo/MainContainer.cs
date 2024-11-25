@@ -87,6 +87,7 @@ namespace CompareFaceExamDemo
                 childForm.MdiParent = this; // Thiết lập MDI Parent
                 childForm.Dock = DockStyle.Fill; // Dock vào form cha
                 childForm.Show();
+                childForm.BringToFront();
             }
             catch (Exception ex)
             {
