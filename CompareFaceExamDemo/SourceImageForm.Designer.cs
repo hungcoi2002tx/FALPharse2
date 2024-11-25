@@ -43,28 +43,31 @@
             // 
             // txtStudentCode
             // 
-            txtStudentCode.Location = new Point(153, 36);
+            txtStudentCode.Location = new Point(134, 27);
+            txtStudentCode.Margin = new Padding(3, 2, 3, 2);
             txtStudentCode.Name = "txtStudentCode";
-            txtStudentCode.Size = new Size(248, 27);
+            txtStudentCode.Size = new Size(218, 23);
             txtStudentCode.TabIndex = 0;
             // 
             // pictureBoxSourceImage
             // 
             pictureBoxSourceImage.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pictureBoxSourceImage.BackColor = SystemColors.ActiveBorder;
-            pictureBoxSourceImage.Location = new Point(48, 91);
+            pictureBoxSourceImage.Location = new Point(42, 68);
+            pictureBoxSourceImage.Margin = new Padding(3, 2, 3, 2);
             pictureBoxSourceImage.Name = "pictureBoxSourceImage";
-            pictureBoxSourceImage.Size = new Size(468, 529);
+            pictureBoxSourceImage.Size = new Size(618, 397);
             pictureBoxSourceImage.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBoxSourceImage.TabIndex = 1;
             pictureBoxSourceImage.TabStop = false;
             // 
             // btnSave
             // 
-            btnSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnSave.Location = new Point(652, 645);
+            btnSave.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnSave.Location = new Point(574, 27);
+            btnSave.Margin = new Padding(3, 2, 3, 2);
             btnSave.Name = "btnSave";
-            btnSave.Size = new Size(121, 29);
+            btnSave.Size = new Size(106, 22);
             btnSave.TabIndex = 2;
             btnSave.Text = "Add";
             btnSave.UseVisualStyleBackColor = true;
@@ -72,10 +75,11 @@
             // 
             // btnDelete
             // 
-            btnDelete.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnDelete.Location = new Point(517, 645);
+            btnDelete.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnDelete.Location = new Point(456, 27);
+            btnDelete.Margin = new Padding(3, 2, 3, 2);
             btnDelete.Name = "btnDelete";
-            btnDelete.Size = new Size(121, 29);
+            btnDelete.Size = new Size(106, 22);
             btnDelete.TabIndex = 2;
             btnDelete.Text = "Delete";
             btnDelete.UseVisualStyleBackColor = true;
@@ -83,9 +87,10 @@
             // 
             // btnLoad
             // 
-            btnLoad.Location = new Point(412, 33);
+            btnLoad.Location = new Point(360, 26);
+            btnLoad.Margin = new Padding(3, 2, 3, 2);
             btnLoad.Name = "btnLoad";
-            btnLoad.Size = new Size(94, 32);
+            btnLoad.Size = new Size(82, 24);
             btnLoad.TabIndex = 2;
             btnLoad.Text = "Load";
             btnLoad.UseVisualStyleBackColor = true;
@@ -94,18 +99,19 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(48, 39);
+            label1.Location = new Point(42, 31);
             label1.Name = "label1";
-            label1.Size = new Size(99, 20);
+            label1.Size = new Size(79, 15);
             label1.TabIndex = 3;
             label1.Text = "Student Code";
             // 
             // btnImport
             // 
-            btnImport.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnImport.Location = new Point(517, 36);
+            btnImport.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnImport.Location = new Point(456, 481);
+            btnImport.Margin = new Padding(3, 2, 3, 2);
             btnImport.Name = "btnImport";
-            btnImport.Size = new Size(121, 29);
+            btnImport.Size = new Size(106, 22);
             btnImport.TabIndex = 4;
             btnImport.Text = "Import Folder";
             btnImport.UseVisualStyleBackColor = true;
@@ -113,10 +119,11 @@
             // 
             // btnDeleteBulk
             // 
-            btnDeleteBulk.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnDeleteBulk.Location = new Point(652, 36);
+            btnDeleteBulk.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnDeleteBulk.Location = new Point(574, 481);
+            btnDeleteBulk.Margin = new Padding(3, 2, 3, 2);
             btnDeleteBulk.Name = "btnDeleteBulk";
-            btnDeleteBulk.Size = new Size(121, 29);
+            btnDeleteBulk.Size = new Size(106, 22);
             btnDeleteBulk.TabIndex = 4;
             btnDeleteBulk.Text = "Delete Bulk";
             btnDeleteBulk.UseVisualStyleBackColor = true;
@@ -134,9 +141,9 @@
             // 
             // SourceImageForm
             // 
-            AutoScaleDimensions = new SizeF(8F, 20F);
+            AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(807, 686);
+            ClientSize = new Size(706, 514);
             Controls.Add(btnDeleteBulk);
             Controls.Add(btnImport);
             Controls.Add(label1);
@@ -145,6 +152,7 @@
             Controls.Add(btnSave);
             Controls.Add(pictureBoxSourceImage);
             Controls.Add(txtStudentCode);
+            Margin = new Padding(3, 2, 3, 2);
             Name = "SourceImageForm";
             Text = "Form1";
             Load += SourceImageForm_Load;

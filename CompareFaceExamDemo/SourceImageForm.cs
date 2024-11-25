@@ -64,13 +64,6 @@ namespace CompareFaceExamDemo
                 return;
             }
 
-            // Xác nhận trước khi lưu ảnh
-            var result = MessageBox.Show("Bạn có chắc chắn muốn lưu ảnh?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (result == DialogResult.No)
-            {
-                return; // Dừng hành động nếu chọn "No"
-            }
-
             using (var openFileDialog = new OpenFileDialog())
             {
                 openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png";
@@ -78,7 +71,12 @@ namespace CompareFaceExamDemo
                 {
                     // Đặt phần mở rộng mặc định là .jpg
                     var destinationPath = Path.Combine(_settingForm.DirectoryImageSource, $"{txtStudentCode.Text.Trim()}.jpg");
-
+                    // Xác nhận trước khi lưu ảnh
+                    var result = MessageBox.Show($"Bạn có chắc chắn muốn thêm ảnh {openFileDialog.FileName} cho sinh viên {txtStudentCode.Text.Trim()}?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    if (result == DialogResult.No)
+                    {
+                        return; // Dừng hành động nếu chọn "No"
+                    }
                     // Đảm bảo ảnh được lưu dưới định dạng .jpg
                     var image = Image.FromFile(openFileDialog.FileName);
                     image.Save(destinationPath, System.Drawing.Imaging.ImageFormat.Jpeg);
@@ -102,7 +100,7 @@ namespace CompareFaceExamDemo
             var filePath = Path.Combine(_settingForm.DirectoryImageSource, $"{txtStudentCode.Text.Trim()}.jpg");
 
             // Xác nhận trước khi xóa ảnh
-            var result = MessageBox.Show("Bạn có chắc chắn muốn xóa ảnh này?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            var result = MessageBox.Show($"Bạn có chắc chắn muốn xóa ảnh của sinh viên {txtStudentCode.Text.Trim()}?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (result == DialogResult.No)
             {
                 return; // Dừng hành động nếu chọn "No"
