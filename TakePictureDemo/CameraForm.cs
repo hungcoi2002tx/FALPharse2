@@ -5,9 +5,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Windows.Forms;
+using TakePictureDemo.Models.DTOs;
+using Newtonsoft.Json;
 
 namespace TakePictureDemo
 {
@@ -17,12 +21,21 @@ namespace TakePictureDemo
         private VideoCaptureDevice videoCaptureDevice;
         private Button captureButton;
         private Button sendButton;
+        private bool frameReceived = false;
+        private Timer frameCheckTimer;
+        private string _base64Image;
+        string folderPath = @"C:\CapturedImages";
+        string apiUrl = "https://your-api-url.com/SaveFile";
 
-        public string ImagePath { get; private set; }
+        public string Semester { get; set; } = "FALL24";
+        public string ExamCode { get; set; }
+        public string StudentCode { get; set; }
 
         public CameraForm()
         {
             InitializeComponent();
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             pictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
             CreateRoundButton();
             CreateSendButton();
@@ -34,106 +47,198 @@ namespace TakePictureDemo
         {
             captureButton = new Button
             {
-                Width = 60, // Đường kính nút
+                Width = 60,
                 Height = 60,
                 BackColor = Color.Orange,
                 FlatStyle = FlatStyle.Flat,
             };
 
-            // Loại bỏ viền nút
             captureButton.FlatAppearance.BorderSize = 0;
-            captureButton.FlatAppearance.MouseOverBackColor = Color.DarkOrange; // Màu khi hover
-            captureButton.FlatAppearance.MouseDownBackColor = Color.OrangeRed; // Màu khi nhấn
+            captureButton.FlatAppearance.MouseOverBackColor = Color.DarkOrange;
+            captureButton.FlatAppearance.MouseDownBackColor = Color.OrangeRed;
 
-            // Tạo hình tròn cho nút
             var graphicsPath = new System.Drawing.Drawing2D.GraphicsPath();
-            graphicsPath.AddEllipse(0, 0, captureButton.Width, captureButton.Height); // Hình tròn
+            graphicsPath.AddEllipse(0, 0, captureButton.Width, captureButton.Height);
             captureButton.Region = new Region(graphicsPath);
 
-            // Gắn sự kiện click
             captureButton.Click += (s, e) =>
             {
                 CaptureAndSaveAndCropImage();
             };
 
-            // Thêm nút vào form
             this.Controls.Add(captureButton);
         }
 
         private void CreateSendButton()
         {
-            // Tạo nút hình tròn
             sendButton = new Button
             {
-                Width = 60,  // Đường kính nút
+                Width = 60,
                 Height = 60,
-                BackColor = Color.LightBlue, // Màu nền
+                BackColor = Color.LightBlue,
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Arial", 10, FontStyle.Bold),
-                TextAlign = ContentAlignment.MiddleCenter, // Canh chữ và hình ảnh
-                Text = "", // Không có chữ
+                TextAlign = ContentAlignment.MiddleCenter,
+                Text = "",
             };
 
-            // Loại bỏ viền mặc định của nút
             sendButton.FlatAppearance.BorderSize = 0;
 
-            // Tạo hình ảnh mũi tên
-            Bitmap arrowImage = new Bitmap(15, 15);  // Kích thước của mũi tên
+            Bitmap arrowImage = new Bitmap(15, 15);
             using (Graphics g = Graphics.FromImage(arrowImage))
             {
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 using (Pen pen = new Pen(Color.Black, 2))
                 {
-                    // Vẽ mũi tên
-                    g.DrawLine(pen, 0, 7, 10, 7); // Đoạn ngang
-                    g.DrawLine(pen, 7, 0, 10, 7); // Đoạn chéo trên
-                    g.DrawLine(pen, 7, 14, 10, 7); // Đoạn chéo dưới
+                    g.DrawLine(pen, 0, 7, 10, 7);
+                    g.DrawLine(pen, 7, 0, 10, 7);
+                    g.DrawLine(pen, 7, 14, 10, 7);
                 }
             }
 
-            // Gán hình ảnh mũi tên vào nút
             sendButton.Image = arrowImage;
-            sendButton.ImageAlign = ContentAlignment.MiddleCenter; // Canh hình ảnh vào giữa
+            sendButton.ImageAlign = ContentAlignment.MiddleCenter;
 
-            // Tạo hình tròn cho nút
             var graphicsPath = new System.Drawing.Drawing2D.GraphicsPath();
             graphicsPath.AddEllipse(0, 0, sendButton.Width, sendButton.Height);
             sendButton.Region = new Region(graphicsPath);
 
-            // Gắn sự kiện click
             sendButton.Click += (s, e) =>
             {
-                MessageBox.Show("Sending...");
+                SendDataToServer();
             };
 
-            // Thêm nút vào form
             this.Controls.Add(sendButton);
         }
 
+        private void SendDataToServer()
+        {
+            // Thông báo trước khi gửi dữ liệu
+            MessageBox.Show("Data sending started...");
+
+            // Tạo đối tượng SaveImageDTO
+            var saveImageDTO = new SaveImageDTO
+            {
+                ImageBase = _base64Image, // Biến toàn cục chứa ảnh Base64
+                Semester = Semester,
+                ExamCode = ExamCode,
+                StudentCode = StudentCode
+            };
+
+            try
+            {
+                // Chuyển đổi DTO thành JSON
+                string jsonContent = JsonConvert.SerializeObject(saveImageDTO);
+
+                // Tạo HttpWebRequest
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(apiUrl);
+                request.Method = "POST";
+                request.ContentType = "application/json";
+                byte[] data = Encoding.UTF8.GetBytes(jsonContent);
+                request.ContentLength = data.Length;
+
+                // Ghi dữ liệu vào body của request
+                using (Stream stream = request.GetRequestStream())
+                {
+                    stream.Write(data, 0, data.Length);
+                }
+
+                // Nhận phản hồi từ server
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                {
+                    using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+                    {
+                        string responseData = reader.ReadToEnd();
+                        MessageBox.Show($"Data sent successfully! Response: {responseData}");
+                    }
+                }
+            }
+            catch (WebException ex)
+            {
+                // Xử lý lỗi từ server
+                using (StreamReader reader = new StreamReader(ex.Response.GetResponseStream()))
+                {
+                    string errorData = reader.ReadToEnd();
+                    MessageBox.Show($"Failed to send data. Error: {errorData}");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Xử lý lỗi khác
+                MessageBox.Show($"Error while sending data: {ex.Message}");
+            }
+        }
 
         private void CameraForm_Load(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Maximized;
-            CenterPictureBox();
 
+            // Lấy danh sách các thiết bị camera
             filterInfoCollection = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+
+            // Kiểm tra nếu không tìm thấy thiết bị camera nào
+            if (filterInfoCollection.Count == 0)
+            {
+                DialogResult result = MessageBox.Show(
+                   "No suitable camera devices found. Please contact support for assistance.",
+                   "Notification",
+                   MessageBoxButtons.OK,
+                   MessageBoxIcon.Warning
+                );
+
+                if (result == DialogResult.OK)
+                {
+                    // Show an alternate form and close this one
+                    this.Hide();
+                    InfoForm infoForm = new InfoForm();
+                    if (infoForm.ShowDialog() == DialogResult.OK)
+                    {
+                        // Additional logic if needed
+                    }
+                    this.Close();
+                }
+                return;
+            }
+
+            // Thêm các camera vào ComboBox
             foreach (FilterInfo filterInfo in filterInfoCollection)
             {
                 comboBoxCamera.Items.Add(filterInfo.Name);
             }
+
             comboBoxCamera.SelectedIndex = 0;
 
-            videoCaptureDevice = new VideoCaptureDevice(filterInfoCollection[comboBoxCamera.SelectedIndex].MonikerString);
-            videoCaptureDevice.NewFrame += VideoCaptureDevice_NewFrame;
-            videoCaptureDevice.Start();
+            try
+            {
+                videoCaptureDevice = new VideoCaptureDevice(filterInfoCollection[comboBoxCamera.SelectedIndex].MonikerString);
+                videoCaptureDevice.NewFrame += VideoCaptureDevice_NewFrame;
+
+                // Bắt đầu luồng video
+                videoCaptureDevice.Start();
+
+                // Khởi tạo Timer để kiểm tra khung hình
+                frameCheckTimer = new Timer { Interval = 3000 }; // 3 giây
+                frameCheckTimer.Tick += FrameCheckTimer_Tick;
+                frameCheckTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Không thể truy cập camera.\nChi tiết lỗi: {ex.Message}",
+                    "Lỗi",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+                this.Close();
+            }
         }
 
         private void VideoCaptureDevice_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
-            // Lấy frame hiện tại
+            frameReceived = true;
+
             Bitmap frame = (Bitmap)eventArgs.Frame.Clone();
 
-            // Resize frame để vừa với PictureBox (1280x720)
             Bitmap resizedFrame = new Bitmap(pictureBox.Width, pictureBox.Height);
             using (Graphics g = Graphics.FromImage(resizedFrame))
             {
@@ -148,15 +253,65 @@ namespace TakePictureDemo
                 int rectX = (resizedFrame.Width - rectWidth) / 2; // Tọa độ X
                 int rectY = (resizedFrame.Height - rectHeight) / 2; // Tọa độ Y
 
-                // Vẽ hình chữ nhật
                 g.DrawRectangle(orangePen, rectX, rectY, rectWidth, rectHeight);
             }
 
-            // Hiển thị hình ảnh đã chỉnh sửa lên PictureBox
             pictureBox.Image = resizedFrame;
 
-            // Giải phóng tài nguyên cũ
             frame.Dispose();
+        }
+
+        private string ConvertImageToBase64(string filePath)
+        {
+            try
+            {
+                // Đọc ảnh từ đường dẫn và chuyển đổi sang Base64
+                byte[] imageBytes = System.IO.File.ReadAllBytes(filePath);
+                return Convert.ToBase64String(imageBytes);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi chuyển đổi ảnh sang Base64: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+        private void FrameCheckTimer_Tick(object sender, EventArgs e)
+        {
+            if (!frameReceived)
+            {
+                // Nếu không nhận được khung hình trong 3 giây, hiển thị thông báo
+                frameCheckTimer.Stop();
+                DialogResult result = MessageBox.Show(
+                    "Camera có thể đang được sử dụng bởi ứng dụng khác. Vui lòng đóng ứng dụng đó và thử lại.",
+                    "Thông báo",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+
+                // Dừng video và đóng form
+                if (videoCaptureDevice != null && videoCaptureDevice.IsRunning)
+                {
+                    videoCaptureDevice.SignalToStop();
+                    videoCaptureDevice.WaitForStop();
+                }
+
+                if (result == DialogResult.OK)
+                {
+                    // Show an alternate form and close this one
+                    this.Hide();
+                    InfoForm infoForm = new InfoForm();
+                    if (infoForm.ShowDialog() == DialogResult.OK)
+                    {
+                        // Additional logic if needed
+                    }
+                    this.Close();
+                }
+                return;
+            }
+
+            // Reset cờ để kiểm tra lần tiếp theo
+            frameReceived = false;
         }
 
 
@@ -173,41 +328,38 @@ namespace TakePictureDemo
             Application.Exit();
         }
 
-        private void CenterPictureBox()
-        {
-            // Đặt tỷ lệ mong muốn cho PictureBox, ví dụ: chiếm 80% chiều rộng và 80% chiều cao của form.
-            double widthRatio = 0.7;
-            double heightRatio = 0.7;
-
-            // Tính kích thước mới của PictureBox
-            int newWidth = (int)(this.ClientSize.Width * widthRatio);
-            int newHeight = (int)(this.ClientSize.Height * heightRatio);
-
-            // Cập nhật kích thước PictureBox
-            pictureBox.Width = newWidth;
-            pictureBox.Height = newHeight;
-
-            pictureBox.Left = (this.ClientSize.Width - pictureBox.Width) / 2;
-            pictureBox.Top = (this.ClientSize.Height - pictureBox.Height) / 2;
-        }
-
         private void CameraForm_Resize(object sender, EventArgs e)
         {
             ResizeControls();
-            CenterPictureBox();
         }
 
         private void ResizeControls()
         {
+            if (pictureBox != null)
+            {
+                double widthRatio = 0.7;
+                double heightRatio = 0.7;
+
+                // Tính kích thước mới của PictureBox
+                int newWidth = (int)(this.ClientSize.Width * widthRatio);
+                int newHeight = (int)(this.ClientSize.Height * heightRatio);
+
+                // Cập nhật kích thước PictureBox
+                pictureBox.Width = newWidth;
+                pictureBox.Height = newHeight;
+
+                pictureBox.Left = (this.ClientSize.Width - pictureBox.Width) / 2;
+                pictureBox.Top = (this.ClientSize.Height - pictureBox.Height) / 2;
+            }
 
             if (label1 != null)
             {
                 label1.Font = new Font(label1.Font.FontFamily, (float)(this.ClientSize.Height * 0.015));
-                label1.Left = (int)(this.ClientSize.Width * 0.168); 
-                label1.Top = (int)(this.ClientSize.Height * 0.05); 
+                label1.Left = (int)(this.ClientSize.Width * 0.168);
+                label1.Top = (int)(this.ClientSize.Height * 0.05);
             }
 
-            if(label2 != null)
+            if (label2 != null)
             {
                 label2.Font = new Font(label1.Font.FontFamily, (float)(this.ClientSize.Height * 0.015));
                 label2.Left = (int)(this.ClientSize.Width * 0.15);
@@ -240,38 +392,21 @@ namespace TakePictureDemo
 
             if (captureButton != null && pictureBox != null)
             {
-                // Đặt kích thước của nút captureButton là hình vuông
                 captureButton.Width = (int)(this.ClientSize.Width * 0.04);
                 captureButton.Height = captureButton.Width;
-
-                // Căn giữa nút theo chiều ngang so với form
                 captureButton.Left = (this.ClientSize.Width - captureButton.Width) / 2;
-
-                // Đặt vị trí nút cách 20px phía dưới pictureBox
                 captureButton.Top = pictureBox.Bottom + 30;
-
-                // Gọi hàm cập nhật hình dạng nút nếu cần
                 UpdateButtonShape(captureButton);
             }
 
-
             if (sendButton != null && captureButton != null && pictureBox != null)
             {
-                // Đặt kích thước của nút sendButton là hình vuông
                 sendButton.Width = (int)(this.ClientSize.Width * 0.04);
                 sendButton.Height = sendButton.Width;
-
-                // Đặt vị trí nút sendButton cách 20px bên trái so với captureButton
                 sendButton.Left = captureButton.Left + 100;
-
-                // Đặt vị trí nút sendButton cách 30px phía dưới pictureBox
                 sendButton.Top = pictureBox.Bottom + 30;
-
-
-                // Gọi hàm cập nhật hình dạng nút nếu cần
                 UpdateButtonShape(sendButton);
             }
-
         }
 
         private void UpdateButtonShape(Button button)
@@ -281,69 +416,68 @@ namespace TakePictureDemo
             button.Region = new Region(graphicsPath);
         }
 
-
         private void CaptureAndSaveAndCropImage()
         {
-            // Kiểm tra xem pictureBox có hình ảnh hay không
-            if (pictureBox.Image != null)
-            {
-                try
-                {
-                    // Đường dẫn thư mục lưu ảnh
-                    string folderPath = @"C:\CapturedImages"; // Đảm bảo thư mục này tồn tại
-                    if (!System.IO.Directory.Exists(folderPath))
-                    {
-                        System.IO.Directory.CreateDirectory(folderPath);
-                    }
-
-                    // Tạo tên file cho ảnh gốc
-                    string originalFileName = $"original_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
-                    string originalFilePath = System.IO.Path.Combine(folderPath, originalFileName);
-
-                    // Lưu ảnh gốc vào thư mục
-                    pictureBox.Image.Save(originalFilePath, System.Drawing.Imaging.ImageFormat.Jpeg);
-
-                    // Tải lại ảnh gốc để thực hiện cắt
-                    Bitmap originalImage = new Bitmap(originalFilePath);
-
-                    // Tính toán tọa độ và kích thước cắt
-                    int rectWidth = 350; // Chiều rộng của khung
-                    int rectHeight = 500; // Chiều cao của khung
-                    int rectX = (originalImage.Width - rectWidth) / 2; // Tọa độ X
-                    int rectY = (originalImage.Height - rectHeight) / 2; // Tọa độ Y
-
-                    // Tạo hình chữ nhật cắt
-                    Rectangle cropRect = new Rectangle(rectX, rectY, rectWidth, rectHeight);
-
-                    // Cắt ảnh
-                    Bitmap croppedImage = originalImage.Clone(cropRect, originalImage.PixelFormat);
-
-                    // Tạo tên file cho ảnh đã cắt
-                    string croppedFileName = $"cropped_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
-                    string croppedFilePath = System.IO.Path.Combine(folderPath, croppedFileName);
-
-                    // Lưu ảnh đã cắt
-                    croppedImage.Save(croppedFilePath, System.Drawing.Imaging.ImageFormat.Jpeg);
-
-                    // Gán ảnh đã cắt vào PictureBox
-                    pictureBox.Image = croppedImage;
-
-                    // Giải phóng tài nguyên
-                    originalImage.Dispose();
-
-                    // Thông báo thành công
-                    MessageBox.Show($"Ảnh gốc được lưu tại: {originalFilePath}\nẢnh đã cắt được lưu tại: {croppedFilePath}");
-                }
-                catch (Exception ex)
-                {
-                    // Xử lý lỗi
-                    MessageBox.Show($"Lỗi khi lưu và cắt ảnh: {ex.Message}");
-                }
-            }
-            else
+            if (pictureBox.Image == null)
             {
                 MessageBox.Show("Không có hình ảnh để lưu và cắt.");
+                return;
             }
+
+            try
+            {
+                EnsureFolderExists(folderPath);
+
+                string originalFilePath = SaveOriginalImage(pictureBox.Image);
+                Bitmap originalImage = new Bitmap(originalFilePath);
+
+                Bitmap croppedImage = CropImage(originalImage, 350, 500);
+                string croppedFilePath = SaveCroppedImage(croppedImage);
+
+                pictureBox.Image = new Bitmap(croppedFilePath);
+
+                _base64Image = ConvertImageToBase64(croppedFilePath);
+
+                originalImage.Dispose();
+                croppedImage.Dispose();
+
+                MessageBox.Show($"Ảnh gốc được lưu tại: {originalFilePath}\nẢnh đã cắt được lưu tại: {croppedFilePath}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi lưu và cắt ảnh: {ex.Message}");
+            }
+        }
+
+        private void EnsureFolderExists(string folderPath)
+        {
+            if (!System.IO.Directory.Exists(folderPath))
+            {
+                System.IO.Directory.CreateDirectory(folderPath);
+            }
+        }
+        private string SaveOriginalImage(Image image)
+        {
+            string fileName = $"original_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+            string filePath = System.IO.Path.Combine(folderPath, fileName);
+            image.Save(filePath, System.Drawing.Imaging.ImageFormat.Jpeg);
+            return filePath;
+        }
+
+        private Bitmap CropImage(Bitmap originalImage, int width, int height)
+        {
+            int rectX = (originalImage.Width - width) / 2;
+            int rectY = (originalImage.Height - height) / 2;
+            Rectangle cropRect = new Rectangle(rectX, rectY, width, height);
+            return originalImage.Clone(cropRect, originalImage.PixelFormat);
+        }
+
+        private string SaveCroppedImage(Bitmap croppedImage)
+        {
+            string fileName = $"cropped_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+            string filePath = System.IO.Path.Combine(folderPath, fileName);
+            croppedImage.Save(filePath, System.Drawing.Imaging.ImageFormat.Jpeg);
+            return filePath;
         }
 
         private void CameraForm_Load_1(object sender, EventArgs e)
@@ -351,6 +485,4 @@ namespace TakePictureDemo
 
         }
     }
-
-
 }

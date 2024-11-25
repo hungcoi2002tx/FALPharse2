@@ -47,18 +47,17 @@ namespace TakePictureDemo
 
         private void captureBtn_Click(object sender, EventArgs e)
         {
-            //cameraCapture.StartCamera();
-
             using (CameraForm formCamera = new CameraForm())
             {
-                this.Hide(); // Ẩn form hiện tại
+                formCamera.Semester = textBox3.Text;
+                formCamera.StudentCode = textBox2.Text;
+
+                this.Hide();
                 if (formCamera.ShowDialog() == DialogResult.OK)
                 {
-                    // Xử lý khi formCamera trả về kết quả OK
-                    // string savedImagePath = formCamera.SavedImagePath;
-                    // MessageBox.Show("Đường dẫn ảnh đã lưu: " + savedImagePath);
+
                 }
-                this.Close(); // Đóng form hiện tại
+                this.Close();
             }
         }
 
