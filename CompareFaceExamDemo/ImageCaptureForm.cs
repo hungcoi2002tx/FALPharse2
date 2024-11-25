@@ -1,4 +1,5 @@
 ﻿using CompareFaceExamDemo.ExternalService.Recognition;
+using CompareFaceExamDemo.Utils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -166,12 +167,51 @@ namespace CompareFaceExamDemo
             }
         }
 
+        private void dataGridViewImages_SelectionChanged(object sender, EventArgs e)
+        {
+            // Kiểm tra nếu có ít nhất một hàng được chọn
+            if (dataGridViewImages.SelectedRows.Count > 0)
+            {
+                DataGridViewRow selectedRow = dataGridViewImages.SelectedRows[0];
+
+                // Lấy tên file từ cột FileName
+                string fileName = selectedRow.Cells["FileName"].Value?.ToString();
+
+                if (!string.IsNullOrEmpty(fileName))
+                {
+                    string folderPath = txtFolderPath.Text; // Đường dẫn thư mục
+                    string fullPath = Path.Combine(folderPath, fileName);
+
+                    // Kiểm tra file tồn tại và hiển thị
+                    if (File.Exists(fullPath))
+                    {
+                        if (pictureBoxPreview.Image != null)
+                        {
+                            pictureBoxPreview.Image.Dispose(); // Giải phóng ảnh cũ
+                        }
+                        pictureBoxPreview.Image = Image.FromFile(fullPath);
+                    }
+                    else
+                    {
+                        pictureBoxPreview.Image = null; // Xóa ảnh nếu file không tồn tại
+                        MessageBox.Show($"File không tồn tại: {fullPath}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+            else
+            {
+                // Không có hàng nào được chọn
+                pictureBoxPreview.Image = null; // Xóa ảnh
+            }
+        }
+
         private void btnSend_Click(object sender, EventArgs e)
         {
             try
             {
                 // Tạo danh sách chứa đường dẫn các file đã được chọn
                 List<string> selectedFiles = new List<string>();
+                List<string> sourceFiles = new List<string>();
 
                 foreach (DataGridViewRow row in dataGridViewImages.Rows)
                 {
@@ -188,6 +228,34 @@ namespace CompareFaceExamDemo
 
                         // Thêm đường dẫn đầy đủ vào danh sách
                         selectedFiles.Add(fullPath);
+                    }
+                }
+
+                var sourceFile = Config.GetSetting();
+                var urlSource = sourceFile.DirectoryImageSource;
+                // Kết hợp với thư mục nguồn để tạo đường dẫn đầy đủ
+                foreach (DataGridViewRow row in dataGridViewImages.Rows)
+                {
+                    // Kiểm tra nếu checkbox được tích
+                    bool isChecked = Convert.ToBoolean(row.Cells["checkBoxColumn"].Value);
+                    if (isChecked)
+                    {
+                        // Lấy tên file từ cột FileName
+                        string fileName = row.Cells["FileName"].Value.ToString();
+
+                        // Kết hợp với đường dẫn thư mục để tạo đường dẫn đầy đủ
+                        string folderPath = txtFolderPath.Text; // Đường dẫn thư mục được chọn
+                        string fullPath = Path.Combine(urlSource, fileName);
+
+                        // Thêm đường dẫn đầy đủ vào danh sách
+                        if (File.Exists(fullPath))
+                        {
+                            sourceFiles.Add(fullPath);
+                        }
+                        else
+                        {
+                            MessageBox.Show($"File không tồn tại trong thư mục nguồn: {fileName}", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
                     }
                 }
 
