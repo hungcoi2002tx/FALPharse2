@@ -47,9 +47,10 @@ namespace Demo_Eos_Api.Service.Interface
 
                 // Navigate up to the solution directory (assuming the project is one level below the solution folder)
                 string solutionDirectory = Directory.GetParent(projectDirectory).FullName;
+                var semester = FindCurrentSemester();
 
                 // Construct the path to the EOS folder outside the project directory
-                string baseFolderPath = Path.Combine(solutionDirectory, "EOS", "ImageStudentCapture", request.Semester, request.ExamCode);
+                string baseFolderPath = Path.Combine(solutionDirectory, "EOS", "ImageStudentCapture", semester, request.ExamCode);
 
                 // Ensure the directory exists
                 if (!Directory.Exists(baseFolderPath))
@@ -103,6 +104,32 @@ namespace Demo_Eos_Api.Service.Interface
                 };
             }
         }
+
+        private string FindCurrentSemester()
+        {
+            // Define Vietnam time zone
+            TimeZoneInfo vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+            // Get the current date and time in Vietnam
+            DateTime vietnamTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone);
+
+            // Extract the current month and year
+            int month = vietnamTime.Month;
+            int year = vietnamTime.Year;
+
+            // Determine the semester based on the month
+            string semester = month switch
+            {
+                >= 1 and <= 4 => "Spring",
+                >= 5 and <= 8 => "Summer",
+                >= 9 and <= 12 => "Fall",
+                _ => throw new InvalidOperationException("Invalid month encountered.")
+            };
+
+            // Return the formatted semester string
+            return $"{semester}{year}";
+        }
+
 
         // Helper method to determine content type of image
         private string GetImageContentType(byte[] imageBytes)
