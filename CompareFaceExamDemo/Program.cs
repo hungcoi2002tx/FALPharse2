@@ -27,12 +27,11 @@ namespace CompareFaceExamDemo
             try
             {
                 services.AddMemoryCache();
-                services.AddSingleton<Main>();
+                services.AddSingleton<ResultForm>();
+                services.AddSingleton<SourceImageForm>();
                 services.AddSingleton<MainContainer>();
                 services.AddSingleton<ImageCaptureForm>();
-                services.AddSingleton<ImageSourceForm>();
                 services.AddSingleton<SettingForm>();
-                services.AddSingleton<SourceImageForm>();
                 services.AddSingleton<Test>();
 
                 services.AddSingleton<IRecognitionRestClient>(r => new RecognitionRestClient(
@@ -45,8 +44,6 @@ namespace CompareFaceExamDemo
                 })
                 { BaseAddress = new Uri("https://dev.demorecognition.click") })));
 
-
-                services.AddSingleton<MainContainer>();
                 #region register Rekognition service
                 var recognitionService = typeof(BaseRecognitionServices<>).Assembly.ExportedTypes
                    .Where(a => a.FullName.EndsWith("AdapterRecognitionService"));

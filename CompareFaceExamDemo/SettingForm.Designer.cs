@@ -31,44 +31,47 @@ namespace CompareFaceExamDemo
             // 
             // labelConfident
             // 
-            labelConfident.Location = new Point(25, 42);
+            labelConfident.Location = new Point(29, 56);
             labelConfident.Name = "labelConfident";
-            labelConfident.Size = new Size(134, 30);
+            labelConfident.Size = new Size(153, 40);
             labelConfident.TabIndex = 1;
             labelConfident.Text = "Confident:";
             // 
             // labelDirectory
             // 
-            labelDirectory.Location = new Point(25, 92);
+            labelDirectory.Location = new Point(29, 123);
             labelDirectory.Name = "labelDirectory";
-            labelDirectory.Size = new Size(134, 30);
+            labelDirectory.Size = new Size(153, 40);
             labelDirectory.TabIndex = 3;
             labelDirectory.Text = "Directory Image Source:";
             labelDirectory.Click += labelDirectory_Click;
             // 
             // txtDirectorySource
             // 
-            txtDirectorySource.Location = new Point(175, 92);
+            txtDirectorySource.Location = new Point(200, 123);
+            txtDirectorySource.Margin = new Padding(3, 4, 3, 4);
             txtDirectorySource.Name = "txtDirectorySource";
             txtDirectorySource.ReadOnly = true;
-            txtDirectorySource.Size = new Size(890, 23);
+            txtDirectorySource.Size = new Size(694, 27);
             txtDirectorySource.TabIndex = 4;
             txtDirectorySource.TextChanged += textBoxDirectorySource_TextChanged;
             // 
             // btnSave
             // 
-            btnSave.Location = new Point(497, 215);
+            btnSave.Location = new Point(1011, 613);
+            btnSave.Margin = new Padding(3, 4, 3, 4);
             btnSave.Name = "btnSave";
-            btnSave.Size = new Size(200, 50);
+            btnSave.Size = new Size(144, 40);
             btnSave.TabIndex = 10;
             btnSave.Text = "Save";
             btnSave.Click += Btn_Save_Click;
             // 
             // btnBrowseSource
             // 
-            btnBrowseSource.Location = new Point(1085, 91);
+            btnBrowseSource.Location = new Point(961, 121);
+            btnBrowseSource.Margin = new Padding(3, 4, 3, 4);
             btnBrowseSource.Name = "btnBrowseSource";
-            btnBrowseSource.Size = new Size(100, 23);
+            btnBrowseSource.Size = new Size(114, 31);
             btnBrowseSource.TabIndex = 13;
             btnBrowseSource.Text = "Browse";
             btnBrowseSource.UseVisualStyleBackColor = true;
@@ -76,37 +79,39 @@ namespace CompareFaceExamDemo
             // 
             // numberConfident
             // 
-            numberConfident.Location = new Point(175, 40);
+            numberConfident.Location = new Point(200, 53);
+            numberConfident.Margin = new Padding(3, 4, 3, 4);
             numberConfident.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             numberConfident.Name = "numberConfident";
-            numberConfident.Size = new Size(120, 23);
+            numberConfident.Size = new Size(137, 27);
             numberConfident.TabIndex = 14;
             numberConfident.Value = new decimal(new int[] { 10, 0, 0, 0 });
             // 
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(364, 42);
+            label1.Location = new Point(416, 56);
             label1.Name = "label1";
-            label1.Size = new Size(70, 15);
+            label1.Size = new Size(87, 20);
             label1.TabIndex = 15;
             label1.Text = "Thread Run:";
             // 
             // numberThread
             // 
-            numberThread.Location = new Point(468, 40);
+            numberThread.Location = new Point(535, 53);
+            numberThread.Margin = new Padding(3, 4, 3, 4);
             numberThread.Maximum = new decimal(new int[] { 10, 0, 0, 0 });
             numberThread.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             numberThread.Name = "numberThread";
-            numberThread.Size = new Size(120, 23);
+            numberThread.Size = new Size(137, 27);
             numberThread.TabIndex = 16;
             numberThread.Value = new decimal(new int[] { 1, 0, 0, 0 });
             // 
             // SettingForm
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1200, 800);
+            ClientSize = new Size(1182, 753);
             Controls.Add(numberThread);
             Controls.Add(label1);
             Controls.Add(numberConfident);
@@ -115,6 +120,7 @@ namespace CompareFaceExamDemo
             Controls.Add(labelDirectory);
             Controls.Add(txtDirectorySource);
             Controls.Add(btnSave);
+            Margin = new Padding(3, 4, 3, 4);
             Name = "SettingForm";
             Text = "Setting Form";
             ((System.ComponentModel.ISupportInitialize)numberConfident).EndInit();
