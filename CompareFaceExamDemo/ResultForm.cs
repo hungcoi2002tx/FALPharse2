@@ -1,27 +1,20 @@
 ﻿using CompareFaceExamDemo.DAO;
-using CompareFaceExamDemo.Dtos;
 using CompareFaceExamDemo.Entities;
 using CompareFaceExamDemo.Models;
 using CompareFaceExamDemo.Utils;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text.Json;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace CompareFaceExamDemo
 {
 
-    public partial class Main : Form
+    public partial class ResultForm : Form
     {
-        private readonly ExamDAO<EOSComparisonResult> _examDao;
+        private ExamDAO<EOSComparisonResult> examDao;
+        private List<EOSComparisonResult> results = [];
         private readonly string _sourceImageFolder;
-        private readonly string _dataFolder;
-        private readonly Config _config;
         private SettingModel _settingForm;
+        private string fileDataPath;
 
-        public Main()
+        public ResultForm()
         {
             InitializeComponent();
 
@@ -51,10 +44,9 @@ namespace CompareFaceExamDemo
                 Environment.Exit(1); // Thoát chương trình nếu có lỗi khác
             }
             _sourceImageFolder = _settingForm.DirectoryImageSource; // Folder của SourceImage
-             // Folder chứa dữ liệu TargetImage
+                                                                    // Folder chứa dữ liệu TargetImage
 
-            // Sử dụng đường dẫn từ file cấu hình
-            _examDao = new ExamDAO<EOSComparisonResult>(_dataFolder);
+
 
             // Khởi tạo giá trị cho cmbStatus
             cmbStatus.Items.AddRange(new object[]
@@ -80,20 +72,38 @@ namespace CompareFaceExamDemo
             // Đăng ký sự kiện để hiển thị ảnh khi chọn hàng mới
             dataGridView1.SelectionChanged += DataGridView1_SelectionChanged;
         }
-
         private void button1_Click(object sender, EventArgs e)
         {
+            // Lấy tên file được chọn từ ComboBox
+            var selectedFile = cmbFileList.SelectedItem as string;
+
+            if (string.IsNullOrEmpty(selectedFile))
+            {
+                MessageBox.Show("Please select a file from the list.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Kết hợp đường dẫn thư mục với tên file
+            fileDataPath = Path.Combine(txtDataFolder.Text, selectedFile.EndsWith(".txt") ? selectedFile : selectedFile + ".txt");
+
+
+            // Kiểm tra file tồn tại
+            if (!File.Exists(fileDataPath))
+            {
+                MessageBox.Show($"File {fileDataPath} does not exist.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             // Lấy các điều kiện lọc từ giao diện người dùng
-            var examDate = dtpExamDate.Value.ToString("yyyy-MM-dd"); // Ngày thi
-            var shift = int.Parse(txtShift.Value.ToString()); // Ca thi
             var filters = GetFilters(); // Lấy các bộ lọc từ các trường giao diện
 
             // Lấy danh sách kết quả từ file và áp dụng bộ lọc
-            var results = GetFilteredResults(examDate, shift, filters);
+            results = GetFilteredResults(fileDataPath, filters);
 
             // Cập nhật DataGridView với kết quả
             dataGridView1.DataSource = results;
         }
+
 
         private Dictionary<string, object> GetFilters()
         {
@@ -117,10 +127,10 @@ namespace CompareFaceExamDemo
             return filters;
         }
 
-        private List<EOSComparisonResult> GetFilteredResults(string examDate, int shift, Dictionary<string, object> filters)
+        private List<EOSComparisonResult> GetFilteredResults(string examCode, Dictionary<string, object> filters)
         {
-            // Đọc toàn bộ dữ liệu từ file cho đợt thi và ca thi cụ thể
-            var results = _examDao.GetAll(examDate, shift);
+            // Đọc toàn bộ dữ liệu từ file theo ExamCode
+            var results = examDao.GetAll(examCode);
 
             // Lọc dữ liệu theo các điều kiện
             if (filters.ContainsKey("StudentCode"))
@@ -160,6 +170,7 @@ namespace CompareFaceExamDemo
 
             return results;
         }
+
         private void DataGridView1_SelectionChanged(object sender, EventArgs e)
         {
             if (dataGridView1.SelectedRows.Count > 0)
@@ -171,35 +182,59 @@ namespace CompareFaceExamDemo
 
         private void DisplayImages(EOSComparisonResult result)
         {
-            var examDate = dtpExamDate.Value.ToString("yyyy-MM-dd"); // Ngày thi
-            var shift = int.Parse(txtShift.Value.ToString()); // Ca thi
-            var sourceImagePath = Path.Combine(_sourceImageFolder, $"{result.StudentCode}.jpg"); // Hoặc .png nếu cần
-            var targetImagePath = Path.Combine(_dataFolder, examDate, $"shift{shift}", "Images", $"{result.StudentCode}.jpg");
+            var sourceImagePath = Path.Combine(_sourceImageFolder, $"{result.StudentCode}.jpg");
+            var targetImagePath = Path.Combine(txtDataFolder.Text, $"{result.ExamCode}", $"{result.StudentCode}.jpg");
 
             // Hiển thị SourceImage
             if (File.Exists(sourceImagePath))
             {
+                // Giải phóng ảnh hiện tại nếu có
+                if (pictureBoxSourceImage.Image != null)
+                {
+                    pictureBoxSourceImage.Image.Dispose();
+                    pictureBoxSourceImage.Image = null;
+                }
+
+                // Tải ảnh mới
                 pictureBoxSourceImage.Image = Image.FromFile(sourceImagePath);
             }
             else
             {
-                pictureBoxSourceImage.Image = null;
+                // Gán giá trị null nếu không tìm thấy ảnh
+                if (pictureBoxSourceImage.Image != null)
+                {
+                    pictureBoxSourceImage.Image.Dispose();
+                    pictureBoxSourceImage.Image = null;
+                }
             }
 
             // Hiển thị TargetImage
             if (File.Exists(targetImagePath))
             {
+                // Giải phóng ảnh hiện tại nếu có
+                if (pictureBoxTargetImage.Image != null)
+                {
+                    pictureBoxTargetImage.Image.Dispose();
+                    pictureBoxTargetImage.Image = null;
+                }
+
+                // Tải ảnh mới
                 pictureBoxTargetImage.Image = Image.FromFile(targetImagePath);
             }
             else
             {
-                pictureBoxTargetImage.Image = null;
+                // Gán giá trị null nếu không tìm thấy ảnh
+                if (pictureBoxTargetImage.Image != null)
+                {
+                    pictureBoxTargetImage.Image.Dispose();
+                    pictureBoxTargetImage.Image = null;
+                }
             }
         }
 
+
         private void Main_Load(object sender, EventArgs e)
         {
-            dtpExamDate.Value = DateTime.Now;
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -210,5 +245,70 @@ namespace CompareFaceExamDemo
             // Hiển thị form SourceImageForm dưới dạng hộp thoại (modal dialog)
             sourceImageForm.ShowDialog();
         }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            using (var folderBrowserDialog = new FolderBrowserDialog())
+            {
+                folderBrowserDialog.Description = "Select the folder containing data files";
+                folderBrowserDialog.ShowNewFolderButton = false;
+
+                // Hiển thị hộp thoại chọn thư mục
+                if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
+                {
+                    // Gán đường dẫn thư mục vào txtDataFolder
+                    txtDataFolder.Text = folderBrowserDialog.SelectedPath;
+                    examDao = new ExamDAO<EOSComparisonResult>(folderBrowserDialog.SelectedPath);
+
+                    // Lấy danh sách file trong thư mục và đưa vào ComboBox
+                    var files = Directory.GetFiles(folderBrowserDialog.SelectedPath, "*.txt");
+                    cmbFileList.Items.Clear(); // Xóa các mục cũ
+                    cmbFileList.Items.AddRange(files.Select(file => Path.GetFileNameWithoutExtension(file)!).ToArray());
+                    // Thêm tên file vào ComboBox
+
+                    if (cmbFileList.Items.Count > 0)
+                    {
+                        cmbFileList.SelectedIndex = 0; // Chọn file đầu tiên trong danh sách
+                    }
+                    // Sử dụng đường dẫn từ file cấu hình
+                }
+            }
+        }
+
+        private void btnExport_Click(object sender, EventArgs e)
+        {
+            // Tạo SaveFileDialog để cho người dùng chọn file lưu
+            using (var saveFileDialog = new SaveFileDialog())
+            {
+                // Thiết lập filter để chỉ chọn file Excel
+                saveFileDialog.Filter = "Excel Files|*.xlsx";
+                saveFileDialog.Title = "Lưu File Excel";
+
+                string defaultFileName = $"output-{cmbFileList.Text}-{DateTime.Now.ToString("yyyyMMdd-HHmmss")}.xlsx";
+                saveFileDialog.FileName = defaultFileName;
+                // Hiển thị hộp thoại và kiểm tra nếu người dùng chọn file
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    // Lấy đường dẫn file đã chọn
+                    string filePath = saveFileDialog.FileName;
+
+                    try
+                    {
+
+                        // Gọi phương thức Export để xuất danh sách ra file Excel
+                        ExcelExporter.ExportListToExcel(results, filePath);
+
+                        // Thông báo thành công
+                        MessageBox.Show("Dữ liệu đã được xuất thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Nếu có lỗi, hiển thị thông báo lỗi
+                        MessageBox.Show($"Đã xảy ra lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
     }
 }

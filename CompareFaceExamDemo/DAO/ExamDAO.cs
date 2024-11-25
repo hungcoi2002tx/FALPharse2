@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace CompareFaceExamDemo.DAO
 {
@@ -15,22 +14,19 @@ namespace CompareFaceExamDemo.DAO
             _baseDirectory = baseDirectory;
         }
 
-        // Tạo đường dẫn đến file cho từng đợt thi và ca thi
-        private string GetFilePath(string examDate, int shift)
+        // Tạo đường dẫn đến file theo ExamCode
+        private string GetFilePath(string examCode)
         {
-            string directory = Path.Combine(_baseDirectory, examDate, $"shift{shift}");
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);  // Tạo thư mục nếu chưa tồn tại
-            }
-            return Path.Combine(directory, "exam.txt");
+            // Tạo file có dạng ExamCode.txt
+            //string filePath = Path.Combine(_baseDirectory, $"{examCode}.txt");
+            return examCode;
         }
 
-        // Đọc toàn bộ đối tượng từ file theo đợt thi và ca thi
-        public List<T> GetAll(string examDate, int shift)
+        // Đọc toàn bộ đối tượng từ file theo ExamCode
+        public List<T> GetAll(string examCode)
         {
             var entities = new List<T>();
-            var filePath = GetFilePath(examDate, shift);
+            var filePath = GetFilePath(examCode);
 
             if (File.Exists(filePath))
             {
@@ -49,10 +45,10 @@ namespace CompareFaceExamDemo.DAO
             return entities;
         }
 
-        // Thêm đối tượng mới vào file theo đợt thi và ca thi
-        public void Add(string examDate, int shift, T entity)
+        // Thêm đối tượng mới vào file theo ExamCode
+        public void Add(string examCode, T entity)
         {
-            var filePath = GetFilePath(examDate, shift);
+            var filePath = GetFilePath(examCode);
 
             using (var writer = new StreamWriter(filePath, append: true))
             {
@@ -60,31 +56,31 @@ namespace CompareFaceExamDemo.DAO
             }
         }
 
-        // Cập nhật đối tượng trong file theo đợt thi và ca thi
-        public void Update(string examDate, int shift, T entity)
+        // Cập nhật đối tượng trong file theo ExamCode
+        public void Update(string examCode, T entity)
         {
-            var entities = GetAll(examDate, shift);
+            var entities = GetAll(examCode);
             var index = entities.FindIndex(e => e.GetId() == entity.GetId());
 
             if (index >= 0)
             {
                 entities[index] = entity;
-                SaveAll(examDate, shift, entities);
+                SaveAll(examCode, entities);
             }
         }
 
-        // Xóa đối tượng khỏi file theo đợt thi và ca thi
-        public void Delete(string examDate, int shift, int id)
+        // Xóa đối tượng khỏi file theo ExamCode
+        public void Delete(string examCode, int id)
         {
-            var entities = GetAll(examDate, shift);
+            var entities = GetAll(examCode);
             entities.RemoveAll(e => e.GetId() == id);
-            SaveAll(examDate, shift, entities);
-        } 
+            SaveAll(examCode, entities);
+        }
 
-        // Lưu toàn bộ danh sách đối tượng vào file theo đợt thi và ca thi
-        private void SaveAll(string examDate, int shift, List<T> entities)
+        // Lưu toàn bộ danh sách đối tượng vào file theo ExamCode
+        private void SaveAll(string examCode, List<T> entities)
         {
-            var filePath = GetFilePath(examDate, shift);
+            var filePath = GetFilePath(examCode);
 
             using (var writer = new StreamWriter(filePath, append: false))
             {

@@ -27,12 +27,11 @@ namespace CompareFaceExamDemo
             try
             {
                 services.AddMemoryCache();
-                services.AddSingleton<Main>();
+                services.AddSingleton<ResultForm>();
+                services.AddSingleton<SourceImageForm>();
                 services.AddSingleton<MainContainer>();
                 services.AddSingleton<ImageCaptureForm>();
-                services.AddSingleton<ImageSourceForm>();
                 services.AddSingleton<SettingForm>();
-                services.AddSingleton<SourceImageForm>();
                 services.AddSingleton<Test>();
 
                 services.AddSingleton<IRecognitionRestClient>(r => new RecognitionRestClient(

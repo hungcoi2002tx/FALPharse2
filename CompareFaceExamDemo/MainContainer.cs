@@ -13,13 +13,13 @@ namespace CompareFaceExamDemo
     public partial class MainContainer : Form
     {
         private ImageCaptureForm imageCaptureForm;
-        private ImageSourceForm imageSourceForm;
+        private SourceImageForm imageSourceForm;
         private SettingForm settingForm;
-        private Main mainForm;
+        private ResultForm mainForm;
         public MainContainer(ImageCaptureForm imageCaptureForm,
-            ImageSourceForm imageSourceForm, 
+            SourceImageForm imageSourceForm, 
             SettingForm settingForm, 
-            Main mainForm)
+            ResultForm mainForm)
         {
             InitializeComponent();
             // Cố định chiều rộng và chiều cao của form
