@@ -1,5 +1,6 @@
 ﻿using CompareFaceExamDemo.Models;
 using Newtonsoft.Json;
+using Share.SystemModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +24,7 @@ namespace CompareFaceExamDemo.ExternalService
             _compareUrl = compareUrl;
         }
 
-        public async Task<ComparisonResponse> CompareFacesAsync(string sourceImagePath, string targetImagePath, int sourceId)
+        public async Task<ComparisonResponse> CompareFacesAsync(string sourceImagePath, string targetImagePath)
         {
             try
             {
@@ -36,8 +37,7 @@ namespace CompareFaceExamDemo.ExternalService
                 var content = new MultipartFormDataContent
                 {
                     { new StreamContent(File.OpenRead(sourceImagePath)), "SourceImage", Path.GetFileName(sourceImagePath) },
-                    { new StreamContent(File.OpenRead(targetImagePath)), "TargetImage", Path.GetFileName(targetImagePath) },
-                    { new StringContent(sourceId.ToString()), "SourceId" }
+                    { new StreamContent(File.OpenRead(targetImagePath)), "TargetImage", Path.GetFileName(targetImagePath) }
                 };
 
                 request.Content = content;
@@ -59,7 +59,7 @@ namespace CompareFaceExamDemo.ExternalService
                 if (response.IsSuccessStatusCode)
                 {
                     // Parse dữ liệu JSON từ phản hồi
-                    var resultData = JsonConvert.DeserializeObject<ComparisonResult>(responseContent);
+                    var resultData = JsonConvert.DeserializeObject<CompareResponseResult>(responseContent);
                     return new ComparisonResponse
                     {
                         Status = (int)response.StatusCode,

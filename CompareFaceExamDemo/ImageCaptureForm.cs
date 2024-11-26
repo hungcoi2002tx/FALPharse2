@@ -269,6 +269,14 @@ namespace CompareFaceExamDemo
                 {
                     MessageBox.Show("Không có file nào được chọn!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
+
+
+
+
+
+
+
+
             }
             catch (Exception)
             {
