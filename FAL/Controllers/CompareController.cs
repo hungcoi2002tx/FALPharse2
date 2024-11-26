@@ -189,7 +189,6 @@ namespace FAL.Controllers
             {
                 Percentage = percentage,
                 Message = message,
-                StatusCode = statusCode
             };
 
             return StatusCode((int)statusCode, response);
