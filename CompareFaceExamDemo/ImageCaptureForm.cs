@@ -311,7 +311,7 @@ namespace CompareFaceExamDemo
 
                             if (!success && retryCount >= maxRetries)
                             {
-                                LogError(logFilePath, response, true); // Ghi log nếu retry thất bại
+                                LogError(logFilePath, response, true);
                             }
                         }
                         catch (Exception)
