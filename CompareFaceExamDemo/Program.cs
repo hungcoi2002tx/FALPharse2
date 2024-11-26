@@ -35,6 +35,7 @@ namespace CompareFaceExamDemo
                 services.AddSingleton<SettingForm>();
                 services.AddSingleton<Test>();
                 services.AddSingleton<AuthService>();
+                services.AddSingleton<FaceCompareService>();
 
                 services.AddSingleton<IRecognitionRestClient>(r => new RecognitionRestClient(
                 new RestClient(new HttpClient(new HttpClientHandler

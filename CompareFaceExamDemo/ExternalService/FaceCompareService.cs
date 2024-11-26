@@ -24,7 +24,7 @@ namespace CompareFaceExamDemo.ExternalService
             _compareUrl = compareUrl;
         }
 
-        public async Task<ComparisonResponse> CompareFacesAsync(string sourceImagePath, string targetImagePath)
+        public async Task<ComparisonResponse> CompareFacesAsync(string sourceImage, string targetImage)
         {
             try
             {
@@ -36,8 +36,8 @@ namespace CompareFaceExamDemo.ExternalService
 
                 var content = new MultipartFormDataContent
                 {
-                    { new StreamContent(File.OpenRead(sourceImagePath)), "SourceImage", Path.GetFileName(sourceImagePath) },
-                    { new StreamContent(File.OpenRead(targetImagePath)), "TargetImage", Path.GetFileName(targetImagePath) }
+                    { new StreamContent(File.OpenRead(sourceImage)), "SourceImage", Path.GetFileName(sourceImage) },
+                    { new StreamContent(File.OpenRead(targetImage)), "TargetImage", Path.GetFileName(targetImage) }
                 };
 
                 request.Content = content;

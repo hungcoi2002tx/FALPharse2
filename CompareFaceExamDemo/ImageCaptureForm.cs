@@ -1,6 +1,9 @@
-﻿using CompareFaceExamDemo.ExternalService.Recognition;
+﻿using CompareFaceExamDemo.ExternalService;
+using CompareFaceExamDemo.ExternalService.Recognition;
+using CompareFaceExamDemo.Models;
 using CompareFaceExamDemo.Utils;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -16,10 +19,12 @@ namespace CompareFaceExamDemo
     public partial class ImageCaptureForm : Form
     {
         private CompareFaceAdapterRecognitionService _compareFaceService;
-        public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService)
+        private readonly FaceCompareService _faceCompareService;
+        public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
             InitializeComponent();
             _compareFaceService = compareFaceService;
+            _faceCompareService = faceCompareService;
         }
 
         private void AddCheckBoxHeader()
@@ -77,7 +82,9 @@ namespace CompareFaceExamDemo
                 string[] files = Directory.GetFiles(folderPath);
 
                 // Regex để kiểm tra định dạng tên file: 2 chữ cái + 4 số
-                Regex regex = new Regex(@"^[a-zA-Z]{2}\d{6}\.jpg$");
+                //Regex regex = new Regex(@"^[a-zA-Z]{2}\d{6}\.jpg$");
+                Regex regex = new Regex(@"^[a-zA-Z]{2}\d{6}\.(jpg|png)$");
+
 
                 // Dọn sạch DataGridView
                 dataGridViewImages.Columns.Clear();
@@ -205,84 +212,179 @@ namespace CompareFaceExamDemo
             }
         }
 
-        private void btnSend_Click(object sender, EventArgs e)
+        private async void btnSend_Click(object sender, EventArgs e)
         {
             try
             {
-                // Tạo danh sách chứa đường dẫn các file đã được chọn
-                List<string> selectedFiles = new List<string>();
-                List<string> sourceFiles = new List<string>();
-
-                foreach (DataGridViewRow row in dataGridViewImages.Rows)
-                {
-                    // Kiểm tra nếu checkbox được tích
-                    bool isChecked = Convert.ToBoolean(row.Cells["checkBoxColumn"].Value);
-                    if (isChecked)
-                    {
-                        // Lấy tên file từ cột FileName
-                        string fileName = row.Cells["FileName"].Value.ToString();
-
-                        // Kết hợp với đường dẫn thư mục để tạo đường dẫn đầy đủ
-                        string folderPath = txtFolderPath.Text; // Đường dẫn thư mục được chọn
-                        string fullPath = Path.Combine(folderPath, fileName);
-
-                        // Thêm đường dẫn đầy đủ vào danh sách
-                        selectedFiles.Add(fullPath);
-                    }
-                }
-
+                List<(Image, Image)> compareImages = new List<(Image, Image)>();
                 var sourceFile = Config.GetSetting();
                 var urlSource = sourceFile.DirectoryImageSource;
-                // Kết hợp với thư mục nguồn để tạo đường dẫn đầy đủ
+
                 foreach (DataGridViewRow row in dataGridViewImages.Rows)
                 {
                     // Kiểm tra nếu checkbox được tích
                     bool isChecked = Convert.ToBoolean(row.Cells["checkBoxColumn"].Value);
                     if (isChecked)
                     {
-                        // Lấy tên file từ cột FileName
-                        string fileName = row.Cells["FileName"].Value.ToString();
+                        string fileName = row.Cells["FileName"].Value.ToString() ?? "";
+                        string folderPath = txtFolderPath.Text;
 
-                        // Kết hợp với đường dẫn thư mục để tạo đường dẫn đầy đủ
-                        string folderPath = txtFolderPath.Text; // Đường dẫn thư mục được chọn
-                        string fullPath = Path.Combine(urlSource, fileName);
+                        string fullPath = Path.Combine(folderPath, fileName);
+                        string fullPathImageSource = Path.Combine(urlSource, fileName);
 
-                        // Thêm đường dẫn đầy đủ vào danh sách
-                        if (File.Exists(fullPath))
+                        try
                         {
-                            sourceFiles.Add(fullPath);
+                            using (Image imgCompare = Image.FromFile(fullPath))
+                            using (Image imgSource = Image.FromFile(fullPathImageSource))
+                            {
+                                compareImages.Add(((Image)imgCompare.Clone(), (Image)imgSource.Clone()));
+                            }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            MessageBox.Show($"File không tồn tại trong thư mục nguồn: {fileName}", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            // Xử lý nếu xảy ra lỗi khi đọc file (ví dụ: file bị hỏng)
+                            MessageBox.Show($"Lỗi khi đọc file: {fullPath}\nChi tiết: {ex.Message}");
                         }
                     }
                 }
 
-                // Hiển thị danh sách file đã được chọn (nếu cần)
-                if (selectedFiles.Count > 0)
+                if (compareImages.Count > 0)
                 {
-                    string message = "Các file được chọn:\n" + string.Join("\n", selectedFiles);
-                    MessageBox.Show(message, "File Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    int maxDegreeOfParallelism = sourceFile.NumberOfThread;
+                    int maxRetries = 3;
+                    await GetCompareResult(maxDegreeOfParallelism, compareImages, maxRetries);
                 }
                 else
                 {
                     MessageBox.Show("Không có file nào được chọn!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
-
-
-
-
-
-
-
-
             }
             catch (Exception)
             {
-
                 throw;
             }
         }
+
+        private async Task GetCompareResult(int maxDegreeOfParallelism, List<(Image, Image)> compareImages, int maxRetries)
+        {
+            try
+            {
+                SemaphoreSlim semaphore = new SemaphoreSlim(maxDegreeOfParallelism);
+                ConcurrentBag<ComparisonResponse> results = new ConcurrentBag<ComparisonResponse>();
+                List<Task> tasks = new List<Task>();
+                string logFilePath = "log.txt";
+
+                foreach (var (targetImage, sourceImage) in compareImages)
+                {
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        await semaphore.WaitAsync(); // Chờ để lấy slot trống
+
+                        try
+                        {
+                            bool success = false;
+                            int retryCount = 0;
+                            string imgCompareBase64 = ConvertImageToBase64(targetImage);
+                            string imgSourceBase64 = ConvertImageToBase64(sourceImage);
+                            ComparisonResponse? response = null;
+
+                            while (!success && retryCount < maxRetries)
+                            {
+                                response = await _faceCompareService.CompareFacesAsync(imgSourceBase64, imgCompareBase64);
+
+                                if (CheckResponseCompare(response))
+                                {
+                                    results.Add(response);
+                                    success = true;
+                                }
+                                else if (response.Status == 429)
+                                {
+                                    retryCount++;
+                                    await Task.Delay(1000);
+                                }
+                                else
+                                {
+                                    LogError(logFilePath, response);
+                                    break;
+                                }
+                            }
+
+                            if (!success && retryCount >= maxRetries)
+                            {
+                                LogError(logFilePath, response, true); // Ghi log nếu retry thất bại
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            throw;
+                        }
+                        finally
+                        {
+                            semaphore.Release();
+                        }
+                    }));
+                }
+
+                await Task.WhenAll(tasks);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        private void LogError(string filePath, ComparisonResponse response, bool isRetryFailed = false)
+        {
+            string logMessage = isRetryFailed
+                ? $"Retry failed for response: Status={response.Status}, Message={response.Message}"
+                : $"Error response logged: Status={response.Status}, Message={response.Message}";
+
+            File.AppendAllText(filePath, $"{DateTime.Now}: {logMessage}{Environment.NewLine}");
+        }
+
+
+        private bool CheckResponseCompare(ComparisonResponse cr)
+        {
+            if (cr.Status == 200)
+            {
+                return true;
+            }
+            else if (cr.Status == 429)
+            {
+                return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private string ConvertImageToBase64(Image image)
+        {
+            try
+            {
+                // Tạo một MemoryStream để lưu ảnh tạm thời
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    // Lưu ảnh vào MemoryStream dưới định dạng PNG (hoặc định dạng khác tùy chọn)
+                    image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+
+                    // Chuyển nội dung MemoryStream sang mảng byte
+                    byte[] imageBytes = ms.ToArray();
+
+                    // Chuyển mảng byte thành chuỗi base64
+                    string base64String = Convert.ToBase64String(imageBytes);
+
+                    return base64String;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Xử lý lỗi nếu cần
+                Console.WriteLine($"Lỗi chuyển đổi ảnh sang base64: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
     }
 }
