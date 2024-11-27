@@ -19,13 +19,13 @@ namespace FAL.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IConfiguration _configuration;
-        private readonly DynamoDBContext _dbContext;
+        private readonly IDynamoDBContext _dbContext;
         private readonly JwtTokenGenerator _jwtTokenGenerator;
 
-        public AuthController(IConfiguration configuration, IAmazonDynamoDB dynamoDbClient)
+        public AuthController(IConfiguration configuration, IDynamoDBContext dbContext)
         {
             _configuration = configuration;
-            _dbContext = new DynamoDBContext(dynamoDbClient);
+            _dbContext = dbContext;
             _jwtTokenGenerator = new JwtTokenGenerator(configuration);
         }
 

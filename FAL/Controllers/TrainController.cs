@@ -95,78 +95,28 @@ namespace FAL.Controllers
         [HttpPost("upload-zip")]
         public async Task<IActionResult> UploadAndProcessZipFile(IFormFile zipFile)
         {
-            if (zipFile == null || zipFile.Length == 0)
+            if (!IsValidZipFile(zipFile, out string errorMessage))
             {
-                return BadRequest("No ZIP file uploaded.");
-            }
-
-            if (!Path.GetExtension(zipFile.FileName).Equals(".zip", StringComparison.OrdinalIgnoreCase))
-            {
-                return BadRequest("Only ZIP files are supported.");
+                return BadRequest(errorMessage);
             }
 
             try
             {
-                // Save the ZIP file to a temporary location
-                var tempZipFilePath = Path.GetTempFileName();
-                using (var stream = new FileStream(tempZipFilePath, FileMode.Create))
+                var tempZipFilePath = await SaveZipToTemporaryLocation(zipFile);
+                var extractPath = ExtractZipFile(tempZipFilePath);
+
+                var imageFiles = GetImageFilesFromDirectory(extractPath);
+
+                if (!imageFiles.Any())
                 {
-                    await zipFile.CopyToAsync(stream);
+                    CleanupTemporaryFiles(tempZipFilePath, extractPath);
+                    return BadRequest("No valid image files found in the ZIP.");
                 }
-
-                // Extract ZIP file to a temporary folder
-                var extractPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                Directory.CreateDirectory(extractPath);
-                ZipFile.ExtractToDirectory(tempZipFilePath, extractPath);
-
-                // Find image files in the extracted folder
-                var imageFiles = Directory.GetFiles(extractPath)
-                    .Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
-                                f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
-                                f.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
 
                 var systemId = User.Claims.FirstOrDefault(c => c.Type == SystermId)?.Value;
+                var (successCount, failureCount) = await ProcessImagesAsync(imageFiles, systemId);
 
-                int successCount = 0;
-                int failureCount = 0;
-
-                foreach (var imageFile in imageFiles)
-                {
-                    var fileName = Path.GetFileNameWithoutExtension(imageFile);
-                    var imageName = Path.GetFileName(imageFile);
-
-                    // Read the image file and validate it
-                    using (var imageStream = new FileStream(imageFile, FileMode.Open, FileAccess.Read))
-                    {
-                        var formFile = new FormFile(imageStream, 0, imageStream.Length, null, imageName)
-                        {
-                            Headers = new HeaderDictionary(),
-                            ContentType = GetContentType(imageFile)
-                        };
-
-                        try
-                        {
-                            // Validate the file with Rekognition
-                            await ValidateFileWithRekognitionAsync(formFile);
-
-                            // Train the system for each user with the image
-                            var image = await GetImageAsync(formFile);
-                            await TrainAsync(image, fileName, systemId);
-                            successCount++; // Increment success count
-                        }
-                        catch (Exception ex)
-                        {
-                            // Log the exception for this specific image
-                            _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
-                            failureCount++; // Increment failure count
-                        }
-                    }
-                }
-
-                // Cleanup
-                System.IO.File.Delete(tempZipFilePath);
-                Directory.Delete(extractPath, true);
+                CleanupTemporaryFiles(tempZipFilePath, extractPath);
 
                 return Ok(new ResultResponse
                 {
@@ -193,6 +143,118 @@ namespace FAL.Controllers
                 });
             }
         }
+
+        private bool IsValidZipFile(IFormFile zipFile, out string errorMessage)
+        {
+            if (zipFile == null || zipFile.Length == 0)
+            {
+                errorMessage = "No ZIP file uploaded.";
+                return false;
+            }
+
+            if (!Path.GetExtension(zipFile.FileName).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                errorMessage = "Only ZIP files are supported.";
+                return false;
+            }
+
+            errorMessage = string.Empty;
+            return true;
+        }
+
+        private async Task<string> SaveZipToTemporaryLocation(IFormFile zipFile)
+        {
+            var tempZipFilePath = Path.GetTempFileName();
+            using (var stream = new FileStream(tempZipFilePath, FileMode.Create))
+            {
+                await zipFile.CopyToAsync(stream);
+            }
+            return tempZipFilePath;
+        }
+
+        private string ExtractZipFile(string zipFilePath)
+        {
+            var extractPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(extractPath);
+
+            try
+            {
+                ZipFile.ExtractToDirectory(zipFilePath, extractPath);
+            }
+            catch (InvalidDataException ex)
+            {
+                // Cleanup if extraction fails
+                if (Directory.Exists(extractPath))
+                {
+                    Directory.Delete(extractPath, true);
+                }
+                throw new ArgumentException("The uploaded ZIP file is invalid or corrupted.", ex);
+            }
+
+            return extractPath;
+        }
+
+
+        private List<string> GetImageFilesFromDirectory(string directoryPath)
+        {
+            return Directory.GetFiles(directoryPath)
+                .Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+                            f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                            f.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        private async Task<(int successCount, int failureCount)> ProcessImagesAsync(List<string> imageFiles, string systemId)
+        {
+            int successCount = 0;
+            int failureCount = 0;
+
+
+
+            foreach (var imageFile in imageFiles)
+            {
+                var fileName = Path.GetFileNameWithoutExtension(imageFile);
+                var imageName = Path.GetFileName(imageFile);
+
+                using (var imageStream = new FileStream(imageFile, FileMode.Open, FileAccess.Read))
+                {
+                    var formFile = new FormFile(imageStream, 0, imageStream.Length, null, imageName)
+                    {
+                        Headers = new HeaderDictionary(),
+                        ContentType = GetContentType(imageFile)
+                    };
+
+                    try
+                    {
+                        await ValidateFileWithRekognitionAsync(formFile);
+                        var image = await GetImageAsync(formFile);
+                        await TrainAsync(image, fileName, systemId);
+                        successCount++;
+                    }
+                    catch
+                    {
+                        failureCount++;
+                    }
+                }
+            }
+
+            return (successCount, failureCount);
+        }
+
+        private void CleanupTemporaryFiles(string tempZipFilePath, string extractPath)
+        {
+            if (System.IO.File.Exists(tempZipFilePath))
+            {
+                System.IO.File.Delete(tempZipFilePath);
+            }
+
+            if (Directory.Exists(extractPath))
+            {
+                Directory.Delete(extractPath, true);
+            }
+        }
+
+
 
 
         private string GetContentType(string path)
@@ -504,7 +566,8 @@ namespace FAL.Controllers
             try
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
-                //check faceId in dynamodb
+
+                // Check if the FaceId exists in DynamoDB
                 var result = await _dynamoService.IsExistFaceIdAsync(systermId, info.FaceId);
                 if (!result)
                 {
@@ -515,14 +578,23 @@ namespace FAL.Controllers
                     });
                 }
 
-                //train
+                // Perform the disassociation
                 await DisassociateFaceIdAsync(info.UserId, info.FaceId, systermId);
 
-                //return 
+                // Return explicit OkObjectResult
                 return Ok(new ResultResponse
                 {
                     Status = true,
                     Message = "The disassociate was successful."
+                });
+            }
+            catch (InvalidOperationException ex)  // Specifically catch InvalidOperationException
+            {
+                // This exception is thrown when user doesn't exist
+                return BadRequest(new ResultResponse
+                {
+                    Status = false,
+                    Message = ex.Message  // Return the exception message directly
                 });
             }
             catch (Exception ex)
@@ -535,6 +607,7 @@ namespace FAL.Controllers
                 });
             }
         }
+
 
         private async Task<bool> ValidateFileWithRekognitionAsync(IFormFile file)
         {

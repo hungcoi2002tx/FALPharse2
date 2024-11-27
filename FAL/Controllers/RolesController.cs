@@ -12,11 +12,11 @@ namespace FAL.Controllers
     [ApiController]
     public class RolesController : ControllerBase
     {
-        private readonly DynamoDBContext _dbContext;
+        private readonly IDynamoDBContext _dbContext;
 
-        public RolesController(IAmazonDynamoDB dynamoDbClient)
+        public RolesController(IDynamoDBContext dbContext)
         {
-            _dbContext = new DynamoDBContext(dynamoDbClient);
+            _dbContext = dbContext;
         }
 
         // GET: api/roles
