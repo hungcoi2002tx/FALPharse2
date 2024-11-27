@@ -11,6 +11,7 @@ using Amazon.SQS.Model;
 using Amazon.SQS;
 using Newtonsoft.Json;
 using Amazon.S3.Model;
+using System.Net;
 
 namespace FAL.Controllers
 {
@@ -104,79 +105,95 @@ namespace FAL.Controllers
         [HttpPost("compare/result")]
         public async Task<IActionResult> CompareFacesReturnResult([FromForm] CompareFaceRequest request)
         {
-            // Validate if both images are provided
-            if (request.SourceImage == null || request.TargetImage == null)
-            {
-                return BadRequest("Both images must be provided.");
-            }
-
-            // Validate file types
-            if (!IsImageFile(request.SourceImage) || !IsImageFile(request.TargetImage))
-            {
-                return BadRequest("Both files must be valid images.");
-            }
+            var response = new CompareResponseResult();
 
             try
             {
-                // Read IFormFile into byte arrays
-                byte[] sourceImageBytes;
-                byte[] targetImageBytes;
-
-                using (var sourceStream = new MemoryStream())
+                // Validate input
+                if (!IsValidRequest(request, out var validationMessage))
                 {
-                    await request.SourceImage.CopyToAsync(sourceStream);
-                    sourceImageBytes = sourceStream.ToArray();
+                    return CreateResponse(null, validationMessage, HttpStatusCode.BadRequest);
                 }
 
-                using (var targetStream = new MemoryStream())
-                {
-                    await request.TargetImage.CopyToAsync(targetStream);
-                    targetImageBytes = targetStream.ToArray();
-                }
+                // Read image data
+                byte[] sourceImageBytes = await GetImageBytesAsync(request.SourceImage);
+                byte[] targetImageBytes = await GetImageBytesAsync(request.TargetImage);
 
-                // Create CompareFacesRequest object
-                var compareFacesRequest = new Amazon.Rekognition.Model.CompareFacesRequest
+                // Create and send CompareFacesRequest
+                var rekognitionResponse = await _rekognitionClient.CompareFacesAsync(new Amazon.Rekognition.Model.CompareFacesRequest
                 {
-                    SourceImage = new Amazon.Rekognition.Model.Image
-                    {
-                        Bytes = new MemoryStream(sourceImageBytes)
-                    },
-                    TargetImage = new Amazon.Rekognition.Model.Image
-                    {
-                        Bytes = new MemoryStream(targetImageBytes)
-                    },
-                    SimilarityThreshold = 80 // Default to 80% similarity if not provided
-                };
-
-                // Call AWS Rekognition CompareFaces API
-                var response = await _rekognitionClient.CompareFacesAsync(compareFacesRequest);
-
-                // Prepare the result
-                var results = response.FaceMatches.Select(match => new
-                {
-                    Similarity = match.Similarity,
-                    BoundingBox = match.Face.BoundingBox
+                    SourceImage = new Amazon.Rekognition.Model.Image { Bytes = new MemoryStream(sourceImageBytes) },
+                    TargetImage = new Amazon.Rekognition.Model.Image { Bytes = new MemoryStream(targetImageBytes) },
+                    SimilarityThreshold = 80
                 });
 
-                return Ok(new
-                {
-                    Status = response.FaceMatches.Any() && response.FaceMatches.Max(match => match.Similarity) >= 80,
-                    Percentage = response.FaceMatches.Any()
-         ? response.FaceMatches.Max(match => match.Similarity)
-         : (float?)null // Return null if no matches
-                });
+                // Process response
+                var maxSimilarity = rekognitionResponse.FaceMatches.Any()
+                    ? rekognitionResponse.FaceMatches.Max(match => match.Similarity)
+                    : (float?)null;
+
+                var message = maxSimilarity.HasValue && maxSimilarity >= 80
+                    ? "Faces matched successfully."
+                    : "No matching faces found.";
+
+                return CreateResponse(maxSimilarity, message, HttpStatusCode.OK);
+            }
+            catch (AmazonRekognitionException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests || ex.Message.Contains("Limit Exceeded"))
+            {
+                return CreateResponse(null, "Rate limit exceeded or request limit exceeded. Please try again later.", HttpStatusCode.TooManyRequests);
             }
             catch (AmazonRekognitionException ex)
             {
-                // Handle AWS Rekognition exceptions
-                return StatusCode(500, $"AWS Rekognition error: {ex.Message}");
+                var statusCode = ex.StatusCode != 0 ? ex.StatusCode : HttpStatusCode.InternalServerError;
+
+                return CreateResponse(
+                    null,
+                    $"AWS Rekognition error: {ex.Message}",
+                    statusCode
+                );
             }
             catch (Exception ex)
             {
-                // Handle generic exceptions
-                return StatusCode(500, $"An error occurred: {ex.Message}");
+                return CreateResponse(null, $"An error occurred: {ex.Message}", HttpStatusCode.InternalServerError);
             }
         }
+
+        private bool IsValidRequest(CompareFaceRequest request, out string message)
+        {
+            if (request.SourceImage == null || request.TargetImage == null)
+            {
+                message = "Both images must be provided.";
+                return false;
+            }
+
+            if (!IsImageFile(request.SourceImage) || !IsImageFile(request.TargetImage))
+            {
+                message = "Both files must be valid images.";
+                return false;
+            }
+
+            message = string.Empty;
+            return true;
+        }
+
+        private async Task<byte[]> GetImageBytesAsync(IFormFile image)
+        {
+            using var stream = new MemoryStream();
+            await image.CopyToAsync(stream);
+            return stream.ToArray();
+        }
+
+        private IActionResult CreateResponse(float? percentage, string message, HttpStatusCode statusCode)
+        {
+            var response = new CompareResponseResult
+            {
+                Percentage = percentage,
+                Message = message,
+            };
+
+            return StatusCode((int)statusCode, response);
+        }
+
 
         private bool IsImageFile(IFormFile file)
         {
