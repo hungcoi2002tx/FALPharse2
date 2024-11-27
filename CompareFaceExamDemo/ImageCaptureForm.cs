@@ -20,6 +20,7 @@ namespace CompareFaceExamDemo
     {
         private CompareFaceAdapterRecognitionService _compareFaceService;
         private readonly FaceCompareService _faceCompareService;
+        private readonly object _logLock = new object();
         public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
             InitializeComponent();
@@ -278,7 +279,7 @@ namespace CompareFaceExamDemo
                 {
                     tasks.Add(Task.Run(async () =>
                     {
-                        await semaphore.WaitAsync(); // Chờ để lấy slot trống
+                        await semaphore.WaitAsync();
 
                         try
                         {
@@ -333,13 +334,26 @@ namespace CompareFaceExamDemo
             }
         }
 
-        private void LogError(string filePath, ComparisonResponse response, bool isRetryFailed = false)
+        private void LogError(string logFilePath, ComparisonResponse? response, bool isRetryExceeded = false)
         {
-            string logMessage = isRetryFailed
-                ? $"Retry failed for response: Status={response.Status}, Message={response.Message}"
-                : $"Error response logged: Status={response.Status}, Message={response.Message}";
+            lock (_logLock)
+            {
+                try
+                {
+                    using (StreamWriter sw = new StreamWriter(logFilePath, true))
+                    {
+                        string logMessage = isRetryExceeded
+                            ? $"[{DateTime.Now}] ERROR: Retry limit exceeded. Response: {response?.ToString()}"
+                            : $"[{DateTime.Now}] ERROR: Comparison failed. Response: {response?.ToString()}";
 
-            File.AppendAllText(filePath, $"{DateTime.Now}: {logMessage}{Environment.NewLine}");
+                        sw.WriteLine(logMessage);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to log error: {ex.Message}");
+                }
+            }
         }
 
 
