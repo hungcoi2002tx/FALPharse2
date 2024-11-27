@@ -124,7 +124,7 @@ namespace FAL.Controllers
                 {
                     SourceImage = new Amazon.Rekognition.Model.Image { Bytes = new MemoryStream(sourceImageBytes) },
                     TargetImage = new Amazon.Rekognition.Model.Image { Bytes = new MemoryStream(targetImageBytes) },
-                    SimilarityThreshold = 80
+                    SimilarityThreshold = 0
                 });
 
                 // Process response
@@ -132,7 +132,7 @@ namespace FAL.Controllers
                     ? rekognitionResponse.FaceMatches.Max(match => match.Similarity)
                     : (float?)null;
 
-                var message = maxSimilarity.HasValue && maxSimilarity >= 80
+                var message = maxSimilarity.HasValue && maxSimilarity >= 0
                     ? "Faces matched successfully."
                     : "No matching faces found.";
 
