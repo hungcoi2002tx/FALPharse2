@@ -21,6 +21,7 @@ namespace CompareFaceExamDemo
         private CompareFaceAdapterRecognitionService _compareFaceService;
         private readonly FaceCompareService _faceCompareService;
         private readonly object _logLock = new object();
+
         public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
             InitializeComponent();
@@ -253,7 +254,9 @@ namespace CompareFaceExamDemo
                 {
                     int maxDegreeOfParallelism = sourceFile.NumberOfThread;
                     int maxRetries = 3;
-                    await GetCompareResult(maxDegreeOfParallelism, compareImages, maxRetries);
+                    List<ComparisonResponse> listResults = await GetCompareResult(maxDegreeOfParallelism, compareImages, maxRetries);
+                    string folderPath = txtFolderPath.Text;
+                    ExcelExporter.ExportListToExcel(listResults, folderPath);
                 }
                 else
                 {
@@ -266,7 +269,7 @@ namespace CompareFaceExamDemo
             }
         }
 
-        private async Task GetCompareResult(int maxDegreeOfParallelism, List<(Image, Image)> compareImages, int maxRetries)
+        private async Task<List<ComparisonResponse>> GetCompareResult(int maxDegreeOfParallelism, List<(Image, Image)> compareImages, int maxRetries)
         {
             try
             {
@@ -274,6 +277,7 @@ namespace CompareFaceExamDemo
                 ConcurrentBag<ComparisonResponse> results = new ConcurrentBag<ComparisonResponse>();
                 List<Task> tasks = new List<Task>();
                 string logFilePath = "log.txt";
+                List<ComparisonResponse> listResults = new List<ComparisonResponse>();
 
                 foreach (var (targetImage, sourceImage) in compareImages)
                 {
@@ -327,6 +331,10 @@ namespace CompareFaceExamDemo
                 }
 
                 await Task.WhenAll(tasks);
+
+                listResults = results.ToList();
+
+                return listResults;
             }
             catch (Exception)
             {
