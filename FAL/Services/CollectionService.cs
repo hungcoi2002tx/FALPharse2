@@ -127,7 +127,7 @@ namespace FAL.Services
             }
         }
 
-        public async Task<bool> DisassociatedFaceAsync(string systermId, string faceId, string userId)
+        public virtual async Task<bool> DisassociatedFaceAsync(string systermId, string faceId, string userId)
         {
             try
             {
@@ -540,7 +540,7 @@ namespace FAL.Services
             }
         }
 
-        public async Task DeleteUserFromRekognitionCollectionAsync(string systemId, string userId)
+        public virtual async Task DeleteUserFromRekognitionCollectionAsync(string systemId, string userId)
         {
             try
             {
