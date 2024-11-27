@@ -117,12 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="label3.Text" xml:space="preserve">
-    <value>* Chú ý:
-Đưa khuôn mặt của bạn vào khung màu cam
-rồi nhấn chụp ảnh, bạn có thể chụp lại nhiều lần
-. Nếu chúng tôi phát hiện mặt bạn không có trong
-khung, kết quả thi của bạn sẽ bị hủy. Xin cảm ơn!
-</value>
-  </data>
 </root>

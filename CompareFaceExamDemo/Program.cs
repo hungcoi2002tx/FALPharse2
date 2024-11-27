@@ -1,4 +1,4 @@
-using CompareFaceExamDemo.ExternalService;
+﻿using CompareFaceExamDemo.ExternalService;
 using CompareFaceExamDemo.ExternalService.Recognition;
 using Microsoft.Extensions.DependencyInjection;
 using RestSharp;
@@ -34,8 +34,20 @@ namespace CompareFaceExamDemo
                 services.AddSingleton<ImageCaptureForm>();
                 services.AddSingleton<SettingForm>();
                 services.AddSingleton<Test>();
-                services.AddSingleton<AuthService>();
-                services.AddSingleton<FaceCompareService>();
+                services.AddSingleton<AuthService>(provider =>
+                    new AuthService(
+                        "https://dev.demorecognition.click/api/Auth/login", 
+                        "string",                  
+                        "123456"                   
+                    ));
+                services.AddSingleton<FaceCompareService>(provider =>
+                {
+                    var authService = provider.GetRequiredService<AuthService>();
+                    return new FaceCompareService(
+                        authService,
+                        "https://dev.demorecognition.click/api/Compare/compare/result" 
+                    );
+                });
 
                 services.AddSingleton<IRecognitionRestClient>(r => new RecognitionRestClient(
                 new RestClient(new HttpClient(new HttpClientHandler
