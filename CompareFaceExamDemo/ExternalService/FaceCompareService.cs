@@ -34,15 +34,21 @@ namespace CompareFaceExamDemo.ExternalService
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
 
-                var content = new MultipartFormDataContent
-                {
-                    { new StreamContent(File.OpenRead(sourceImage)), "SourceImage", Path.GetFileName(sourceImage) },
-                    { new StreamContent(File.OpenRead(targetImage)), "TargetImage", Path.GetFileName(targetImage) }
-                };
+                var content = new MultipartFormDataContent();
+
+                // Tạo StreamContent cho sourceImage và thiết lập Content-Type
+                var sourceImageContent = new StreamContent(File.OpenRead(sourceImage));
+                sourceImageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg"); // Thay đổi 'image/jpeg' theo loại ảnh thực tế
+                content.Add(sourceImageContent, "SourceImage", Path.GetFileName(sourceImage));
+
+                // Tạo StreamContent cho targetImage và thiết lập Content-Type
+                var targetImageContent = new StreamContent(File.OpenRead(targetImage));
+                targetImageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg"); // Thay đổi 'image/jpeg' theo loại ảnh thực tế
+                content.Add(targetImageContent, "TargetImage", Path.GetFileName(targetImage));
 
                 request.Content = content;
-                using HttpClient client = new HttpClient();
 
+                using HttpClient client = new HttpClient();
                 var response = await client.SendAsync(request);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)

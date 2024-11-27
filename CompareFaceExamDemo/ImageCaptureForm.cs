@@ -2,6 +2,7 @@
 using CompareFaceExamDemo.ExternalService.Recognition;
 using CompareFaceExamDemo.Models;
 using CompareFaceExamDemo.Utils;
+using Share.SystemModel;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -218,7 +219,9 @@ namespace CompareFaceExamDemo
         {
             try
             {
-                List<(Image, Image)> compareImages = new List<(Image, Image)>();
+                //List<(Image, Image)> compareImages = new List<(Image, Image)>();
+                List<(string, string)> compareImages = new List<(string, string)>();
+
                 var sourceFile = Config.GetSetting();
                 var urlSource = sourceFile.DirectoryImageSource;
 
@@ -228,35 +231,51 @@ namespace CompareFaceExamDemo
                     bool isChecked = Convert.ToBoolean(row.Cells["checkBoxColumn"].Value);
                     if (isChecked)
                     {
-                        string fileName = row.Cells["FileName"].Value.ToString() ?? "";
-                        string folderPath = txtFolderPath.Text;
-
-                        string fullPath = Path.Combine(folderPath, fileName);
-                        string fullPathImageSource = Path.Combine(urlSource, fileName);
+                        string? fullPathImageTarget = "";
+                        string? fullPathImageSource = "";
 
                         try
                         {
-                            using (Image imgCompare = Image.FromFile(fullPath))
-                            using (Image imgSource = Image.FromFile(fullPathImageSource))
-                            {
-                                compareImages.Add(((Image)imgCompare.Clone(), (Image)imgSource.Clone()));
-                            }
+                            string fileName = row.Cells["FileName"].Value.ToString() ?? "";
+                            string folderPath = txtFolderPath.Text;
+
+                            fullPathImageTarget = Path.Combine(folderPath, fileName);
+                            fullPathImageSource = Path.Combine(urlSource, fileName);
+
+                            compareImages.Add((fullPathImageTarget, fullPathImageSource));
                         }
                         catch (Exception ex)
                         {
                             // Xử lý nếu xảy ra lỗi khi đọc file (ví dụ: file bị hỏng)
-                            MessageBox.Show($"Lỗi khi đọc file: {fullPath}\nChi tiết: {ex.Message}");
+                            MessageBox.Show($"Lỗi khi đọc file: {fullPathImageTarget}\nChi tiết: {ex.Message}");
                         }
                     }
                 }
 
                 if (compareImages.Count > 0)
                 {
-                    int maxDegreeOfParallelism = sourceFile.NumberOfThread;
-                    int maxRetries = 3;
-                    List<ComparisonResponse> listResults = await GetCompareResult(maxDegreeOfParallelism, compareImages, maxRetries);
-                    string folderPath = txtFolderPath.Text;
-                    ExcelExporter.ExportListToExcel(listResults, folderPath);
+                    try
+                    {
+                        int maxDegreeOfParallelism = sourceFile.NumberOfThread;
+                        int maxRetries = 3;
+                        List<ComparisonResponse> listResults = await GetCompareResult(maxDegreeOfParallelism, compareImages, maxRetries);
+
+                        List<CompareResponseResult> listResultData = listResults
+                            .Where(response => response.Data != null)
+                            .Select(response => response.Data!)
+                            .ToList();
+
+                        string folderPath = txtFolderPath.Text;
+                        string[] folderPathParts = folderPath.Split('\\');
+                        string lastPart = folderPathParts[folderPathParts.Length - 1];
+
+                        string filePath = folderPath + "/" + DateTime.Now.ToString("ddMMyyyy_HHmmss_fff") + "-" + lastPart + ".xlsx";
+                        ExcelExporter.ExportListToExcel(listResultData, filePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception(ex.Message);
+                    }
                 }
                 else
                 {
@@ -269,7 +288,7 @@ namespace CompareFaceExamDemo
             }
         }
 
-        private async Task<List<ComparisonResponse>> GetCompareResult(int maxDegreeOfParallelism, List<(Image, Image)> compareImages, int maxRetries)
+        private async Task<List<ComparisonResponse>> GetCompareResult(int maxDegreeOfParallelism, List<(string, string)> compareImages, int maxRetries)
         {
             try
             {
@@ -289,13 +308,13 @@ namespace CompareFaceExamDemo
                         {
                             bool success = false;
                             int retryCount = 0;
-                            string imgCompareBase64 = ConvertImageToBase64(targetImage);
-                            string imgSourceBase64 = ConvertImageToBase64(sourceImage);
+                            //string imgCompareBase64 = ConvertImageToBase64(targetImage);
+                            //string imgSourceBase64 = ConvertImageToBase64(sourceImage);
                             ComparisonResponse? response = null;
 
                             while (!success && retryCount < maxRetries)
                             {
-                                response = await _faceCompareService.CompareFacesAsync(imgSourceBase64, imgCompareBase64);
+                                response = await _faceCompareService.CompareFacesAsync(sourceImage, targetImage);
 
                                 if (CheckResponseCompare(response))
                                 {

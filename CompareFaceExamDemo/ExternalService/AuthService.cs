@@ -48,7 +48,7 @@ namespace CompareFaceExamDemo.ExternalService
 
             // Giả định response chứa trường 'token' và 'expires_in'
             token = json["token"]?.ToString();
-            tokenExpiry = DateTime.UtcNow.AddSeconds((int)json["expires_in"]);
+            tokenExpiry = DateTime.UtcNow.AddSeconds((int)json["expiresIn"]);
 
             return token ?? throw new Exception("Token retrieval failed.");
         }
