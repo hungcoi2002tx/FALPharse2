@@ -16,7 +16,7 @@ namespace FAL.FrontEnd.Pages.Admin
             _httpClientFactory = httpClientFactory;
         }
 
-        public List<Account> Accounts { get; set; } = new();
+        public List<AccountViewDto> Accounts { get; set; } = new();
 
         public async Task OnGetAsync()
         {
@@ -35,7 +35,7 @@ namespace FAL.FrontEnd.Pages.Admin
             if (response.IsSuccessStatusCode)
             {
                 var json = await response.Content.ReadAsStringAsync();
-                Accounts = JsonSerializer.Deserialize<List<Account>>(json);
+                Accounts = JsonSerializer.Deserialize<List<AccountViewDto>>(json);
                 // Debug log kết quả Deserialize
                 Console.WriteLine("Accounts Count: " + Accounts.Count);
             }

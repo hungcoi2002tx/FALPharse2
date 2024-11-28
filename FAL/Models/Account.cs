@@ -8,7 +8,6 @@ public class Account
 {
     [DynamoDBHashKey]
     public string Username { get; set; }
-    [JsonIgnore]
     public string Password { get; set; }
     public string Email { get; set; }
     public int RoleId { get; set; }  // Chỉ một RoleId duy nhất cho user, kiểu int
