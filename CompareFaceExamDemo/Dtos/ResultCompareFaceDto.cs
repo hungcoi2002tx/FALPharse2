@@ -8,6 +8,7 @@ namespace CompareFaceExamDemo.Dtos
 {
     public class ResultCompareFaceDto
     {
+        public bool IsSelected { get; set; }
         public string? ExamCode { get; set; }
         public string? StudentCode { get; set; }
         public DateTime Time { get; set; } = DateTime.Now;

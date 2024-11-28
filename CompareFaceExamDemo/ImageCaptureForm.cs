@@ -25,7 +25,6 @@ namespace CompareFaceExamDemo
         private readonly object _logLock = new object();
         private BindingSource? source = null;
         List<ResultCompareFaceDto>? listDataCompare = null;
-        private bool isLoadData = false;
 
         public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
@@ -33,7 +32,6 @@ namespace CompareFaceExamDemo
             _compareFaceService = compareFaceService;
             _faceCompareService = faceCompareService;
             LoadListData();
-
         }
 
         private void LoadListData()
@@ -54,48 +52,15 @@ namespace CompareFaceExamDemo
                 dataGridViewImages.Columns.Clear();
                 dataGridViewImages.Rows.Clear();
                 dataGridViewImages.AllowUserToAddRows = false;
-                dataGridViewImages.ScrollBars = ScrollBars.Both;  // Hiển thị thanh cuộn ngang và dọc
+                dataGridViewImages.ScrollBars = ScrollBars.Both; // Hiển thị thanh cuộn ngang và dọc
+                dataGridViewImages.RowHeadersVisible = false;
 
                 source.DataSource = listDataCompare;
                 dataGridViewImages.DataSource = source;
-
-                if (!isLoadData)
-                {
-                    AddCheckBoxHeader();
-                    isLoadData = true;
-                }
             }
             catch (Exception)
             {
                 MessageBox.Show($"Liên hệ admin", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void AddCheckBoxHeader()
-        {
-            // Tạo checkbox header
-            CheckBox headerCheckBox = new CheckBox
-            {
-                Size = new System.Drawing.Size(15, 15)
-            };
-            headerCheckBox.CheckedChanged += HeaderCheckBox_CheckedChanged;
-
-            // Đặt checkbox vào vị trí của cột đầu tiên
-            var cellRectangle = dataGridViewImages.GetCellDisplayRectangle(0, -1, true);
-            headerCheckBox.Location = new System.Drawing.Point(cellRectangle.Location.X + 20, cellRectangle.Location.Y + 5);
-
-            // Thêm checkbox vào DataGridView
-            dataGridViewImages.Controls.Add(headerCheckBox);
-        }
-
-        private void HeaderCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            // Thay đổi trạng thái tất cả các checkbox
-            CheckBox headerCheckBox = (CheckBox)sender;
-            foreach (DataGridViewRow row in dataGridViewImages.Rows)
-            {
-                DataGridViewCheckBoxCell checkBoxCell = (DataGridViewCheckBoxCell)row.Cells["checkBoxColumn"];
-                checkBoxCell.Value = headerCheckBox.Checked;
             }
         }
 
@@ -141,9 +106,6 @@ namespace CompareFaceExamDemo
                     // Kiểm tra tên file có đúng định dạng không
                     if (regex.IsMatch(fileName))
                     {
-
-                        AddSelectAllCheckBox();
-
                         ResultCompareFaceDto rcf = new ResultCompareFaceDto
                         {
                             StudentCode = Path.GetFileNameWithoutExtension(fileName),
@@ -167,85 +129,6 @@ namespace CompareFaceExamDemo
             catch (Exception ex)
             {
                 MessageBox.Show($"Có lỗi xảy ra: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void btnSelectAll_Click(object sender, EventArgs e)
-        {
-            foreach (DataGridViewRow row in dataGridViewImages.Rows)
-            {
-                DataGridViewCheckBoxCell checkBoxCell = (DataGridViewCheckBoxCell)row.Cells["checkBoxColumn"];
-                checkBoxCell.Value = true; // Chọn tất cả checkbox
-            }
-        }
-
-        private void AddSelectAllCheckBox()
-        {
-            // Tạo CheckBox
-            CheckBox selectAllCheckBox = new CheckBox
-            {
-                Size = new System.Drawing.Size(15, 15),
-                Location = new System.Drawing.Point(5, 5) // Tùy chỉnh vị trí
-            };
-
-            // Gắn sự kiện thay đổi trạng thái
-            selectAllCheckBox.CheckedChanged += SelectAllCheckBox_CheckedChanged;
-
-            // Đặt CheckBox vào tiêu đề của cột đầu tiên (Select Column)
-            var headerCell = dataGridViewImages.GetCellDisplayRectangle(0, -1, true);
-            selectAllCheckBox.Location = new System.Drawing.Point(headerCell.Location.X + 20, headerCell.Location.Y + 5);
-
-            // Thêm CheckBox vào DataGridView
-            dataGridViewImages.Controls.Add(selectAllCheckBox);
-        }
-
-        private void SelectAllCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            CheckBox headerCheckBox = (CheckBox)sender;
-
-            // Thay đổi trạng thái tất cả các checkbox trong bảng
-            foreach (DataGridViewRow row in dataGridViewImages.Rows)
-            {
-                DataGridViewCheckBoxCell checkBoxCell = (DataGridViewCheckBoxCell)row.Cells["checkBoxColumn"];
-                checkBoxCell.Value = headerCheckBox.Checked;
-            }
-        }
-
-        private void dataGridViewImages_SelectionChanged(object sender, EventArgs e)
-        {
-            // Kiểm tra nếu có ít nhất một hàng được chọn
-            if (dataGridViewImages.SelectedRows.Count > 0)
-            {
-                DataGridViewRow selectedRow = dataGridViewImages.SelectedRows[0];
-
-                // Lấy tên file từ cột FileName
-                string fileName = selectedRow.Cells["FileName"].Value?.ToString();
-
-                if (!string.IsNullOrEmpty(fileName))
-                {
-                    string folderPath = txtFolderPath.Text; // Đường dẫn thư mục
-                    string fullPath = Path.Combine(folderPath, fileName);
-
-                    // Kiểm tra file tồn tại và hiển thị
-                    if (File.Exists(fullPath))
-                    {
-                        if (pictureBoxPreview.Image != null)
-                        {
-                            pictureBoxPreview.Image.Dispose(); // Giải phóng ảnh cũ
-                        }
-                        pictureBoxPreview.Image = Image.FromFile(fullPath);
-                    }
-                    else
-                    {
-                        pictureBoxPreview.Image = null; // Xóa ảnh nếu file không tồn tại
-                        MessageBox.Show($"File không tồn tại: {fullPath}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
-            else
-            {
-                // Không có hàng nào được chọn
-                pictureBoxPreview.Image = null; // Xóa ảnh
             }
         }
 
