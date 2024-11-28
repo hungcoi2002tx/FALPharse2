@@ -15,5 +15,7 @@ namespace CompareFaceExamDemo.Dtos
         public string? Message { get; set; }
         public double Confidence { get; set; } = 0;
         public string? Note { get; set; }
+        public string? ImageTagetPath { get; set; } = null;
+        public string? ImageSourcePath { get; set; } = null;
     }
 }

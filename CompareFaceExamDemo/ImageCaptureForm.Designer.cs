@@ -8,7 +8,6 @@
         private System.Windows.Forms.Button btnSelectAll;
         private System.Windows.Forms.Button btnSend;
         private System.Windows.Forms.TextBox txtFolderPath;
-        private System.Windows.Forms.PictureBox pictureBoxPreview;
 
 
         protected override void Dispose(bool disposing)
@@ -26,9 +25,7 @@
             btnSend = new Button();
             txtFolderPath = new TextBox();
             dataGridViewImages = new DataGridView();
-            pictureBoxPreview = new PictureBox();
             ((System.ComponentModel.ISupportInitialize)dataGridViewImages).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)pictureBoxPreview).BeginInit();
             SuspendLayout();
             // 
             // btnSelectFolder
@@ -72,24 +69,12 @@
             dataGridViewImages.Name = "dataGridViewImages";
             dataGridViewImages.Size = new Size(1173, 623);
             dataGridViewImages.TabIndex = 3;
-            dataGridViewImages.SelectionChanged += dataGridViewImages_SelectionChanged;
-            // 
-            // pictureBoxPreview
-            // 
-            pictureBoxPreview.Location = new Point(1184, 92);
-            pictureBoxPreview.Margin = new Padding(4, 3, 4, 3);
-            pictureBoxPreview.Name = "pictureBoxPreview";
-            pictureBoxPreview.Size = new Size(175, 173);
-            pictureBoxPreview.SizeMode = PictureBoxSizeMode.Zoom;
-            pictureBoxPreview.TabIndex = 4;
-            pictureBoxPreview.TabStop = false;
             // 
             // ImageCaptureForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1341, 720);
-            Controls.Add(pictureBoxPreview);
             Controls.Add(txtFolderPath);
             Controls.Add(dataGridViewImages);
             Controls.Add(btnSend);
@@ -98,7 +83,6 @@
             Name = "ImageCaptureForm";
             Text = "Image Viewer with Preview";
             ((System.ComponentModel.ISupportInitialize)dataGridViewImages).EndInit();
-            ((System.ComponentModel.ISupportInitialize)pictureBoxPreview).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
