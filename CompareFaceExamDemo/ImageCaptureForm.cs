@@ -25,13 +25,15 @@ namespace CompareFaceExamDemo
         private readonly object _logLock = new object();
         private BindingSource? source = null;
         List<ResultCompareFaceDto>? listDataCompare = null;
+        private SettingModel sourceFile;
+
 
         public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
             InitializeComponent();
             _compareFaceService = compareFaceService;
             _faceCompareService = faceCompareService;
-            LoadListData();
+            sourceFile = Config.GetSetting();
         }
 
         private void LoadListData()
@@ -86,40 +88,39 @@ namespace CompareFaceExamDemo
         {
             try
             {
-                // Lấy danh sách các file trong thư mục
+                var urlSource = sourceFile.DirectoryImageSource;
                 string[] files = Directory.GetFiles(folderPath);
-
-                // Regex để kiểm tra định dạng tên file: 2 chữ cái + 4 số
                 Regex regex = new Regex(@"^[a-zA-Z]{2}\d{6}\.(jpg|png)$");
-             
-                // Lấy tên thư mục cuối cùng làm ExamCode
+                List<ResultCompareFaceDto> listDataCompareGetData = new List<ResultCompareFaceDto>();
+
+
                 string[] folderPathParts = folderPath.Split('\\');
                 string lastPart = folderPathParts[folderPathParts.Length - 1];
                 string examCode = lastPart;
 
-
-                // Thêm dữ liệu vào danh sách
                 foreach (string file in files)
                 {
-                    string fileName = Path.GetFileName(file);
-                 
-                    // Kiểm tra tên file có đúng định dạng không
-                    if (regex.IsMatch(fileName))
+                    string ImageTagetPath = Path.GetFileName(file);
+                    string ImageSourcePath = Path.Combine(urlSource, ImageTagetPath);
+
+                    if (regex.IsMatch(ImageTagetPath))
                     {
                         ResultCompareFaceDto rcf = new ResultCompareFaceDto
                         {
-                            StudentCode = Path.GetFileNameWithoutExtension(fileName),
+                            ImageSourcePath = ImageSourcePath,
+                            ImageTagetPath = file,
+                            StudentCode = Path.GetFileNameWithoutExtension(ImageTagetPath),
                             Status = "Pending",
                             Confidence = 0.0,
                             ExamCode = examCode,
                             Time = DateTime.Now,
                             Message = "File loaded",
                         };
-                        listDataCompare.Add(rcf);
+                        listDataCompareGetData.Add(rcf);
                     }
                 }
+                listDataCompare = listDataCompareGetData;
 
-                // Hiển thị thông báo nếu không tìm thấy file phù hợp
                 if (listDataCompare.Count == 0)
                 {
                     MessageBox.Show("Không tìm thấy file nào đáp ứng định dạng trong thư mục!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -136,44 +137,13 @@ namespace CompareFaceExamDemo
         {
             try
             {
-                List<(string, string)> compareImages = new List<(string, string)>();
-
-                var sourceFile = Config.GetSetting();
-                var urlSource = sourceFile.DirectoryImageSource;
-
-                foreach (DataGridViewRow row in dataGridViewImages.Rows)
-                {
-                    // Kiểm tra nếu checkbox được tích
-                    bool isChecked = Convert.ToBoolean(row.Cells["checkBoxColumn"].Value);
-                    if (isChecked)
-                    {
-                        string? fullPathImageTarget = "";
-                        string? fullPathImageSource = "";
-
-                        try
-                        {
-                            string fileName = row.Cells["FileName"].Value.ToString() ?? "";
-                            string folderPath = txtFolderPath.Text;
-
-                            fullPathImageTarget = Path.Combine(folderPath, fileName);
-                            fullPathImageSource = Path.Combine(urlSource, fileName);
-
-                            compareImages.Add((fullPathImageTarget, fullPathImageSource));
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show($"Lỗi khi đọc file: {fullPathImageTarget}\nChi tiết: {ex.Message}");
-                        }
-                    }
-                }
-
-                if (compareImages.Count > 0)
+                if (listDataCompare.Count > 0)
                 {
                     try
                     {
                         int maxDegreeOfParallelism = sourceFile.NumberOfThread;
                         int maxRetries = 3;
-                        List<ComparisonResponse> listResults = await GetCompareResult(maxDegreeOfParallelism, compareImages, maxRetries);
+                        List<ComparisonResponse> listResults = await GetCompareResult(maxDegreeOfParallelism, maxRetries);
 
                         List<CompareResponseResult> listResultData = listResults
                             .Where(response => response.Data != null)
@@ -203,7 +173,7 @@ namespace CompareFaceExamDemo
             }
         }
 
-        private async Task<List<ComparisonResponse>> GetCompareResult(int maxDegreeOfParallelism, List<(string, string)> compareImages, int maxRetries)
+        private async Task<List<ComparisonResponse>> GetCompareResult(int maxDegreeOfParallelism, int maxRetries)
         {
             try
             {
@@ -212,7 +182,7 @@ namespace CompareFaceExamDemo
                 List<Task> tasks = new List<Task>();
                 string logFilePath = "log.txt";
 
-                foreach (var (targetImage, sourceImage) in compareImages)
+                foreach (var itemCompare in listDataCompare)
                 {
                     tasks.Add(Task.Run(async () =>
                     {
@@ -228,7 +198,7 @@ namespace CompareFaceExamDemo
 
                             while (!success && retryCount < maxRetries)
                             {
-                                response = await _faceCompareService.CompareFacesAsync(sourceImage, targetImage);
+                                response = await _faceCompareService.CompareFacesAsync(itemCompare.ImageSourcePath, itemCompare.ImageTagetPath);
 
                                 if (CheckResponseCompare(response))
                                 {
