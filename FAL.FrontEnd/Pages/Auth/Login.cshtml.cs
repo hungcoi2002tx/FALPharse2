@@ -35,7 +35,7 @@ namespace FAL.FrontEnd.Pages.Auth
 
                 // Lưu token vào session hoặc cookie
                 HttpContext.Session.SetString("JwtToken", token);
-                return RedirectToPage("/Admin/Index"); // Chuyển hướng đến trang chính cho Admin/User
+                return RedirectToPage("/Dashboard/Index"); // Chuyển hướng đến trang chính cho Admin/User
             }
             else
             {

@@ -38,7 +38,11 @@ namespace FAL.FrontEnd.Pages.Dashboard
             if (response.IsSuccessStatusCode)
             {
                 var responseContent = await response.Content.ReadAsStringAsync();
-                TrainStats = JsonSerializer.Deserialize<TrainStatsResponse>(responseContent);
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                TrainStats = JsonSerializer.Deserialize<TrainStatsResponse>(responseContent,options);
             }
             else
             {
