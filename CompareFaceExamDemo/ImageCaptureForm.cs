@@ -3,6 +3,7 @@ using CompareFaceExamDemo.ExternalService;
 using CompareFaceExamDemo.ExternalService.Recognition;
 using CompareFaceExamDemo.Models;
 using CompareFaceExamDemo.Utils;
+using RestSharp;
 using Share.SystemModel;
 using System;
 using System.Collections.Concurrent;
@@ -27,14 +28,13 @@ namespace CompareFaceExamDemo
         private BindingSource? source = null;
         private List<ResultCompareFaceDto>? listDataCompare = null;
         private SettingModel sourceFile;
-
+        private int maxRetries = 3;
 
         public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
             InitializeComponent();
             _compareFaceService = compareFaceService;
             _faceCompareService = faceCompareService;
-
         }
 
         private void LoadListData()
@@ -169,20 +169,15 @@ namespace CompareFaceExamDemo
                     try
                     {
                         int maxDegreeOfParallelism = sourceFile.NumberOfThread;
-                        int maxRetries = 3;
-                        List<ComparisonResponse> listResults = await GetCompareResult(maxDegreeOfParallelism, maxRetries);
-
-                        List<CompareResponseResult> listResultData = listResults
-                            .Where(response => response.Data != null)
-                            .Select(response => response.Data!)
-                            .ToList();
+                    
+                        await GetCompareResult(maxDegreeOfParallelism, maxRetries);
 
                         string folderPath = txtFolderPath.Text;
                         string[] folderPathParts = folderPath.Split('\\');
                         string lastPart = folderPathParts[folderPathParts.Length - 1];
 
                         string filePath = folderPath + "/" + DateTime.Now.ToString("ddMMyyyy_HHmmss_fff") + "-" + lastPart + ".xlsx";
-                        ExcelExporter.ExportListToExcel(listResultData, filePath);
+                        ExcelExporter.ExportListToExcel(listDataCompare, filePath);
                     }
                     catch (Exception ex)
                     {
@@ -200,14 +195,25 @@ namespace CompareFaceExamDemo
             }
         }
 
-        private async Task<List<ComparisonResponse>> GetCompareResult(int maxDegreeOfParallelism, int maxRetries)
+        private string GetNote(int confident, double ConfidenceResponse)
+        {
+            if(ConfidenceResponse >= confident)
+            {
+                return "khuôn mặt giống nhau";
+            }
+            else
+            {
+                return "khuôn mặt KHÁC nhau";
+            }
+        }
+
+        private async Task GetCompareResult(int maxDegreeOfParallelism, int maxRetries)
         {
             try
             {
                 SemaphoreSlim semaphore = new SemaphoreSlim(maxDegreeOfParallelism);
-                ConcurrentBag<ComparisonResponse> results = new ConcurrentBag<ComparisonResponse>();
                 List<Task> tasks = new List<Task>();
-                string logFilePath = "log.txt";
+                var confident = sourceFile.Confident;
 
                 foreach (var itemCompare in listDataCompare)
                 {
@@ -219,8 +225,6 @@ namespace CompareFaceExamDemo
                         {
                             bool success = false;
                             int retryCount = 0;
-                            //string imgCompareBase64 = ConvertImageToBase64(targetImage);
-                            //string imgSourceBase64 = ConvertImageToBase64(sourceImage);
                             ComparisonResponse? response = null;
 
                             while (!success && retryCount < maxRetries)
@@ -231,31 +235,52 @@ namespace CompareFaceExamDemo
 
                                     if (CheckResponseCompare(response))
                                     {
-                                        results.Add(response);
                                         success = true;
-                                        itemCompare.Status = "Đã hoàn thành!";
+                                        var ConfidenceResponse = response.Data.Percentage.HasValue ? (double)response.Data.Percentage.Value : 0.0;
                                         itemCompare.Message = response.Data.Message;
-                                        itemCompare.Status = response.Message;
-                                        itemCompare.Confidence = response.Data.Percentage.HasValue ? (double)response.Data.Percentage.Value : 0.0;
+                                        itemCompare.Note = GetNote(confident, ConfidenceResponse);
+                                        itemCompare.Status = response.Status + " - " + response.Message;
+                                        itemCompare.Confidence = ConfidenceResponse;
 
-                                        dataGridViewImages.Refresh();
+                                        int rowIndex = listDataCompare.IndexOf(itemCompare);
+                                        dataGridViewImages.Invoke(new Action(() =>
+                                        {
+                                            if (ConfidenceResponse < confident)
+                                            {
+                                                dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.Red;
+                                            }
+                                            else
+                                            {
+                                                dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.Green;
+                                            }
+                                            dataGridViewImages.Refresh();
+                                        }));
                                     }
                                     else if (response.Status == 429)
                                     {
                                         retryCount++;
                                         itemCompare.Status = $"Đang retry lần {retryCount}";
                                         itemCompare.Message = response.Data.Message;
-                                        itemCompare.Status = response.Message;
+                                        itemCompare.Status = response.Status + " - " + response.Message;
 
-                                        dataGridViewImages.Refresh();
+                                        dataGridViewImages.Invoke(new Action(() =>
+                                        {
+                                            dataGridViewImages.Refresh();
+                                        }));
                                         await Task.Delay(1000);
                                     }
                                     else
                                     {
                                         itemCompare.Status = $"Lỗi!";
                                         itemCompare.Message = response.Data.Message;
-                                        itemCompare.Status = response.Message;
-                                        dataGridViewImages.Refresh();
+                                        itemCompare.Status = response.Status + " - " + response.Message;
+
+                                        int rowIndex = listDataCompare.IndexOf(itemCompare);
+                                        dataGridViewImages.Invoke(new Action(() =>
+                                        {
+                                            dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.Yellow;
+                                            dataGridViewImages.Refresh();
+                                        }));
                                         break;
                                     }
                                 }
@@ -264,14 +289,29 @@ namespace CompareFaceExamDemo
                                     itemCompare.Status = "Comparison successful.";
                                     itemCompare.Message = "Không tìm thấy ảnh source!";
                                     itemCompare.Note = "Cần thêm ảnh source vào hệ thống!";
-                                    dataGridViewImages.Refresh();
+
+                                    int rowIndex = listDataCompare.IndexOf(itemCompare);
+                                    dataGridViewImages.Invoke(new Action(() =>
+                                    {
+                                        dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.Yellow;
+                                        dataGridViewImages.Refresh();
+                                    }));
                                     break;
                                 }
                             }
 
                             if (!success && retryCount >= maxRetries)
                             {
-                                LogError(logFilePath, response, true);
+                                itemCompare.Status = $"Lỗi, đã retry lại {maxRetries} lần.";
+                                itemCompare.Message = response.Data.Message;
+                                itemCompare.Status = response.Status + " - " + response.Message;
+
+                                int rowIndex = listDataCompare.IndexOf(itemCompare);
+                                dataGridViewImages.Invoke(new Action(() =>
+                                {
+                                    dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.Yellow;
+                                    dataGridViewImages.Refresh();
+                                }));
                             }
                         }
                         catch (Exception)
@@ -286,8 +326,7 @@ namespace CompareFaceExamDemo
                 }
 
                 await Task.WhenAll(tasks);
-
-                return results.ToList();
+                MessageBox.Show("Đã có kết quả!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception)
             {
