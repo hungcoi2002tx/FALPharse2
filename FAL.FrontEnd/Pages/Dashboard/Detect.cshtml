@@ -1,0 +1,23 @@
+﻿@page
+@model Dashboard.DetectModel
+@{
+    ViewData["Title"] = "Detect Stats";
+}
+<div class="container">
+    <h1 class="mb-4">Detect Stats</h1>
+    @if (Model.DetectStats != null)
+    {
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Statistics</h5>
+                <p class="card-text"><strong>Total Media Detected:</strong> @Model.DetectStats.TotalMediaDetected</p>
+                <p class="card-text"><strong>Total Media Retries:</strong> @Model.DetectStats.TotalMediaRetries</p>
+                <a asp-page="./Index" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger">Failed to load Detect Stats.</div>
+    }
+</div>

@@ -1,8 +1,10 @@
 ﻿using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Rekognition.Model;
 using FAL.Services.IServices;
 using Share.Data;
+using Share.DTO;
 using System.Text.Json;
 
 namespace FAL.Services
@@ -356,5 +358,83 @@ namespace FAL.Services
             return result;
         }
 
+        public async Task<DetectStatsResponse> GetDetectStats(string tableName)
+        {
+            try
+            {
+                // Connect to the DynamoDB table
+                var table = Table.LoadTable(_dynamoDBService, tableName);
+
+                // Scan the table to retrieve all items
+                var search = table.Scan(new ScanOperationConfig());
+                var results = new List<Document>();
+                do
+                {
+                    results.AddRange(await search.GetNextSetAsync());
+                } while (!search.IsDone);
+
+                // Extract the "FileName" field
+                var fileNames = results
+                    .Select(doc => doc["FileName"].AsString())
+                    .ToList();
+
+                // Calculate unique and duplicate counts
+                var uniqueMediaCount = fileNames.Distinct().Count();
+                var duplicateMediaCount = fileNames.Count() - uniqueMediaCount;
+
+                // Return the response
+                return new DetectStatsResponse
+                {
+                    TotalMediaDetected = uniqueMediaCount,
+                    TotalMediaRetries = duplicateMediaCount
+                };
+            }
+            catch (System.Exception ex)
+            {
+                return null;
+            }
+        }
+
+        public async Task<TrainStatsResponse> GetTrainStats(string systermId)
+        {
+            try
+            {
+                // Load the table
+                var table = Table.LoadTable(_dynamoDBService, systermId);
+
+                // Scan the table to retrieve all records
+                var search = table.Scan(new ScanOperationConfig());
+                var results = new List<Document>();
+                do
+                {
+                    results.AddRange(await search.GetNextSetAsync());
+                } while (!search.IsDone);
+
+                // Group by UserId and count FaceId for each user
+                var groupedData = results
+                    .GroupBy(doc => doc["UserId"].AsString())
+                    .Select(group => new TrainStatsOfUser
+                    {
+                        UserId = group.Key,
+                        TotalNumberOfFaceTrained = group.Count()
+                    })
+                    .ToList();
+
+                // Calculate the total unique UserIds
+                var totalUniqueUserIds = groupedData.Count;
+
+                // Return the response
+                return new TrainStatsResponse 
+                {
+                    TotalTrainedUserId = totalUniqueUserIds,
+                    UserStats = groupedData
+                };
+            }
+            catch (System.Exception ex)
+            {
+                return null;
+            }
+        }
     }
+    
 }

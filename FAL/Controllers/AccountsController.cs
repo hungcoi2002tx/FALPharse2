@@ -3,6 +3,8 @@ using Amazon.DynamoDBv2;
 using Microsoft.AspNetCore.Mvc;
 using FAL.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Net.WebSockets;
+using FAL.Dtos;
 
 namespace FAL.Controllers
 {
@@ -17,13 +19,24 @@ namespace FAL.Controllers
             _dbContext = dbContext;
         }
 
-        // GET: api/users
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
-            var users = await _dbContext.ScanAsync<Account>(new List<ScanCondition>()).GetRemainingAsync();
-            return Ok(users);
+            var accounts = await _dbContext.ScanAsync<Account>(new List<ScanCondition>()).GetRemainingAsync();
+            var accountDtos = accounts.Select(account => new AccountViewDto
+            {
+                Username = account.Username,
+                Password = account.Password,
+                Email = account.Email,
+                RoleId = account.RoleId,
+                SystemName = account.SystemName,
+                WebhookUrl = account.WebhookUrl,
+                WebhookSecretKey = account.WebhookSecretKey,
+                Status = account.Status
+            }).ToList();
+
+            return Ok(accountDtos);
         }
 
         // GET: api/users/{username}
@@ -31,12 +44,25 @@ namespace FAL.Controllers
         [HttpGet("{username}")]
         public async Task<IActionResult> GetUserById(string username)
         {
-            var user = await _dbContext.LoadAsync<Account>(username);
-            if (user == null)
+            var account = await _dbContext.LoadAsync<Account>(username);
+            if (account == null)
                 return NotFound("User không tìm thấy!");
 
-            return Ok(user);
+            var accountDto = new AccountViewDto
+            {
+                Username = account.Username,
+                Password = account.Password,
+                Email = account.Email,
+                RoleId = account.RoleId,
+                SystemName = account.SystemName,
+                WebhookUrl = account.WebhookUrl,
+                WebhookSecretKey = account.WebhookSecretKey,
+                Status = account.Status
+            };
+
+            return Ok(accountDto);
         }
+
 
         // POST: api/users
         [Authorize]
