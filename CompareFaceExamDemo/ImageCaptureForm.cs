@@ -25,7 +25,7 @@ namespace CompareFaceExamDemo
         private readonly object _logLock = new object();
         private BindingSource? source = null;
         List<ResultCompareFaceDto>? listDataCompare = null;
-
+        private bool isLoadData = false;
 
         public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
@@ -33,6 +33,7 @@ namespace CompareFaceExamDemo
             _compareFaceService = compareFaceService;
             _faceCompareService = faceCompareService;
             LoadListData();
+
         }
 
         private void LoadListData()
@@ -51,12 +52,18 @@ namespace CompareFaceExamDemo
 
                 dataGridViewImages.DataSource = null;
                 dataGridViewImages.Columns.Clear();
+                dataGridViewImages.Rows.Clear();
                 dataGridViewImages.AllowUserToAddRows = false;
                 dataGridViewImages.ScrollBars = ScrollBars.Both;  // Hiển thị thanh cuộn ngang và dọc
 
                 source.DataSource = listDataCompare;
                 dataGridViewImages.DataSource = source;
-                AddCheckBoxHeader();
+
+                if (!isLoadData)
+                {
+                    AddCheckBoxHeader();
+                    isLoadData = true;
+                }
             }
             catch (Exception)
             {
@@ -135,7 +142,7 @@ namespace CompareFaceExamDemo
                     if (regex.IsMatch(fileName))
                     {
 
-                        //AddSelectAllCheckBox();
+                        AddSelectAllCheckBox();
 
                         ResultCompareFaceDto rcf = new ResultCompareFaceDto
                         {
@@ -185,8 +192,8 @@ namespace CompareFaceExamDemo
             selectAllCheckBox.CheckedChanged += SelectAllCheckBox_CheckedChanged;
 
             // Đặt CheckBox vào tiêu đề của cột đầu tiên (Select Column)
-            //var headerCell = dataGridViewImages.GetCellDisplayRectangle(0, -1, true);
-            //selectAllCheckBox.Location = new System.Drawing.Point(headerCell.Location.X + 20, headerCell.Location.Y + 5);
+            var headerCell = dataGridViewImages.GetCellDisplayRectangle(0, -1, true);
+            selectAllCheckBox.Location = new System.Drawing.Point(headerCell.Location.X + 20, headerCell.Location.Y + 5);
 
             // Thêm CheckBox vào DataGridView
             dataGridViewImages.Controls.Add(selectAllCheckBox);
@@ -241,21 +248,6 @@ namespace CompareFaceExamDemo
                 pictureBoxPreview.Image = null; // Xóa ảnh
             }
         }
-
-        //private void UpdateDataGridViewRow(DataGridView dataGridView, string studentCode, string status, double confidence, string message)
-        //{
-        //    foreach (DataGridViewRow row in dataGridView.Rows)
-        //    {
-        //        if (row.Cells["StudentCode"].Value?.ToString() == studentCode)
-        //        {
-        //            row.Cells["Status"].Value = status;
-        //            row.Cells["Confidence"].Value = confidence.ToString("F2");
-        //            row.Cells["Message"].Value = message;
-        //            break;
-        //        }
-        //    }
-        //}
-
 
         private async void btnSend_Click(object sender, EventArgs e)
         {
