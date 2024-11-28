@@ -27,7 +27,6 @@ namespace CompareFaceExamDemo
         private readonly object _logLock = new object();
         private BindingSource? source = null;
         private List<ResultCompareFaceDto>? listDataCompare = null;
-        private SettingModel sourceFile;
         private int maxRetries = 3;
 
         public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
@@ -35,6 +34,7 @@ namespace CompareFaceExamDemo
             InitializeComponent();
             _compareFaceService = compareFaceService;
             _faceCompareService = faceCompareService;
+
         }
 
         private void LoadListData()
@@ -74,6 +74,7 @@ namespace CompareFaceExamDemo
             {
                 if (folderBrowser.ShowDialog() == DialogResult.OK)
                 {
+                    progressBarCompare.Value = 0;
                     // Lấy đường dẫn của thư mục được chọn
                     string folderPath = folderBrowser.SelectedPath;
                     // Hiển thị đường dẫn trong TextBox
@@ -89,6 +90,7 @@ namespace CompareFaceExamDemo
         {
             try
             {
+                var sourceFile = Config.GetSetting();
                 var urlSource = sourceFile.DirectoryImageSource;
                 string[] files = Directory.GetFiles(folderPath);
                 Regex regex = new Regex(@"^[a-zA-Z]{2}\d{6}\.(jpg|png)$");
@@ -168,8 +170,10 @@ namespace CompareFaceExamDemo
                 {
                     try
                     {
+                        progressBarCompare.Maximum = listDataCompare.Count;
+                        var sourceFile = Config.GetSetting();
                         int maxDegreeOfParallelism = sourceFile.NumberOfThread;
-                    
+
                         await GetCompareResult(maxDegreeOfParallelism, maxRetries);
 
                         string folderPath = txtFolderPath.Text;
@@ -197,7 +201,7 @@ namespace CompareFaceExamDemo
 
         private string GetNote(int confident, double ConfidenceResponse)
         {
-            if(ConfidenceResponse >= confident)
+            if (ConfidenceResponse >= confident)
             {
                 return "khuôn mặt giống nhau";
             }
@@ -213,7 +217,17 @@ namespace CompareFaceExamDemo
             {
                 SemaphoreSlim semaphore = new SemaphoreSlim(maxDegreeOfParallelism);
                 List<Task> tasks = new List<Task>();
+                var sourceFile = Config.GetSetting();
                 var confident = sourceFile.Confident;
+
+                // Đặt giá trị tối đa cho ProgressBar
+                progressBarCompare.Invoke(new Action(() =>
+                {
+                    progressBarCompare.Maximum = listDataCompare.Count;
+                    progressBarCompare.Value = 0; // Bắt đầu từ 0
+                }));
+
+                int completedCount = 0;
 
                 foreach (var itemCompare in listDataCompare)
                 {
@@ -263,8 +277,10 @@ namespace CompareFaceExamDemo
                                         itemCompare.Message = response.Data.Message;
                                         itemCompare.Status = response.Status + " - " + response.Message;
 
+                                        int rowIndex = listDataCompare.IndexOf(itemCompare);
                                         dataGridViewImages.Invoke(new Action(() =>
                                         {
+                                            dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.Yellow;
                                             dataGridViewImages.Refresh();
                                         }));
                                         await Task.Delay(1000);
@@ -320,19 +336,32 @@ namespace CompareFaceExamDemo
                         }
                         finally
                         {
+                            // Tăng tiến trình một cách an toàn giữa các thread
+                            Interlocked.Increment(ref completedCount);
+
+                            // Cập nhật ProgressBar và phần trăm hoàn thành trên giao diện
+                            progressBarCompare.Invoke(new Action(() =>
+                            {
+                                progressBarCompare.Value = completedCount;
+                                lblProgress.Text = $"{(completedCount * 100) / listDataCompare.Count}% hoàn thành";
+                            }));
+
+                            // Giải phóng Semaphore để các Task khác có thể chạy
                             semaphore.Release();
                         }
                     }));
                 }
 
                 await Task.WhenAll(tasks);
+
                 MessageBox.Show("Đã có kết quả!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                MessageBox.Show($"Có lỗi xảy ra: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
 
         private double ParseConfidence(string percentage)
         {
@@ -373,7 +402,6 @@ namespace CompareFaceExamDemo
                 }
             }
         }
-
 
         private bool CheckResponseCompare(ComparisonResponse cr)
         {
@@ -420,7 +448,8 @@ namespace CompareFaceExamDemo
 
         private void ImageCaptureForm_Load(object sender, EventArgs e)
         {
-            sourceFile = Config.GetSetting();
+           
+            progressBarCompare.Minimum = 0;
         }
     }
 }
