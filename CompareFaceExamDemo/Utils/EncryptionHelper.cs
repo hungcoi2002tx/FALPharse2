@@ -35,7 +35,7 @@ namespace CompareFaceExamDemo.Utils
 
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     throw;
                 }
@@ -68,7 +68,7 @@ namespace CompareFaceExamDemo.Utils
                         }
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     throw;
                 }

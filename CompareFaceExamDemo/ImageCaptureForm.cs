@@ -107,7 +107,7 @@ namespace CompareFaceExamDemo
 
                     if (regex.IsMatch(ImageTagetPath))
                     {
-                        string ImageSourcePath = GetImageSourcePath(urlSource, ImageTagetPath);
+                        string? ImageSourcePath = GetImageSourcePath(urlSource, ImageTagetPath) ;
 
                         ResultCompareFaceDto rcf = new ResultCompareFaceDto
                         {
@@ -137,7 +137,7 @@ namespace CompareFaceExamDemo
             }
         }
 
-        private string GetImageSourcePath(string urlSource, string imageFileName)
+        private string? GetImageSourcePath(string urlSource, string imageFileName)
         {
             // Lấy tên file không có phần mở rộng
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(imageFileName);
@@ -166,7 +166,7 @@ namespace CompareFaceExamDemo
         {
             try
             {
-                if (listDataCompare.Count > 0)
+                if (listDataCompare!.Count > 0)
                 {
                     try
                     {
@@ -180,8 +180,10 @@ namespace CompareFaceExamDemo
                         string[] folderPathParts = folderPath.Split('\\');
                         string lastPart = folderPathParts[folderPathParts.Length - 1];
 
-                        string filePath = folderPath + "/" + DateTime.Now.ToString("ddMMyyyy_HHmmss_fff") + "-" + lastPart + ".xlsx";
-                        ExcelExporter.ExportListToExcel(listDataCompare, filePath);
+                        string filePathExcel = folderPath + "/" + DateTime.Now.ToString("ddMMyyyy_HHmmss_fff") + "-" + lastPart + ".xlsx";
+                        string filePathTxt = folderPath + "/" + DateTime.Now.ToString("ddMMyyyy_HHmmss_fff") + "-" + lastPart + ".txt";
+                        TxtExporter.ExportListToTxt(listDataCompare, filePathTxt);
+                        ExcelExporter.ExportListToExcel(listDataCompare, filePathExcel);
                     }
                     catch (Exception ex)
                     {
@@ -245,7 +247,7 @@ namespace CompareFaceExamDemo
                             {
                                 if (itemCompare.ImageSourcePath != null)
                                 {
-                                    response = await _faceCompareService.CompareFacesAsync(itemCompare.ImageSourcePath, itemCompare.ImageTagetPath);
+                                    response = await _faceCompareService.CompareFacesAsync(itemCompare.ImageSourcePath, itemCompare.ImageTagetPath ?? "");
 
                                     if (CheckResponseCompare(response))
                                     {
@@ -361,25 +363,6 @@ namespace CompareFaceExamDemo
                 MessageBox.Show($"Có lỗi xảy ra: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
-
-        private double ParseConfidence(string percentage)
-        {
-            // Loại bỏ ký hiệu '%' nếu có và cắt các khoảng trắng
-            string cleanedPercentage = percentage?.Replace("%", "").Trim();
-
-            if (double.TryParse(cleanedPercentage, out double confidence))
-            {
-                return confidence; // Trả về giá trị nếu chuyển đổi thành công
-            }
-            else
-            {
-                // Hiển thị thông báo lỗi nếu chuyển đổi thất bại
-                MessageBox.Show("Không thể chuyển đổi giá trị phần trăm thành số thực!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return 0.0; // Trả về giá trị mặc định
-            }
-        }
-
 
         private void LogError(string logFilePath, ComparisonResponse? response, bool isRetryExceeded = false)
         {
