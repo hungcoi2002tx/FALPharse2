@@ -15,6 +15,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace CompareFaceExamDemo
 {
@@ -101,10 +102,11 @@ namespace CompareFaceExamDemo
                 foreach (string file in files)
                 {
                     string ImageTagetPath = Path.GetFileName(file);
-                    string ImageSourcePath = Path.Combine(urlSource, ImageTagetPath);
 
                     if (regex.IsMatch(ImageTagetPath))
                     {
+                        string ImageSourcePath = GetImageSourcePath(urlSource, ImageTagetPath);
+
                         ResultCompareFaceDto rcf = new ResultCompareFaceDto
                         {
                             ImageSourcePath = ImageSourcePath,
@@ -131,6 +133,31 @@ namespace CompareFaceExamDemo
             {
                 MessageBox.Show($"Có lỗi xảy ra: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private string GetImageSourcePath(string urlSource, string imageFileName)
+        {
+            // Lấy tên file không có phần mở rộng
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(imageFileName);
+
+            // Đường dẫn cho file .jpg
+            string jpgPath = Path.Combine(urlSource, fileNameWithoutExtension + ".jpg");
+
+            if (File.Exists(jpgPath))
+            {
+                return jpgPath; // Trả về đường dẫn nếu file .jpg tồn tại
+            }
+
+            // Đường dẫn cho file .png
+            string pngPath = Path.Combine(urlSource, fileNameWithoutExtension + ".png");
+
+            if (File.Exists(pngPath))
+            {
+                return pngPath; // Trả về đường dẫn nếu file .png tồn tại
+            }
+
+            // Nếu cả hai file không tồn tại, trả về null hoặc xử lý khác
+            return null;
         }
 
         private async void btnSend_Click(object sender, EventArgs e)
@@ -198,22 +225,31 @@ namespace CompareFaceExamDemo
 
                             while (!success && retryCount < maxRetries)
                             {
-                                response = await _faceCompareService.CompareFacesAsync(itemCompare.ImageSourcePath, itemCompare.ImageTagetPath);
+                                if(itemCompare.ImageSourcePath != null)
+                                {
+                                    response = await _faceCompareService.CompareFacesAsync(itemCompare.ImageSourcePath, itemCompare.ImageTagetPath);
 
-                                if (CheckResponseCompare(response))
-                                {
-                                    results.Add(response);
-                                    success = true;
-                                }
-                                else if (response.Status == 429)
-                                {
-                                    retryCount++;
-                                    await Task.Delay(1000);
+                                    if (CheckResponseCompare(response))
+                                    {
+                                        results.Add(response);
+                                        success = true;
+                                    }
+                                    else if (response.Status == 429)
+                                    {
+                                        retryCount++;
+                                        await Task.Delay(1000);
+                                    }
+                                    else
+                                    {
+                                        LogError(logFilePath, response);
+                                        break;
+                                    }
                                 }
                                 else
                                 {
-                                    LogError(logFilePath, response);
-                                    break;
+                                    itemCompare.Status = "Đã hoàn thành!";
+                                    itemCompare.Message = "Không tìm thấy ảnh source!";
+                                    itemCompare.Note = "Cần thêm ảnh source vào hệ thống!";
                                 }
                             }
 
