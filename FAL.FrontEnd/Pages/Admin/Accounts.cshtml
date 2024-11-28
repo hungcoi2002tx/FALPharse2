@@ -1,0 +1,199 @@
+﻿@page
+@model FAL.FrontEnd.Pages.Admin.AccountsModel
+@{
+    ViewData["Title"] = "Quản lý tài khoản";
+}
+<h1 class="mb-4">Quản lý tài khoản</h1>
+
+<div class="container">
+    <div class="row mb-3">
+        <div class="col">
+            <button class="btn btn-primary" onclick="showAddUserModal()">Thêm tài khoản</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="accounts-table">
+                    <!-- Accounts sẽ được load từ JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm/Sửa tài khoản -->
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="isEdit" value="false">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="roleId" class="form-label">Role</label>
+                        <input type="number" class="form-control" id="roleId" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <input type="text" class="form-control" id="status" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const apiBaseUrl = "https://dev.demorecognition.click/api/Accounts";
+
+    // Lấy JWT từ Session
+    function getJwtToken() {
+        return sessionStorage.getItem("jwtToken");
+    }
+
+    // Hàm tiện ích để gọi API với JWT
+    async function callApi(url, method = "GET", body = null) {
+        const token = getJwtToken();
+        if (!token) {
+            alert("Token không tồn tại hoặc đã hết hạn. Vui lòng đăng nhập lại.");
+            window.location.href = "/auth/login"; // Điều hướng về trang đăng nhập
+            return;
+        }
+
+        const headers = {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+        };
+
+        const options = { method, headers };
+        if (body) options.body = JSON.stringify(body);
+
+        const response = await fetch(url, options);
+        if (response.status === 401) {
+            alert("Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.");
+            sessionStorage.removeItem("jwtToken");
+            window.location.href = "/auth/login";
+        }
+        return response;
+    }
+
+    // Load danh sách tài khoản
+    async function loadAccounts() {
+        const response = await callApi(apiBaseUrl);
+        if (!response.ok) {
+            alert("Không thể tải danh sách tài khoản!");
+            return;
+        }
+
+        const accounts = await response.json();
+        const tableBody = document.getElementById("accounts-table");
+        tableBody.innerHTML = "";
+
+        accounts.forEach(account => {
+            const row = `
+                    <tr>
+                        <td>${account.username}</td>
+                        <td>${account.email}</td>
+                        <td>${account.roleId}</td>
+                        <td>${account.status}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editUser('${account.username}')">Sửa</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteUser('${account.username}')">Xóa</button>
+                        </td>
+                    </tr>`;
+            tableBody.innerHTML += row;
+        });
+    }
+
+    // Hiển thị modal thêm/sửa tài khoản
+    function showAddUserModal() {
+        document.getElementById("userModalLabel").innerText = "Thêm tài khoản";
+        document.getElementById("isEdit").value = false;
+        document.getElementById("userForm").reset();
+        new bootstrap.Modal(document.getElementById("userModal")).show();
+    }
+
+    async function editUser(username) {
+        const response = await callApi(`${apiBaseUrl}/${username}`);
+        if (!response.ok) {
+            alert("Không thể tải thông tin tài khoản!");
+            return;
+        }
+
+        const user = await response.json();
+        document.getElementById("userModalLabel").innerText = "Sửa tài khoản";
+        document.getElementById("isEdit").value = true;
+        document.getElementById("username").value = user.username;
+        document.getElementById("email").value = user.email;
+        document.getElementById("roleId").value = user.roleId;
+        document.getElementById("status").value = user.status;
+        new bootstrap.Modal(document.getElementById("userModal")).show();
+    }
+
+    async function saveUser() {
+        const isEdit = document.getElementById("isEdit").value === "true";
+        const user = {
+            username: document.getElementById("username").value,
+            email: document.getElementById("email").value,
+            password: document.getElementById("password").value,
+            roleId: parseInt(document.getElementById("roleId").value),
+            status: document.getElementById("status").value,
+        };
+
+        const method = isEdit ? "PUT" : "POST";
+        const url = isEdit ? `${apiBaseUrl}/${user.username}` : apiBaseUrl;
+
+        const response = await callApi(url, method, user);
+        if (response.ok) {
+            alert("Lưu thành công!");
+            loadAccounts();
+        } else {
+            alert("Lỗi trong quá trình lưu!");
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById("userModal")).hide();
+    }
+
+    async function deleteUser(username) {
+        if (confirm("Bạn có chắc chắn muốn xóa tài khoản này không?")) {
+            const response = await callApi(`${apiBaseUrl}/${username}`, "DELETE");
+            if (response.ok) {
+                alert("Xóa thành công!");
+                loadAccounts();
+            } else {
+                alert("Lỗi trong quá trình xóa!");
+            }
+        }
+    }
+
+    // Load tài khoản khi trang được tải
+    document.addEventListener("DOMContentLoaded", loadAccounts);
+</script>

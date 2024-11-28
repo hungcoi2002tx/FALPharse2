@@ -1,0 +1,45 @@
+﻿@page
+@model FAL.FrontEnd.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "Quản lý tài khoản";
+}
+<h1>Quản lý tài khoản</h1>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role ID</th>
+            <th>System Name</th>
+            <th>Webhook URL</th>
+            <th>Webhook Secret Key</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var account in Model.Accounts)
+        {
+            <tr>
+                <td>@account.Username</td>
+                <td>@account.Email</td>
+                <td>@account.RoleId</td>
+                <td>@account.SystemName</td>
+                <td>
+                    <a href="@account.WebhookUrl" target="_blank">@account.WebhookUrl</a>
+                </td>
+                <td>@account.WebhookSecretKey</td>
+                <td>@account.Status</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" onclick="editUser('@account.Username')">Sửa</button>
+                    <form method="post" action="/Admin/Delete" style="display:inline;">
+                        <input type="hidden" name="Username" value="@account.Username" />
+                        <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a href="/Admin/Add" class="btn btn-primary">Thêm tài khoản</a>
