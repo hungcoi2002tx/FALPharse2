@@ -13,7 +13,7 @@ namespace FAL.Controllers
     {
         private readonly IDynamoDBService _dynamoService;
         private readonly CustomLog _logger;
-       
+
 
         public ResultController(IDynamoDBService dynamoService, CustomLog logger)
         {
@@ -28,14 +28,58 @@ namespace FAL.Controllers
             try
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
-                
-                var result = await _dynamoService.GetWebhookResult(GetDBResultBySystemName(systermId),mediaId);
+
+                var result = await _dynamoService.GetWebhookResult(GetDBResultBySystemName(systermId), mediaId);
 
                 return Ok(result);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
+            }
+        }
+
+        [Authorize]
+        [HttpGet("DetectStats")]
+        public async Task<IActionResult> GetDetectStats()
+        {
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
+
+                var result = await _dynamoService.GetDetectStats(GetDBResultBySystemName(systermId));
+
+                if (result != null)
+                {
+                    return Ok(result);
+                }
+                return StatusCode(500, "Something is wrong with da server");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Something is wrong with da server");
+            }
+        }
+
+        [Authorize]
+        [HttpGet("TrainStats")]
+        public async Task<IActionResult> GetTrainStats()
+        {
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
+
+                var result = await _dynamoService.GetTrainStats(systermId);
+
+                if (result != null)
+                {
+                    return Ok(result);
+                }
+                return StatusCode(500, "Something is wrong with da server");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Something is wrong with da server");
             }
         }
 
