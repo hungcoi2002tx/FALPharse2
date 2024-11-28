@@ -22,79 +22,85 @@
 
         private void InitializeComponent()
         {
-            this.btnSelectFolder = new System.Windows.Forms.Button();
-            this.btnSend = new System.Windows.Forms.Button();
-            this.txtFolderPath = new System.Windows.Forms.TextBox();
-            this.dataGridViewImages = new System.Windows.Forms.DataGridView();
-            this.pictureBoxPreview = new System.Windows.Forms.PictureBox();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewImages)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPreview)).BeginInit();
-            this.SuspendLayout();
+            btnSelectFolder = new Button();
+            btnSend = new Button();
+            txtFolderPath = new TextBox();
+            dataGridViewImages = new DataGridView();
+            pictureBoxPreview = new PictureBox();
+            ((System.ComponentModel.ISupportInitialize)dataGridViewImages).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBoxPreview).BeginInit();
+            SuspendLayout();
             // 
             // btnSelectFolder
             // 
-            this.btnSelectFolder.Location = new System.Drawing.Point(12, 12);
-            this.btnSelectFolder.Name = "btnSelectFolder";
-            this.btnSelectFolder.Size = new System.Drawing.Size(150, 30);
-            this.btnSelectFolder.TabIndex = 0;
-            this.btnSelectFolder.Text = "Select Folder";
-            this.btnSelectFolder.UseVisualStyleBackColor = true;
-            this.btnSelectFolder.Click += new System.EventHandler(this.btnSelectFolder_Click);
+            btnSelectFolder.Location = new Point(14, 14);
+            btnSelectFolder.Margin = new Padding(4, 3, 4, 3);
+            btnSelectFolder.Name = "btnSelectFolder";
+            btnSelectFolder.Size = new Size(175, 35);
+            btnSelectFolder.TabIndex = 0;
+            btnSelectFolder.Text = "Select Folder";
+            btnSelectFolder.UseVisualStyleBackColor = true;
+            btnSelectFolder.Click += btnSelectFolder_Click;
             // 
             // btnSend
             // 
-            this.btnSend.Location = new System.Drawing.Point(180, 12);
-            this.btnSend.Name = "btnSend";
-            this.btnSend.Size = new System.Drawing.Size(150, 30);
-            this.btnSend.TabIndex = 1;
-            this.btnSend.Text = "Send";
-            this.btnSend.UseVisualStyleBackColor = true;
-            this.btnSend.Click += new System.EventHandler(this.btnSend_Click);
+            btnSend.Location = new Point(210, 14);
+            btnSend.Margin = new Padding(4, 3, 4, 3);
+            btnSend.Name = "btnSend";
+            btnSend.Size = new Size(175, 35);
+            btnSend.TabIndex = 1;
+            btnSend.Text = "Send";
+            btnSend.UseVisualStyleBackColor = true;
+            btnSend.Click += btnSend_Click;
             // 
             // txtFolderPath
             // 
-            this.txtFolderPath.Location = new System.Drawing.Point(12, 50);
-            this.txtFolderPath.Name = "txtFolderPath";
-            this.txtFolderPath.ReadOnly = true;
-            this.txtFolderPath.Size = new System.Drawing.Size(500, 20);
-            this.txtFolderPath.TabIndex = 2;
+            txtFolderPath.Location = new Point(14, 58);
+            txtFolderPath.Margin = new Padding(4, 3, 4, 3);
+            txtFolderPath.Name = "txtFolderPath";
+            txtFolderPath.ReadOnly = true;
+            txtFolderPath.Size = new Size(583, 23);
+            txtFolderPath.TabIndex = 2;
             // 
             // dataGridViewImages
             // 
-            this.dataGridViewImages.AllowUserToAddRows = false;
-            this.dataGridViewImages.AllowUserToDeleteRows = false;
-            this.dataGridViewImages.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridViewImages.Location = new System.Drawing.Point(12, 80);
-            this.dataGridViewImages.Name = "dataGridViewImages";
-            this.dataGridViewImages.Size = new System.Drawing.Size(350, 270);
-            this.dataGridViewImages.TabIndex = 3;
-            this.dataGridViewImages.SelectionChanged += new System.EventHandler(this.dataGridViewImages_SelectionChanged);
+            dataGridViewImages.AllowUserToAddRows = false;
+            dataGridViewImages.AllowUserToDeleteRows = false;
+            dataGridViewImages.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewImages.Location = new Point(3, 92);
+            dataGridViewImages.Margin = new Padding(4, 3, 4, 3);
+            dataGridViewImages.Name = "dataGridViewImages";
+            dataGridViewImages.Size = new Size(1173, 623);
+            dataGridViewImages.TabIndex = 3;
+            dataGridViewImages.SelectionChanged += dataGridViewImages_SelectionChanged;
             // 
             // pictureBoxPreview
             // 
-            this.pictureBoxPreview.Location = new System.Drawing.Point(380, 80);
-            this.pictureBoxPreview.Name = "pictureBoxPreview";
-            this.pictureBoxPreview.Size = new System.Drawing.Size(150, 150);
-            this.pictureBoxPreview.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.pictureBoxPreview.TabIndex = 4;
-            this.pictureBoxPreview.TabStop = false;
+            pictureBoxPreview.Location = new Point(1184, 92);
+            pictureBoxPreview.Margin = new Padding(4, 3, 4, 3);
+            pictureBoxPreview.Name = "pictureBoxPreview";
+            pictureBoxPreview.Size = new Size(175, 173);
+            pictureBoxPreview.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBoxPreview.TabIndex = 4;
+            pictureBoxPreview.TabStop = false;
             // 
-            // Form1
+            // ImageCaptureForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(550, 361);
-            this.Controls.Add(this.pictureBoxPreview);
-            this.Controls.Add(this.txtFolderPath);
-            this.Controls.Add(this.dataGridViewImages);
-            this.Controls.Add(this.btnSend);
-            this.Controls.Add(this.btnSelectFolder);
-            this.Name = "Form1";
-            this.Text = "Image Viewer with Preview";
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewImages)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPreview)).EndInit();
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(1341, 720);
+            Controls.Add(pictureBoxPreview);
+            Controls.Add(txtFolderPath);
+            Controls.Add(dataGridViewImages);
+            Controls.Add(btnSend);
+            Controls.Add(btnSelectFolder);
+            Margin = new Padding(4, 3, 4, 3);
+            Name = "ImageCaptureForm";
+            Text = "Image Viewer with Preview";
+            ((System.ComponentModel.ISupportInitialize)dataGridViewImages).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBoxPreview).EndInit();
+            ResumeLayout(false);
+            PerformLayout();
         }
     }
 }

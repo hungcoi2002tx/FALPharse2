@@ -1,4 +1,5 @@
-﻿using CompareFaceExamDemo.ExternalService;
+﻿using CompareFaceExamDemo.Dtos;
+using CompareFaceExamDemo.ExternalService;
 using CompareFaceExamDemo.ExternalService.Recognition;
 using CompareFaceExamDemo.Models;
 using CompareFaceExamDemo.Utils;
@@ -22,12 +23,45 @@ namespace CompareFaceExamDemo
         private CompareFaceAdapterRecognitionService _compareFaceService;
         private readonly FaceCompareService _faceCompareService;
         private readonly object _logLock = new object();
+        private BindingSource? source = null;
+        List<ResultCompareFaceDto>? listDataCompare = null;
+
 
         public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
             InitializeComponent();
             _compareFaceService = compareFaceService;
             _faceCompareService = faceCompareService;
+            LoadListData();
+        }
+
+        private void LoadListData()
+        {
+            try
+            {
+                if (source == null)
+                {
+                    source = new BindingSource();
+                }
+
+                if (listDataCompare == null)
+                {
+                    listDataCompare = new List<ResultCompareFaceDto>();
+                }
+
+                dataGridViewImages.DataSource = null;
+                dataGridViewImages.Columns.Clear();
+                dataGridViewImages.AllowUserToAddRows = false;
+                dataGridViewImages.ScrollBars = ScrollBars.Both;  // Hiển thị thanh cuộn ngang và dọc
+
+                source.DataSource = listDataCompare;
+                dataGridViewImages.DataSource = source;
+                AddCheckBoxHeader();
+            }
+            catch (Exception)
+            {
+                MessageBox.Show($"Liên hệ admin", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void AddCheckBoxHeader()
@@ -67,12 +101,11 @@ namespace CompareFaceExamDemo
                 {
                     // Lấy đường dẫn của thư mục được chọn
                     string folderPath = folderBrowser.SelectedPath;
-
                     // Hiển thị đường dẫn trong TextBox
                     txtFolderPath.Text = folderPath;
-
                     // Load danh sách file từ thư mục được chọn
                     LoadImagesWithCheckbox(folderPath);
+                    LoadListData();
                 }
             }
         }
@@ -85,56 +118,50 @@ namespace CompareFaceExamDemo
                 string[] files = Directory.GetFiles(folderPath);
 
                 // Regex để kiểm tra định dạng tên file: 2 chữ cái + 4 số
-                //Regex regex = new Regex(@"^[a-zA-Z]{2}\d{6}\.jpg$");
                 Regex regex = new Regex(@"^[a-zA-Z]{2}\d{6}\.(jpg|png)$");
+             
+                // Lấy tên thư mục cuối cùng làm ExamCode
+                string[] folderPathParts = folderPath.Split('\\');
+                string lastPart = folderPathParts[folderPathParts.Length - 1];
+                string examCode = lastPart;
 
 
-                // Dọn sạch DataGridView
-                dataGridViewImages.Columns.Clear();
-                dataGridViewImages.Rows.Clear();
-
-                // Thêm cột checkbox
-                DataGridViewCheckBoxColumn checkBoxColumn = new DataGridViewCheckBoxColumn
-                {
-                    HeaderText = "",
-                    Name = "checkBoxColumn",
-                    Width = 50
-                };
-                dataGridViewImages.Columns.Add(checkBoxColumn);
-                DataGridViewTextBoxColumn fileNameColumn = new DataGridViewTextBoxColumn
-                {
-                    HeaderText = "File Name",
-                    Name = "FileName",
-                    ReadOnly = true // Không cho phép sửa tên file
-                };
-                // Thêm cột tên file
-                dataGridViewImages.Columns.Add(fileNameColumn);
-
-                // Thêm dữ liệu vào DataGridView
+                // Thêm dữ liệu vào danh sách
                 foreach (string file in files)
                 {
                     string fileName = Path.GetFileName(file);
-
+                 
                     // Kiểm tra tên file có đúng định dạng không
                     if (regex.IsMatch(fileName))
                     {
-                        dataGridViewImages.Rows.Add(false, fileName); // False mặc định checkbox không tích
+
+                        //AddSelectAllCheckBox();
+
+                        ResultCompareFaceDto rcf = new ResultCompareFaceDto
+                        {
+                            StudentCode = Path.GetFileNameWithoutExtension(fileName),
+                            Status = "Pending",
+                            Confidence = 0.0,
+                            ExamCode = examCode,
+                            Time = DateTime.Now,
+                            Message = "File loaded",
+                        };
+                        listDataCompare.Add(rcf);
                     }
                 }
 
                 // Hiển thị thông báo nếu không tìm thấy file phù hợp
-                if (dataGridViewImages.Rows.Count == 0)
+                if (listDataCompare.Count == 0)
                 {
                     MessageBox.Show("Không tìm thấy file nào đáp ứng định dạng trong thư mục!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
-                AddSelectAllCheckBox();
+
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Có lỗi xảy ra: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
 
         private void btnSelectAll_Click(object sender, EventArgs e)
         {
@@ -158,8 +185,8 @@ namespace CompareFaceExamDemo
             selectAllCheckBox.CheckedChanged += SelectAllCheckBox_CheckedChanged;
 
             // Đặt CheckBox vào tiêu đề của cột đầu tiên (Select Column)
-            var headerCell = dataGridViewImages.GetCellDisplayRectangle(0, -1, true);
-            selectAllCheckBox.Location = new System.Drawing.Point(headerCell.Location.X + 20, headerCell.Location.Y + 5);
+            //var headerCell = dataGridViewImages.GetCellDisplayRectangle(0, -1, true);
+            //selectAllCheckBox.Location = new System.Drawing.Point(headerCell.Location.X + 20, headerCell.Location.Y + 5);
 
             // Thêm CheckBox vào DataGridView
             dataGridViewImages.Controls.Add(selectAllCheckBox);
@@ -215,11 +242,25 @@ namespace CompareFaceExamDemo
             }
         }
 
+        //private void UpdateDataGridViewRow(DataGridView dataGridView, string studentCode, string status, double confidence, string message)
+        //{
+        //    foreach (DataGridViewRow row in dataGridView.Rows)
+        //    {
+        //        if (row.Cells["StudentCode"].Value?.ToString() == studentCode)
+        //        {
+        //            row.Cells["Status"].Value = status;
+        //            row.Cells["Confidence"].Value = confidence.ToString("F2");
+        //            row.Cells["Message"].Value = message;
+        //            break;
+        //        }
+        //    }
+        //}
+
+
         private async void btnSend_Click(object sender, EventArgs e)
         {
             try
             {
-                //List<(Image, Image)> compareImages = new List<(Image, Image)>();
                 List<(string, string)> compareImages = new List<(string, string)>();
 
                 var sourceFile = Config.GetSetting();
@@ -246,7 +287,6 @@ namespace CompareFaceExamDemo
                         }
                         catch (Exception ex)
                         {
-                            // Xử lý nếu xảy ra lỗi khi đọc file (ví dụ: file bị hỏng)
                             MessageBox.Show($"Lỗi khi đọc file: {fullPathImageTarget}\nChi tiết: {ex.Message}");
                         }
                     }
@@ -296,7 +336,6 @@ namespace CompareFaceExamDemo
                 ConcurrentBag<ComparisonResponse> results = new ConcurrentBag<ComparisonResponse>();
                 List<Task> tasks = new List<Task>();
                 string logFilePath = "log.txt";
-                List<ComparisonResponse> listResults = new List<ComparisonResponse>();
 
                 foreach (var (targetImage, sourceImage) in compareImages)
                 {
@@ -351,9 +390,7 @@ namespace CompareFaceExamDemo
 
                 await Task.WhenAll(tasks);
 
-                listResults = results.ToList();
-
-                return listResults;
+                return results.ToList();
             }
             catch (Exception)
             {
@@ -426,6 +463,5 @@ namespace CompareFaceExamDemo
                 return string.Empty;
             }
         }
-
     }
 }
