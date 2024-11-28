@@ -233,23 +233,38 @@ namespace CompareFaceExamDemo
                                     {
                                         results.Add(response);
                                         success = true;
+                                        itemCompare.Status = "Đã hoàn thành!";
+                                        itemCompare.Message = response.Data.Message;
+                                        itemCompare.Status = response.Message;
+                                        itemCompare.Confidence = response.Data.Percentage.HasValue ? (double)response.Data.Percentage.Value : 0.0;
+
+                                        dataGridViewImages.Refresh();
                                     }
                                     else if (response.Status == 429)
                                     {
                                         retryCount++;
+                                        itemCompare.Status = $"Đang retry lần {retryCount}";
+                                        itemCompare.Message = response.Data.Message;
+                                        itemCompare.Status = response.Message;
+
+                                        dataGridViewImages.Refresh();
                                         await Task.Delay(1000);
                                     }
                                     else
                                     {
-                                        LogError(logFilePath, response);
+                                        itemCompare.Status = $"Lỗi!";
+                                        itemCompare.Message = response.Data.Message;
+                                        itemCompare.Status = response.Message;
+                                        dataGridViewImages.Refresh();
                                         break;
                                     }
                                 }
                                 else
                                 {
-                                    itemCompare.Status = "Đã hoàn thành!";
+                                    itemCompare.Status = "Comparison successful.";
                                     itemCompare.Message = "Không tìm thấy ảnh source!";
                                     itemCompare.Note = "Cần thêm ảnh source vào hệ thống!";
+                                    dataGridViewImages.Refresh();
                                     break;
                                 }
                             }
@@ -279,6 +294,24 @@ namespace CompareFaceExamDemo
                 throw;
             }
         }
+
+        private double ParseConfidence(string percentage)
+        {
+            // Loại bỏ ký hiệu '%' nếu có và cắt các khoảng trắng
+            string cleanedPercentage = percentage?.Replace("%", "").Trim();
+
+            if (double.TryParse(cleanedPercentage, out double confidence))
+            {
+                return confidence; // Trả về giá trị nếu chuyển đổi thành công
+            }
+            else
+            {
+                // Hiển thị thông báo lỗi nếu chuyển đổi thất bại
+                MessageBox.Show("Không thể chuyển đổi giá trị phần trăm thành số thực!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return 0.0; // Trả về giá trị mặc định
+            }
+        }
+
 
         private void LogError(string logFilePath, ComparisonResponse? response, bool isRetryExceeded = false)
         {
