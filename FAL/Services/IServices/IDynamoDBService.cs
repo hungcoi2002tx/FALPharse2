@@ -1,5 +1,6 @@
 ﻿using Amazon.DynamoDBv2.Model;
 using Share.Data;
+using Share.DTO;
 
 namespace FAL.Services.IServices
 {
@@ -16,5 +17,7 @@ namespace FAL.Services.IServices
         Task<string> GetOldestFaceIdForUserAsync(string userId, string collectionName);
         Task DeleteItem(string userId, string faceId, string collectionName);
         Task<FaceDetectionResult> GetWebhookResult(string systermId,string mediaId);
+        Task<DetectStatsResponse> GetDetectStats(string v);
+        Task<TrainStatsResponse> GetTrainStats(string systermId);
     }
 }
