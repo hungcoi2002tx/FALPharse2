@@ -250,6 +250,7 @@ namespace CompareFaceExamDemo
                                     itemCompare.Status = "Đã hoàn thành!";
                                     itemCompare.Message = "Không tìm thấy ảnh source!";
                                     itemCompare.Note = "Cần thêm ảnh source vào hệ thống!";
+                                    break;
                                 }
                             }
 
