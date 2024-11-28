@@ -76,7 +76,7 @@
 
     // Lấy JWT từ Session
     function getJwtToken() {
-        return sessionStorage.getItem("jwtToken");
+        return sessionStorage.getItem("JwtToken");
     }
 
     // Hàm tiện ích để gọi API với JWT
@@ -99,7 +99,7 @@
         const response = await fetch(url, options);
         if (response.status === 401) {
             alert("Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.");
-            sessionStorage.removeItem("jwtToken");
+            sessionStorage.removeItem("JwtToken");
             window.location.href = "/auth/login";
         }
         return response;

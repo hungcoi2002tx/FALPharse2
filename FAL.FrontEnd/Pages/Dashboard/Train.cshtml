@@ -1,0 +1,39 @@
+﻿@page
+@model Dashboard.TrainModel
+@{
+    ViewData["Title"] = "Train Stats";
+}
+<div class="container">
+    <h1 class="mb-4">Train Stats</h1>
+    @if (Model.TrainStats != null)
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Overall Statistics</h5>
+                <p class="card-text"><strong>Total Trained User IDs:</strong> @Model.TrainStats.TotalTrainedUserId</p>
+            </div>
+        </div>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Total Number of Faces Trained</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.TrainStats.UserStats)
+                {
+                    <tr>
+                        <td>@user.UserId</td>
+                        <td>@user.TotalNumberOfFaceTrained</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <a asp-page="./Index" class="btn btn-secondary">Back to Dashboard</a>
+    }
+    else
+    {
+        <div class="alert alert-danger">Failed to load Train Stats.</div>
+    }
+</div>

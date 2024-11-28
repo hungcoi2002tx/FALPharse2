@@ -25,16 +25,24 @@ builder.Services.AddAuthentication(options =>
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = "yourdomain.com",
-            ValidAudience = "yourdomain.com",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey"))
+            ValidIssuer = "your_issuer",
+            ValidAudience = "your_audience",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your_super_secret_key_which_is_very_secure_32chars"))
         };
     });
 
-builder.Services.AddSession();
+builder.Services.AddDistributedMemoryCache(); // Required for session handling
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromDays(1); // Session timeout duration
+    options.Cookie.HttpOnly = true; // Ensure session cookie is HTTP only
+    options.Cookie.IsEssential = true; // Makes the session cookie essential
+});
+
+builder.Services.AddHttpContextAccessor(); // Ensure HttpContext is accessible
 
 var app = builder.Build();
-app.UseSession();
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -45,12 +53,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapRazorPages();
 
 app.Run();
