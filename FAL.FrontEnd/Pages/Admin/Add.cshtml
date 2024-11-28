@@ -1,0 +1,65 @@
+﻿@page
+@model FAL.FrontEnd.Pages.Admin.AddModel
+@{
+}
+<h2>Thêm Tài Khoản</h2>
+@{
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">
+        @successMessage
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
+<form method="post">
+    <div class="form-group">
+        <label for="username">Tên đăng nhập</label>
+        <input type="text" class="form-control" id="username" name="Username" required />
+    </div>
+    <div class="form-group">
+        <label for="password">Mật khẩu</label>
+        <input type="password" class="form-control" id="password" name="Password" required />
+    </div>
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" class="form-control" id="email" name="Email" required />
+    </div>
+    <div class="form-group">
+        <label for="roleId">Vai trò</label>
+        <select class="form-control" id="roleId" name="RoleId" required>
+            <option value="1">Quản trị viên</option>
+            <option value="2">Người dùng</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="systemName">Tên hệ thống</label>
+        <input type="text" class="form-control" id="systemName" name="SystemName" required />
+    </div>
+    <div class="form-group">
+        <label for="webhookUrl">Webhook URL</label>
+        <input type="url" class="form-control" id="webhookUrl" name="WebhookUrl" />
+    </div>
+    <div class="form-group">
+        <label for="webhookSecretKey">Webhook Secret Key</label>
+        <input type="text" class="form-control" id="webhookSecretKey" name="WebhookSecretKey" />
+    </div>
+    <div class="form-group">
+        <label for="status">Trạng thái</label>
+        <select class="form-control" id="status" name="Status" required>
+            <option value="Active">Kích hoạt</option>
+            <option value="Inactive">Không kích hoạt</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Lưu</button>
+</form>
+

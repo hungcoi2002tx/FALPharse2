@@ -2,7 +2,7 @@
 
 namespace FAL.FrontEnd.Models
 {
-    public class Account
+    public class AccountViewDto
     {
         [JsonPropertyName("username")]
         public string Username { get; set; }
