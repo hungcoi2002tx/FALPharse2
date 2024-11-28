@@ -82,6 +82,7 @@
             Margin = new Padding(4, 3, 4, 3);
             Name = "ImageCaptureForm";
             Text = "Image Viewer with Preview";
+            Load += ImageCaptureForm_Load;
             ((System.ComponentModel.ISupportInitialize)dataGridViewImages).EndInit();
             ResumeLayout(false);
             PerformLayout();

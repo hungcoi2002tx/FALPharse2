@@ -25,7 +25,7 @@ namespace CompareFaceExamDemo
         private readonly FaceCompareService _faceCompareService;
         private readonly object _logLock = new object();
         private BindingSource? source = null;
-        List<ResultCompareFaceDto>? listDataCompare = null;
+        private List<ResultCompareFaceDto>? listDataCompare = null;
         private SettingModel sourceFile;
 
 
@@ -34,7 +34,7 @@ namespace CompareFaceExamDemo
             InitializeComponent();
             _compareFaceService = compareFaceService;
             _faceCompareService = faceCompareService;
-            sourceFile = Config.GetSetting();
+
         }
 
         private void LoadListData()
@@ -225,7 +225,7 @@ namespace CompareFaceExamDemo
 
                             while (!success && retryCount < maxRetries)
                             {
-                                if(itemCompare.ImageSourcePath != null)
+                                if (itemCompare.ImageSourcePath != null)
                                 {
                                     response = await _faceCompareService.CompareFacesAsync(itemCompare.ImageSourcePath, itemCompare.ImageTagetPath);
 
@@ -344,6 +344,11 @@ namespace CompareFaceExamDemo
                 Console.WriteLine($"Lỗi chuyển đổi ảnh sang base64: {ex.Message}");
                 return string.Empty;
             }
+        }
+
+        private void ImageCaptureForm_Load(object sender, EventArgs e)
+        {
+            sourceFile = Config.GetSetting();
         }
     }
 }
