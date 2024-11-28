@@ -9,6 +9,7 @@ namespace Share.DTO
     public class TrainStatsResponse
     {
         public int TotalTrainedUserId { get; set; }
+        public int TotalTrainedFaceId { get; set; }
         public List<TrainStatsOfUser> UserStats { get; set; }
     }
 }

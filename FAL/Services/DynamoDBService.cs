@@ -416,25 +416,31 @@ namespace FAL.Services
                     .Select(group => new TrainStatsOfUser
                     {
                         UserId = group.Key,
-                        TotalNumberOfFaceTrained = group.Count()
+                        TotalNumberOfFaceTrained = group.Count() // Count how many FaceIds each user has
                     })
                     .ToList();
 
                 // Calculate the total unique UserIds
                 var totalUniqueUserIds = groupedData.Count;
 
+                // Calculate the total number of FaceIds (all records in the table)
+                var totalTrainedFaceId = results.Count;
+
                 // Return the response
-                return new TrainStatsResponse 
+                return new TrainStatsResponse
                 {
                     TotalTrainedUserId = totalUniqueUserIds,
+                    TotalTrainedFaceId = totalTrainedFaceId, // Add total count of all FaceIds
                     UserStats = groupedData
                 };
             }
             catch (System.Exception ex)
             {
+                // Handle exceptions gracefully (e.g., log the error)
                 return null;
             }
         }
+
     }
-    
+
 }
