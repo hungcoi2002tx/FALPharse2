@@ -27,7 +27,6 @@ namespace CompareFaceExamDemo
         private readonly object _logLock = new object();
         private BindingSource? source = null;
         private List<ResultCompareFaceDto>? listDataCompare = null;
-        private int maxRetries = 3;
 
         public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
@@ -177,7 +176,7 @@ namespace CompareFaceExamDemo
                         progressBarCompare.Maximum = listDataCompare.Count;
                         var sourceFile = Config.GetSetting();
                         int maxDegreeOfParallelism = sourceFile.NumberOfThread;
-
+                        int maxRetries = sourceFile.NumberOfRetry;
                         await GetCompareResult(maxDegreeOfParallelism, maxRetries);
 
                         string folderPath = txtFolderPath.Text;
