@@ -1,6 +1,7 @@
 ﻿using Amazon.Rekognition.Model;
 using Amazon.Runtime;
 using Amazon.S3;
+using Amazon.Util.Internal;
 using FAL.Services;
 using FAL.Services.IServices;
 using FAL.Utils;
@@ -16,6 +17,7 @@ using Share.SystemModel;
 using System.IO.Compression;
 using System.Net;
 using System.Reflection;
+using System.Text.Json;
 
 namespace FAL.Controllers
 {
@@ -76,8 +78,12 @@ namespace FAL.Controllers
 
                 // Check if both deletions were successful
                 if (collectionDeleted)
+                {
+                    await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.ResetUser, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(userId));
                     return Ok(new { Status = true });
+                }
 
+                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.GetWebhookResult, Share.DTO.RequestResultEnum.Failed, JsonSerializer.Serialize(userId));
                 return BadRequest(new { Status = false });
             }
             catch (Exception ex)
@@ -117,7 +123,7 @@ namespace FAL.Controllers
                 var (successCount, failureCount) = await ProcessImagesAsync(imageFiles, systemId);
 
                 CleanupTemporaryFiles(tempZipFilePath, extractPath);
-
+                await _dynamoService.LogRequestAsync(systemId, Share.DTO.RequestType.TrainByZip, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(zipFile));
                 return Ok(new ResultResponse
                 {
                     Status = true,
@@ -278,6 +284,8 @@ namespace FAL.Controllers
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 var response = await _dynamoService.GetFaceIdsByUserIdAsync(userId, systermId);
                 //return 
+                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.CheckIsTrained, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(userId));
+
                 return Ok(new ResultIsTrainedModel
                 {
                     Status = true,
@@ -306,6 +314,11 @@ namespace FAL.Controllers
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
                 await TrainAsync(image, userId, systermId);
+                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.TrainByImage, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(new
+                {
+                    file =file,
+                    userId = userId
+                }));
                 //return 
                 return Ok(new ResultResponse
                 {
@@ -392,6 +405,7 @@ namespace FAL.Controllers
                 {
                     await TrainAsync(new Image { Bytes = imageStream }, model.UserId, systermId);
                 }
+                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.TrainByUrl, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(model));
 
                 return Ok(new ResultResponse
                 {
@@ -541,6 +555,7 @@ namespace FAL.Controllers
 
                 //train
                 await TrainFaceIdAsync(info.UserId, info.FaceId, systermId);
+                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.TrainByFaceId, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(info));
 
                 //return 
                 return Ok(new ResultResponse
@@ -571,15 +586,19 @@ namespace FAL.Controllers
                 var result = await _dynamoService.IsExistFaceIdAsync(systermId, info.FaceId);
                 if (!result)
                 {
+                    await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.DisassociateFace, Share.DTO.RequestResultEnum.Failed, JsonSerializer.Serialize(info));
+
                     return BadRequest(new ResultResponse
                     {
                         Status = false,
                         Message = "FaceId is not existed in systerm"
                     });
+
                 }
 
                 // Perform the disassociation
                 await DisassociateFaceIdAsync(info.UserId, info.FaceId, systermId);
+                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.DisassociateFace, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(info));
 
                 // Return explicit OkObjectResult
                 return Ok(new ResultResponse

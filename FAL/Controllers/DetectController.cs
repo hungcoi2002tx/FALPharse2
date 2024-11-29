@@ -18,14 +18,16 @@ namespace FAL.Controllers
     {
         private readonly IS3Service _s3Service;
         private readonly ICollectionService _collectionService;
+        private readonly IDynamoDBService _dynamoDbService;
         private readonly CustomLog _logger;
         private readonly string SystermId = GlobalVarians.SystermId;
 
-        public DetectController(CustomLog logger, ICollectionService collectionService, IS3Service s3Service)
+        public DetectController(CustomLog logger, ICollectionService collectionService, IS3Service s3Service, IDynamoDBService dynamoDbService)
         {
             _logger = logger;
             _collectionService = collectionService;
             _s3Service = s3Service;
+            _dynamoDbService = dynamoDbService;
         }
 
 
@@ -44,6 +46,11 @@ namespace FAL.Controllers
                 if (!bucketExists) return NotFound($"Bucket {systermId} does not exist.");
                 var fileName = Guid.NewGuid().ToString();
                 var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging,mediaId);
+                await _dynamoDbService.LogRequestAsync(systermId, Share.DTO.RequestType.Detect,Share.DTO.RequestResultEnum.Success,JsonSerializer.Serialize(new
+                {
+                    file = file,
+                    mediaId = mediaId,
+                }));
                 #endregion
                 return Ok(new ResultResponse
                 {

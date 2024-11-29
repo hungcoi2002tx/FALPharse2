@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Rekognition.Model;
 using FAL.Services.IServices;
+using Newtonsoft.Json;
 using Share.Data;
 using Share.DTO;
 using System.Text.Json;
@@ -12,6 +13,7 @@ namespace FAL.Services
     public class DynamoDBService : IDynamoDBService
     {
         private readonly IAmazonDynamoDB _dynamoDBService;
+        private static readonly string LOG_TABLE_NAME = "ClientRequests";
 
         public DynamoDBService(IAmazonDynamoDB dynamoDBService)
         {
@@ -346,7 +348,7 @@ namespace FAL.Services
                 if (queryResponse.Items.Count > 0 && queryResponse.Items[0].TryGetValue("Data", out var dataAttribute))
                 {
                     // Deserialize the Data attribute into FaceDetectionResult
-                    result = JsonSerializer.Deserialize<FaceDetectionResult>(dataAttribute.S);
+                    result = System.Text.Json.JsonSerializer.Deserialize<FaceDetectionResult>(dataAttribute.S);
 
                 }
             }
@@ -440,7 +442,133 @@ namespace FAL.Services
                 return null;
             }
         }
+        public async Task<bool> LogRequestAsync(string systemName, RequestType requestType, RequestResultEnum status = RequestResultEnum.Unknown, object requestBody = null)
+        {
+            // Validate required fields
+            if (string.IsNullOrEmpty(systemName))
+            {
+                throw new ArgumentException("SystemName is required.");
+            }
 
+            // Convert UTC to Vietnamese Time (UTC+7)
+            var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            var createDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone).ToString("o"); // ISO 8601 format
+
+            // Prepare the data for DynamoDB
+            var item = new Dictionary<string, AttributeValue>
+    {
+        { "SystemName", new AttributeValue { S = systemName } },
+        { "CreateDate", new AttributeValue { S = createDate } },
+        { "RequestType", new AttributeValue { S = requestType.ToString() } }
+    };
+
+            // Add status to the item
+            item.Add("Status", new AttributeValue { S = status.ToString() });
+
+            // Optionally add requestBody if provided
+            if (requestBody != null)
+            {
+                var requestBodyJson = JsonConvert.SerializeObject(requestBody);
+                item.Add("RequestBody", new AttributeValue { S = requestBodyJson });
+            }
+
+            // Create the PutItem request
+            var putItemRequest = new PutItemRequest
+            {
+                TableName = LOG_TABLE_NAME,
+                Item = item
+            };
+
+            try
+            {
+                // Insert the item into the DynamoDB table
+                var response = await _dynamoDBService.PutItemAsync(putItemRequest);
+                return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error logging request: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<RequestStatsResponse> GetRequestStats(string systermId)
+        {
+            try
+            {
+                // Fetch all data for the given system ID
+                var allData = await GetRequestsBySystemIdAsync(systermId);
+
+                if (allData == null || !allData.Any())
+                {
+                    return new RequestStatsResponse();
+                }
+
+                // Calculate statistics
+                var totalSuccess = allData.Count(x => x.Status == RequestResultEnum.Success.ToString());
+                var totalFailed = allData.Count(x => x.Status == RequestResultEnum.Failed.ToString());
+
+                // Group data by RequestType
+                var groupedData = allData
+                    .GroupBy(x => x.RequestType)
+                    .Select(group => new GroupedRequestData
+                    {
+                        RequestType = group.Key,
+                        Requests = group.ToList()
+                    })
+                    .ToList();
+
+                // Prepare the response
+                var response = new RequestStatsResponse
+                {
+                    TotalSuccess = totalSuccess,
+                    TotalFailed = totalFailed,
+                    RequestData = groupedData
+                };
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (replace with your logging framework if available)
+                Console.WriteLine($"Error in {nameof(GetRequestStats)}: {ex.Message}");
+                throw; // Rethrow the exception to allow higher layers to handle it if needed
+            }
+        }
+
+
+        private async Task<List<ClientRequest>> GetRequestsBySystemIdAsync(string systemId)
+        {
+            var request = new QueryRequest
+            {
+                TableName = "ClientRequests",
+                KeyConditionExpression = "SystemName = :systemId",
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+        {
+            { ":systemId", new AttributeValue { S = systemId } }
+        }
+            };
+
+            try
+            {
+                var response = await _dynamoDBService.QueryAsync(request);
+
+                // Map the response to a list of ClientRequest objects
+                return response.Items.Select(item => new ClientRequest
+                {
+                    SystemName = item["SystemName"].S,
+                    CreateDate = item["CreateDate"].S,
+                    RequestType = item.ContainsKey("RequestType") ? item["RequestType"].S : null,
+                    Status = item.ContainsKey("Status") ? item["Status"].S : null,
+                    RequestBody = item.ContainsKey("RequestBody") ? item["RequestBody"].S : null
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching data from DynamoDB: {ex.Message}");
+                return null;
+            }
+        }
     }
 
 }
