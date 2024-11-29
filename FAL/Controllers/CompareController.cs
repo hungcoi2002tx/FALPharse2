@@ -9,9 +9,11 @@ using Share.SystemModel;
 using System.IO.Compression;
 using Amazon.SQS.Model;
 using Amazon.SQS;
-using Newtonsoft.Json;
 using Amazon.S3.Model;
 using System.Net;
+using FAL.Services;
+using System.Text.Json;
+using Newtonsoft.Json;
 
 namespace FAL.Controllers
 {
@@ -29,15 +31,17 @@ namespace FAL.Controllers
         private readonly IAmazonRekognition _rekognitionClient;
         private readonly IAmazonS3 _s3Client;
         private readonly CustomLog _logger;
+        private readonly IDynamoDBService _dynamoDbService; 
         private readonly string SystermId = GlobalVarians.SystermId;
         private readonly IAmazonSQS _sqsClient;
 
-        public CompareController(CustomLog logger, IAmazonRekognition rekognitionClient, IAmazonSQS sqsClient, IAmazonS3 s3Service)
+        public CompareController(CustomLog logger, IAmazonRekognition rekognitionClient, IAmazonSQS sqsClient, IAmazonS3 s3Service, IDynamoDBService dynamoDbService)
         {
             _logger = logger;
             _rekognitionClient = rekognitionClient;
             _sqsClient = sqsClient;
             _s3Client = s3Service;
+            _dynamoDbService = dynamoDbService;
         }
         [HttpPost("compare")]
         public async Task<IActionResult> CompareFaces([FromForm] CompareFaceRequest request)
@@ -109,6 +113,7 @@ namespace FAL.Controllers
 
             try
             {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 // Validate input
                 if (!IsValidRequest(request, out var validationMessage))
                 {
@@ -135,8 +140,9 @@ namespace FAL.Controllers
                 var message = maxSimilarity.HasValue && maxSimilarity >= 0
                     ? "Faces matched successfully."
                     : "No matching faces found.";
-
+                await _dynamoDbService.LogRequestAsync(systermId, Share.DTO.RequestType.CompareFace, Share.DTO.RequestResultEnum.Success, System.Text.Json.JsonSerializer.Serialize(request));
                 return CreateResponse(maxSimilarity, message, HttpStatusCode.OK);
+                
             }
             catch (AmazonRekognitionException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests || ex.Message.Contains("Limit Exceeded"))
             {

@@ -1,9 +1,12 @@
 ﻿using Amazon.DynamoDBv2.Model;
+using Amazon.Runtime.Internal;
+using FAL.Services;
 using FAL.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Share.SystemModel;
+using System.Text.Json;
 
 namespace FAL.Controllers
 {
@@ -31,6 +34,7 @@ namespace FAL.Controllers
 
                 var result = await _dynamoService.GetWebhookResult(GetDBResultBySystemName(systermId), mediaId);
 
+                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.GetWebhookResult, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(mediaId));
                 return Ok(result);
             }
             catch (Exception ex)
@@ -48,6 +52,28 @@ namespace FAL.Controllers
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
 
                 var result = await _dynamoService.GetDetectStats(GetDBResultBySystemName(systermId));
+
+                if (result != null)
+                {
+                    return Ok(result);
+                }
+                return StatusCode(500, "Something is wrong with da server");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Something is wrong with da server");
+            }
+        }
+
+        [Authorize]
+        [HttpGet("RequestStats")]
+        public async Task<IActionResult> GetRequestStats()
+        {
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
+
+                var result = await _dynamoService.GetRequestStats(systermId);
 
                 if (result != null)
                 {

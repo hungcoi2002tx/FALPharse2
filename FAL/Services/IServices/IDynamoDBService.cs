@@ -19,5 +19,7 @@ namespace FAL.Services.IServices
         Task<FaceDetectionResult> GetWebhookResult(string systermId,string mediaId);
         Task<DetectStatsResponse> GetDetectStats(string v);
         Task<TrainStatsResponse> GetTrainStats(string systermId);
+        Task<bool> LogRequestAsync(string systemName, RequestType requestType, RequestResultEnum status = RequestResultEnum.Unknown, object requestBody = null);
+        Task<RequestStatsResponse> GetRequestStats(string systermId);
     }
 }
