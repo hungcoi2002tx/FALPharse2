@@ -19,8 +19,11 @@ namespace CompareFaceExamDemo.Utils
         public static void ExportListToExcel<T>(List<T> data, string filePath, string sheetName = "Sheet1")
         {
             if (data == null || data.Count == 0)
-                throw new ArgumentException("Danh sách dữ liệu rỗng!");
-
+            {
+                MessageBox.Show("Danh sách dữ liệu rỗng!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return; // Thoát khỏi hàm để tránh lỗi tiếp theo
+            }
+             
             using (var package = new ExcelPackage())
             {
                 // Tạo worksheet

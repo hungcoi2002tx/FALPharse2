@@ -89,7 +89,7 @@ namespace CompareFaceExamDemo
                 childForm.Show();
                 childForm.BringToFront();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }

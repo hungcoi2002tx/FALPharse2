@@ -25,6 +25,8 @@
             btnSend = new Button();
             txtFolderPath = new TextBox();
             dataGridViewImages = new DataGridView();
+            progressBarCompare = new ProgressBar();
+            lblProgress = new Label();
             ((System.ComponentModel.ISupportInitialize)dataGridViewImages).BeginInit();
             SuspendLayout();
             // 
@@ -70,11 +72,29 @@
             dataGridViewImages.Size = new Size(1173, 623);
             dataGridViewImages.TabIndex = 3;
             // 
+            // progressBarCompare
+            // 
+            progressBarCompare.Location = new Point(716, 58);
+            progressBarCompare.Name = "progressBarCompare";
+            progressBarCompare.Size = new Size(460, 23);
+            progressBarCompare.TabIndex = 4;
+            // 
+            // lblProgress
+            // 
+            lblProgress.AutoSize = true;
+            lblProgress.Location = new Point(929, 37);
+            lblProgress.Name = "lblProgress";
+            lblProgress.Size = new Size(23, 15);
+            lblProgress.TabIndex = 5;
+            lblProgress.Text = "0%";
+            // 
             // ImageCaptureForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1341, 720);
+            Controls.Add(lblProgress);
+            Controls.Add(progressBarCompare);
             Controls.Add(txtFolderPath);
             Controls.Add(dataGridViewImages);
             Controls.Add(btnSend);
@@ -82,9 +102,13 @@
             Margin = new Padding(4, 3, 4, 3);
             Name = "ImageCaptureForm";
             Text = "Image Viewer with Preview";
+            Load += ImageCaptureForm_Load;
             ((System.ComponentModel.ISupportInitialize)dataGridViewImages).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
+
+        private ProgressBar progressBarCompare;
+        private Label lblProgress;
     }
 }
