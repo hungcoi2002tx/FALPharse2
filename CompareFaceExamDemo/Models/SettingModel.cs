@@ -10,6 +10,7 @@ namespace CompareFaceExamDemo.Models
     {
         public int Confident { get; set; }
         public int NumberOfThread { get; set; }
+        public int NumberOfRetry { get; set; }
         public string DirectoryImageSource { get; set; }
     }
 }
