@@ -60,21 +60,21 @@
             // imageSourceToolStripMenuItem
             // 
             imageSourceToolStripMenuItem.Name = "imageSourceToolStripMenuItem";
-            imageSourceToolStripMenuItem.Size = new Size(180, 22);
+            imageSourceToolStripMenuItem.Size = new Size(149, 22);
             imageSourceToolStripMenuItem.Text = "ImageSource";
             imageSourceToolStripMenuItem.Click += ImageSourceButtonClick;
             // 
             // imageCaptureToolStripMenuItem
             // 
             imageCaptureToolStripMenuItem.Name = "imageCaptureToolStripMenuItem";
-            imageCaptureToolStripMenuItem.Size = new Size(180, 22);
+            imageCaptureToolStripMenuItem.Size = new Size(149, 22);
             imageCaptureToolStripMenuItem.Text = "ImageCapture";
             imageCaptureToolStripMenuItem.Click += ImageCaptureButtonClick;
             // 
             // resultToolStripMenuItem
             // 
             resultToolStripMenuItem.Name = "resultToolStripMenuItem";
-            resultToolStripMenuItem.Size = new Size(180, 22);
+            resultToolStripMenuItem.Size = new Size(149, 22);
             resultToolStripMenuItem.Text = "Result";
             resultToolStripMenuItem.Click += ViewResultButtonClick;
             // 
@@ -111,6 +111,7 @@
             Margin = new Padding(3, 2, 3, 2);
             Name = "MainContainer";
             Text = "EOS Face Verification";
+            Load += MainContainer_Load;
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             ResumeLayout(false);

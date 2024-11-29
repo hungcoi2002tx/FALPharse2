@@ -17,16 +17,16 @@ namespace CompareFaceExamDemo
         private SettingForm settingForm;
         private ResultForm mainForm;
         public MainContainer(ImageCaptureForm imageCaptureForm,
-            SourceImageForm imageSourceForm, 
-            SettingForm settingForm, 
+            SourceImageForm imageSourceForm,
+            SettingForm settingForm,
             ResultForm mainForm)
         {
             InitializeComponent();
             // Cố định chiều rộng và chiều cao của form
-            this.Size = new Size(1200, 800); // Thay đổi kích thước theo ý muốn
+            this.Size = new Size(1920, 1080); // Thay đổi kích thước theo ý muốn
 
             // Đặt kiểu viền cố định
-            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+          //  this.FormBorderStyle = FormBorderStyle.FixedSingle;
 
             // Tắt nút phóng to
             this.MaximizeBox = false;
@@ -35,8 +35,8 @@ namespace CompareFaceExamDemo
             this.MinimizeBox = true;
 
             // Tắt khả năng thay đổi kích thước
-            this.MaximumSize = this.Size;
-            this.MinimumSize = this.Size;
+            //this.MaximumSize = this.Size;
+            //this.MinimumSize = this.Size;
             this.imageCaptureForm = imageCaptureForm;
             this.imageSourceForm = imageSourceForm;
             this.settingForm = settingForm;
@@ -122,7 +122,7 @@ namespace CompareFaceExamDemo
             }
         }
 
-#region NOT DELETE THESE METHOD
+        #region NOT DELETE THESE METHOD
 
         private void viewImageCaptureToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -139,5 +139,9 @@ namespace CompareFaceExamDemo
         #endregion
 
 
+        private void MainContainer_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }

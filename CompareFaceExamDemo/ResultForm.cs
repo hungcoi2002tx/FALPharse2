@@ -74,7 +74,6 @@ namespace CompareFaceExamDemo
         }
         private void button1_Click(object sender, EventArgs e)
         {
-            // Lấy tên file được chọn từ ComboBox
             var selectedFile = cmbFileList.SelectedItem as string;
 
             if (string.IsNullOrEmpty(selectedFile))
@@ -83,25 +82,48 @@ namespace CompareFaceExamDemo
                 return;
             }
 
-            // Kết hợp đường dẫn thư mục với tên file
             fileDataPath = Path.Combine(txtDataFolder.Text, selectedFile.EndsWith(".txt") ? selectedFile : selectedFile + ".txt");
 
-
-            // Kiểm tra file tồn tại
             if (!File.Exists(fileDataPath))
             {
                 MessageBox.Show($"File {fileDataPath} does not exist.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            // Lấy các điều kiện lọc từ giao diện người dùng
             var filters = GetFilters(); // Lấy các bộ lọc từ các trường giao diện
-
-            // Lấy danh sách kết quả từ file và áp dụng bộ lọc
             results = GetFilteredResults(fileDataPath, filters);
 
-            // Cập nhật DataGridView với kết quả
+            // Cập nhật DataGridView
             dataGridView1.DataSource = results;
+
+            // Đăng ký sự kiện RowPrePaint để định màu sắc
+            dataGridView1.RowPrePaint += DataGridView1_RowPrePaint;
+        }
+
+        private void DataGridView1_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e)
+        {
+            if (dataGridView1.Rows[e.RowIndex].DataBoundItem is EOSComparisonResult result)
+            {
+                // Thay đổi màu nền của dòng dựa trên ResultStatus
+                switch (result.Status)
+                {
+                    case ResultStatus.PROCESSING:
+                        dataGridView1.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.LightYellow; // Màu vàng nhạt
+                        break;
+
+                    case ResultStatus.MATCHED:
+                        dataGridView1.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.LightGreen; // Màu xanh nhạt
+                        break;
+
+                    case ResultStatus.NOTMATCHED:
+                        dataGridView1.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.LightCoral; // Màu đỏ nhạt
+                        break;
+
+                    default:
+                        dataGridView1.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.White; // Màu trắng mặc định
+                        break;
+                }
+            }
         }
 
 
@@ -182,8 +204,8 @@ namespace CompareFaceExamDemo
 
         private void DisplayImages(EOSComparisonResult result)
         {
-            var sourceImagePath = Path.Combine(_sourceImageFolder, $"{result.StudentCode}.jpg");
-            var targetImagePath = Path.Combine(txtDataFolder.Text, $"{result.ExamCode}", $"{result.StudentCode}.jpg");
+            var sourceImagePath = result.ImageSourcePath;
+            var targetImagePath = result.ImageTagetPath;
 
             // Hiển thị SourceImage
             if (File.Exists(sourceImagePath))

@@ -90,14 +90,14 @@ namespace CompareFaceExamDemo
             label1.AutoSize = true;
             label1.Location = new Point(364, 42);
             label1.Name = "label1";
-            label1.Size = new Size(70, 15);
+            label1.Size = new Size(71, 15);
             label1.TabIndex = 15;
             label1.Text = "Thread Run:";
             // 
             // numberThread
             // 
             numberThread.Location = new Point(468, 40);
-            numberThread.Maximum = new decimal(new int[] { 25, 0, 0, 0 });
+            numberThread.Maximum = new decimal(new int[] { 24, 0, 0, 0 });
             numberThread.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             numberThread.Name = "numberThread";
             numberThread.Size = new Size(120, 23);

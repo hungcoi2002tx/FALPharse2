@@ -11,17 +11,16 @@ namespace CompareFaceExamDemo.Utils
         public static void ExportListToTxt<T>(List<T> list, string filePath, string delimiter = ",")
         {
             if (list == null || !list.Any())
-                throw new InvalidOperationException("Danh sách trống hoặc null.");
+            {
+                MessageBox.Show("Danh sách dữ liệu rỗng!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return; // Thoát khỏi hàm để tránh lỗi tiếp theo
+            }
 
             // Lấy thông tin các thuộc tính của class
             var properties = typeof(T).GetProperties();
 
             using (StreamWriter writer = new StreamWriter(filePath))
             {
-                // Ghi dòng tiêu đề (header)
-                writer.WriteLine(string.Join(delimiter, properties.Select(p => p.Name)));
-
-                // Ghi từng dòng dữ liệu
                 foreach (var item in list)
                 {
                     var values = properties.Select(p => p.GetValue(item, null)?.ToString() ?? string.Empty);
@@ -29,6 +28,5 @@ namespace CompareFaceExamDemo.Utils
                 }
             }
         }
-
     }
 }
