@@ -21,5 +21,6 @@ namespace FAL.Services.IServices
         Task<TrainStatsResponse> GetTrainStats(string systermId);
         Task<bool> LogRequestAsync(string systemName, RequestTypeEnum requestType, RequestResultEnum status = RequestResultEnum.Unknown, object requestBody = null);
         Task<RequestStatsResponse> GetRequestStats(string systermId);
+        Task<List<TrainStatsDetailDTO>> GetTrainStatsDetail(string systermId, string userId);
     }
 }

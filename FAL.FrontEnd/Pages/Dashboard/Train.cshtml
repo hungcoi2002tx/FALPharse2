@@ -25,12 +25,15 @@
                 @foreach (var user in Model.TrainStats.UserStats)
                 {
                     <tr>
-                        <td>@user.UserId</td>
+                        <td>
+                            <a asp-page="./TrainDetails" asp-route-userId="@user.UserId">@user.UserId</a>
+                        </td>
                         <td>@user.TotalNumberOfFaceTrained</td>
                     </tr>
                 }
             </tbody>
         </table>
+
         <a asp-page="./Index" class="btn btn-secondary">Back to Dashboard</a>
     }
     else

@@ -108,6 +108,50 @@ namespace FAL.Controllers
             }
         }
 
+        [Authorize]
+        [HttpGet("TrainStats/Details/{userId}")]
+        public async Task<IActionResult> GetTrainStats(string userId)
+        {
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
+
+                var result = await _dynamoService.GetTrainStatsDetail(systermId,userId);
+
+                if (result != null)
+                {
+                    return Ok(result);
+                }
+                return StatusCode(500, "Something is wrong with da server");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Something is wrong with da server");
+            }
+        }
+
+        [Authorize]
+        [HttpDelete("TrainStats/{userId}/{faceId}")]
+        public async Task<IActionResult> DeleteTrainStats(string userId,string faceId)
+        {
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
+
+                var result = await _dynamoService.GetTrainStatsDetail(systermId, userId);
+
+                if (result != null)
+                {
+                    return Ok(result);
+                }
+                return StatusCode(500, "Something is wrong with da server");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Something is wrong with da server");
+            }
+        }
+
         private string GetDBResultBySystemName(string systemName)
         {
             try
