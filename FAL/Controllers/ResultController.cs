@@ -88,13 +88,13 @@ namespace FAL.Controllers
 
         [Authorize]
         [HttpGet("TrainStats")]
-        public async Task<IActionResult> GetTrainStats()
+        public async Task<IActionResult> GetTrainStats([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string searchUserId = null)
         {
             try
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
 
-                var result = await _dynamoService.GetTrainStats(systermId);
+                var result = await _dynamoService.GetTrainStats(systermId, page, pageSize,searchUserId);
 
                 if (result != null)
                 {
@@ -110,13 +110,13 @@ namespace FAL.Controllers
 
         [Authorize]
         [HttpGet("TrainStats/Details/{userId}")]
-        public async Task<IActionResult> GetTrainStats(string userId)
+        public async Task<IActionResult> GetTrainStats(string userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
 
-                var result = await _dynamoService.GetTrainStatsDetail(systermId,userId);
+                var result = await _dynamoService.GetTrainStatsDetail(systermId,userId,page,pageSize);
 
                 if (result != null)
                 {

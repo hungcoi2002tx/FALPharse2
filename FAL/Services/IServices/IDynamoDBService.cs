@@ -18,10 +18,10 @@ namespace FAL.Services.IServices
         Task DeleteItem(string userId, string faceId, string collectionName);
         Task<FaceDetectionResult> GetWebhookResult(string systermId,string mediaId);
         Task<DetectStatsResponse> GetDetectStats(string v);
-        Task<TrainStatsResponse> GetTrainStats(string systermId);
+        Task<TrainStatsResponse> GetTrainStats(string systermId,int page, int pageSize,string searchUserId);
         Task<bool> LogRequestAsync(string systemName, RequestTypeEnum requestType, RequestResultEnum status = RequestResultEnum.Unknown, object requestBody = null);
         Task<RequestStatsResponse> GetRequestStats(string systermId);
-        Task<List<TrainStatsDetailDTO>> GetTrainStatsDetail(string systermId, string userId);
+        Task<PaginatedTrainStatsDetailResponse> GetTrainStatsDetail(string systermId, string userId,int page,int pageSize);
         Task<bool> DeleteTrainStat(string systermId, string userId, string faceId);
     }
 }

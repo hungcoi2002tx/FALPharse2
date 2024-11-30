@@ -397,7 +397,8 @@ namespace FAL.Services
             }
         }
 
-        public async Task<TrainStatsResponse> GetTrainStats(string systermId)
+
+        public async Task<TrainStatsResponse> GetTrainStats(string systermId, int page, int pageSize, string searchUserId)
         {
             try
             {
@@ -412,8 +413,15 @@ namespace FAL.Services
                     results.AddRange(await search.GetNextSetAsync());
                 } while (!search.IsDone);
 
+                // Filter by UserId if searchUserId is provided (partial matching)
+                var filteredResults = results;
+                if (!string.IsNullOrEmpty(searchUserId))
+                {
+                    filteredResults = results.Where(doc => doc["UserId"].AsString().IndexOf(searchUserId, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                }
+
                 // Group by UserId and count FaceId for each user
-                var groupedData = results
+                var groupedData = filteredResults
                     .GroupBy(doc => doc["UserId"].AsString())
                     .Select(group => new TrainStatsOfUser
                     {
@@ -422,18 +430,25 @@ namespace FAL.Services
                     })
                     .ToList();
 
-                // Calculate the total unique UserIds
-                var totalUniqueUserIds = groupedData.Count;
+                // Pagination logic
+                var totalRecords = groupedData.Count;
+                var pagedData = groupedData
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
 
-                // Calculate the total number of FaceIds (all records in the table)
-                var totalTrainedFaceId = results.Count;
+                // Total trained face IDs
+                var totalTrainedFaceId = filteredResults.Count;
 
                 // Return the response
                 return new TrainStatsResponse
                 {
-                    TotalTrainedUserId = totalUniqueUserIds,
-                    TotalTrainedFaceId = totalTrainedFaceId, // Add total count of all FaceIds
-                    UserStats = groupedData
+                    TotalTrainedUserId = groupedData.Count,
+                    TotalTrainedFaceId = totalTrainedFaceId,
+                    TotalRecords = totalRecords,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    UserStats = pagedData
                 };
             }
             catch (System.Exception ex)
@@ -442,6 +457,7 @@ namespace FAL.Services
                 return null;
             }
         }
+
         public async Task<bool> LogRequestAsync(string systemName, RequestTypeEnum requestType, RequestResultEnum status = RequestResultEnum.Unknown, object requestBody = null)
         {
             // Validate required fields
@@ -570,24 +586,24 @@ namespace FAL.Services
             }
         }
 
-        public async Task<List<TrainStatsDetailDTO>> GetTrainStatsDetail(string systemId, string userId)
+        public async Task<PaginatedTrainStatsDetailResponse> GetTrainStatsDetail(string systemId, string userId, int page, int pageSize)
         {
             var tableName = systemId; // The table name is the system ID
             var result = new List<TrainStatsDetailDTO>();
 
-            // Define the query parameters
-            var request = new QueryRequest
+            try
             {
-                TableName = tableName,
-                KeyConditionExpression = "UserId = :userId",
-                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                // Define the query parameters
+                var request = new QueryRequest
+                {
+                    TableName = tableName,
+                    KeyConditionExpression = "UserId = :userId",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
                 { ":userId", new AttributeValue { S = userId } }
             }
-            };
+                };
 
-            try
-            {
                 // Execute the query
                 var response = await _dynamoDBService.QueryAsync(request);
 
@@ -600,15 +616,37 @@ namespace FAL.Services
                         ? DateTime.Parse(item["CreateDate"].S)
                         : DateTime.MinValue
                 }).ToList();
+
+                // Apply pagination
+                var totalRecords = result.Count;
+                var paginatedResult = result
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                // Return paginated response
+                return new PaginatedTrainStatsDetailResponse
+                {
+                    Data = paginatedResult,
+                    TotalRecords = totalRecords,
+                    CurrentPage = page,
+                    PageSize = pageSize
+                };
             }
             catch (Exception ex)
             {
                 // Handle exceptions (e.g., table not found, invalid query, etc.)
                 Console.WriteLine($"Error querying table {tableName}: {ex.Message}");
+                return new PaginatedTrainStatsDetailResponse
+                {
+                    Data = new List<TrainStatsDetailDTO>(),
+                    TotalRecords = 0,
+                    CurrentPage = page,
+                    PageSize = pageSize
+                };
             }
-
-            return result;
         }
+    
 
         public async Task<bool> DeleteTrainStat(string systemId, string userId, string faceId)
         {

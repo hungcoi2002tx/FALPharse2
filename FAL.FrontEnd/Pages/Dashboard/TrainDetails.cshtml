@@ -9,8 +9,8 @@
     {
         <div class="card mb-4">
             <div class="card-body">
-                <h5 class="card-title">Details for User: @Model.UserDetails[0].UserId</h5>
-                <p class="card-text"><strong>Total Faces Trained:</strong> @Model.UserDetails.Count</p>
+                <h5 class="card-title">Details for User</h5>
+                <p class="card-text"><strong>Total Faces Trained:</strong> @Model.TotalRecords</p>
             </div>
         </div>
         <table class="table table-bordered">
@@ -37,6 +37,19 @@
                 }
             </tbody>
         </table>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                @for (int i = 1; i <= Math.Ceiling((double)Model.TotalRecords / Model.PageSize); i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <a class="page-link" href="?userId=@Model.UserDetails.First().UserId&page=@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+
         <a asp-page="./Index" class="btn btn-secondary">Back to Dashboard</a>
     }
     else

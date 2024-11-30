@@ -4,40 +4,58 @@
     ViewData["Title"] = "Train Stats";
 }
 <div class="container">
-    <h1 class="mb-4">Train Stats</h1>
-    @if (Model.TrainStats != null)
-    {
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Overall Statistics</h5>
-                <p class="card-text"><strong>Total Trained User IDs:</strong> @Model.TrainStats.TotalTrainedUserId</p>
-                <p class="card-text"><strong>Total Faces Trained:</strong> @Model.TrainStats.TotalTrainedFaceId</p>
-            </div>
+    <h1 class="mb-4">Train Details</h1>
+
+    <!-- Search Form -->
+    <form method="get" id="searchForm">
+        <div class="input-group mb-4">
+            <input type="text" name="searchUserId" class="form-control" placeholder="Search by User ID" value="@Model.SearchUserId">
+            <button type="submit" class="btn btn-primary">Search</button>
         </div>
+    </form>
+
+    <!-- Train Details -->
+    @if (Model.TrainStats != null && Model.TrainStats.UserStats.Count > 0)
+    {
         <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>User ID</th>
-                    <th>Total Number of Faces Trained</th>
+                    <th>Face ID</th>
+                    <th>Total Faces Trained</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var user in Model.TrainStats.UserStats)
+                @foreach (var detail in Model.TrainStats.UserStats)
                 {
                     <tr>
                         <td>
-                            <a asp-page="./TrainDetails" asp-route-userId="@user.UserId">@user.UserId</a>
+                            <a asp-page="TrainDetails" asp-route-userId="@detail.UserId">
+                                @detail.UserId
+                            </a>
                         </td>
-                        <td>@user.TotalNumberOfFaceTrained</td>
+                        <td>@detail.TotalNumberOfFaceTrained</td>
                     </tr>
                 }
             </tbody>
         </table>
 
-        <a asp-page="./Index" class="btn btn-secondary">Back to Dashboard</a>
+        <!-- Pagination -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                @for (int i = 1; i <= Math.Ceiling((double)Model.TrainStats.TotalRecords / Model.TrainStats.PageSize); i++)
+                {
+                    <li class="page-item @(i == Model.TrainStats.CurrentPage ? "active" : "")">
+                        <a class="page-link" href="?page=@i&searchUserId=@Model.SearchUserId">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
     }
     else
     {
-        <div class="alert alert-danger">Failed to load Train Stats.</div>
+        <div class="alert alert-danger">No results found.</div>
     }
+
+    <a asp-page="./Index" class="btn btn-secondary">Back to Dashboard</a>
 </div>
+

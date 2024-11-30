@@ -16,9 +16,14 @@ namespace FAL.FrontEnd.Pages.Dashboard
         }
 
         public TrainStatsResponse TrainStats { get; set; }
+        public string SearchUserId { get; set; }
+        public int CurrentPage { get; set; } = 1;
 
-        public async Task<IActionResult> OnGetAsync()
+        public async Task<IActionResult> OnGetAsync(string searchUserId = null, int page = 1)
         {
+            SearchUserId = searchUserId;
+            CurrentPage = page;
+
             var client = _httpClientFactory.CreateClient();
             var jwtToken = HttpContext.Session.GetString("JwtToken");
 
@@ -32,8 +37,15 @@ namespace FAL.FrontEnd.Pages.Dashboard
             // Add JWT token to the Authorization header
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
 
+            // Build API query string
+            var queryParams = $"?page={CurrentPage}&pageSize=10";
+            if (!string.IsNullOrEmpty(SearchUserId))
+            {
+                queryParams += $"&searchUserId={SearchUserId}";
+            }
+
             // Call the TrainStats API
-            var response = await client.GetAsync("https://dev.demorecognition.click/api/Result/TrainStats");
+            var response = await client.GetAsync($"https://dev.demorecognition.click/api/Result/TrainStats{queryParams}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -42,7 +54,7 @@ namespace FAL.FrontEnd.Pages.Dashboard
                 {
                     PropertyNameCaseInsensitive = true
                 };
-                TrainStats = JsonSerializer.Deserialize<TrainStatsResponse>(responseContent,options);
+                TrainStats = JsonSerializer.Deserialize<TrainStatsResponse>(responseContent, options);
             }
             else
             {
