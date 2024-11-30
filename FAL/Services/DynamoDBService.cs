@@ -569,6 +569,85 @@ namespace FAL.Services
                 return null;
             }
         }
+
+        public async Task<List<TrainStatsDetailDTO>> GetTrainStatsDetail(string systemId, string userId)
+        {
+            var tableName = systemId; // The table name is the system ID
+            var result = new List<TrainStatsDetailDTO>();
+
+            // Define the query parameters
+            var request = new QueryRequest
+            {
+                TableName = tableName,
+                KeyConditionExpression = "UserId = :userId",
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                { ":userId", new AttributeValue { S = userId } }
+            }
+            };
+
+            try
+            {
+                // Execute the query
+                var response = await _dynamoDBService.QueryAsync(request);
+
+                // Map the results to the DTO
+                result = response.Items.Select(item => new TrainStatsDetailDTO
+                {
+                    UserId = item["UserId"].S,
+                    FaceId = item.ContainsKey("FaceId") ? item["FaceId"].S : null,
+                    CreateDate = item.ContainsKey("CreateDate")
+                        ? DateTime.Parse(item["CreateDate"].S)
+                        : DateTime.MinValue
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions (e.g., table not found, invalid query, etc.)
+                Console.WriteLine($"Error querying table {tableName}: {ex.Message}");
+            }
+
+            return result;
+        }
+
+        public async Task<bool> DeleteTrainStat(string systemId, string userId, string faceId)
+        {
+            var tableName = systemId; // The table name is the system ID
+
+            try
+            {
+                // Define the delete request
+                var deleteRequest = new DeleteItemRequest
+                {
+                    TableName = tableName,
+                    Key = new Dictionary<string, AttributeValue>
+            {
+                { "UserId", new AttributeValue { S = userId } }, // Partition key
+                { "FaceId", new AttributeValue { S = faceId } }  // Sort key
+            }
+                };
+
+                // Execute the delete request
+                var response = await _dynamoDBService.DeleteItemAsync(deleteRequest);
+
+                if (response.HttpStatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    Console.WriteLine($"Successfully deleted item with UserId: {userId} and FaceId: {faceId} from table {tableName}.");
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to delete item. HTTP Status Code: {response.HttpStatusCode}");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting item from table {tableName} with UserId: {userId} and FaceId: {faceId}. Error: {ex.Message}");
+                return false;
+            }
+        }
+
     }
 
 }

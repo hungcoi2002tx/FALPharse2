@@ -1,0 +1,47 @@
+﻿@page "{userId}"
+@model Dashboard.UserDetailsModel
+@{
+    ViewData["Title"] = "User Details";
+}
+<div class="container">
+    <h1 class="mb-4">User Details</h1>
+    @if (Model.UserDetails != null && Model.UserDetails.Count > 0)
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Details for User: @Model.UserDetails[0].UserId</h5>
+                <p class="card-text"><strong>Total Faces Trained:</strong> @Model.UserDetails.Count</p>
+            </div>
+        </div>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Face ID</th>
+                    <th>Create Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var detail in Model.UserDetails)
+                {
+                    <tr>
+                        <td>@detail.FaceId</td>
+                        <td>@detail.CreateDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>
+                            <a asp-page="./DeleteTrainModel"
+                               asp-route-userId="@detail.UserId"
+                               asp-route-faceId="@detail.FaceId"
+                               class="btn btn-danger btn-sm">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <a asp-page="./Index" class="btn btn-secondary">Back to Dashboard</a>
+    }
+    else
+    {
+        <div class="alert alert-danger">No details found for this user.</div>
+        <a asp-page="./Index" class="btn btn-secondary">Back to Dashboard</a>
+    }
+</div>
