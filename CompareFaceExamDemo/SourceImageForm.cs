@@ -46,7 +46,7 @@ namespace CompareFaceExamDemo
                 return;
             }
 
-            var filePath = Path.Combine(_settingForm.DirectoryImageSource, $"{txtStudentCode.Text.Trim()}.jpg");
+            var filePath = Path.Combine(_settingForm.DirectoryImageSource, $"{txtStudentCode.Text.Trim().ToUpper()}.jpg");
             if (File.Exists(filePath))
             {
                 pictureBoxSourceImage.Image = Image.FromFile(filePath);
@@ -56,13 +56,12 @@ namespace CompareFaceExamDemo
                 MessageBox.Show("Không tìm thấy ảnh nguồn cho sinh viên này.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
+
         private void btnSaveImage_Click(object sender, EventArgs e)
         {
             var addImageSourceForm = new AddImageSourceForm();
             addImageSourceForm.Show();
         }
-
-
 
         private void btnDeleteImage_Click(object sender, EventArgs e)
         {

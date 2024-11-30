@@ -57,7 +57,7 @@ namespace CompareFaceExamDemo
             }
 
             SettingModel _settingForm = Config.GetSetting();
-            var destinationPath = Path.Combine(_settingForm.DirectoryImageSource, $"{textBox1.Text.Trim()}.jpg");
+            var destinationPath = Path.Combine(_settingForm.DirectoryImageSource, $"{textBox1.Text.Trim().ToUpper()}.jpg");
 
             if (File.Exists(destinationPath))
             {
