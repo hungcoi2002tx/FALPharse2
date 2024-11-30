@@ -249,7 +249,7 @@ namespace FAL.Services
                 foreach (var faceId in faceIds)
                 {
 
-                    var response = await AssociateUser(key,faceId,systemId);
+                    var response = await AssociateUserAsync(key,faceId,systemId);
 
                     // Check the response status code
                     if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
@@ -268,7 +268,7 @@ namespace FAL.Services
             }
         }
 
-        private async Task<AssociateFacesResponse> AssociateUser(string userId, string faceId, string collectionName)
+        private async Task<AssociateFacesResponse> AssociateUserAsync(string userId, string faceId, string collectionName)
         {
             var listFaceIDs = await _dynamoDBService.GetFaceIdsByUserIdAsync(userId, collectionName);
             var existingFaceId = await _dynamoDBService.GetFaceIdForUserAndFaceAsync(userId, faceId, collectionName);
