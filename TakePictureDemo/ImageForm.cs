@@ -11,13 +11,14 @@ using System.Text;
 using System.Windows.Forms;
 using TakePictureDemo.Models.DTOs;
 using System.Drawing.Drawing2D;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace TakePictureDemo
 {
     public partial class ImageForm : Form
     {
-        private Button sendButton;
-        private Button retryButton;
+        private System.Windows.Forms.Button sendButton;
+        private System.Windows.Forms.Button retryButton;
         private string apiUrl = "https://localhost:7237/api/Image/SaveFile";
 
         public string ExamCode { get; set; }
@@ -45,7 +46,7 @@ namespace TakePictureDemo
 
         private void CreateRetryButton()
         {
-            retryButton = new Button
+            retryButton = new System.Windows.Forms.Button
             {
                 Width = 60,
                 Height = 60,
@@ -67,7 +68,7 @@ namespace TakePictureDemo
             // Sự kiện khi nhấn nút Re-Try
             retryButton.Click += (s, e) =>
             {
-                MessageBox.Show("Re-Try button clicked!");
+                HandleRetryButtonClick();
             };
 
             // Vị trí nút trên form
@@ -77,22 +78,26 @@ namespace TakePictureDemo
             this.Controls.Add(retryButton);
         }
 
-
-        private void RetrySendData()
+        private void HandleRetryButtonClick()
         {
-            try
+            using (CameraForm formCamera = new CameraForm())
             {
-                SendDataToServer(); // Gọi lại hàm gửi dữ liệu
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Retry failed: {ex.Message}");
+                formCamera.ExamCode = ExamCode;
+                formCamera.StudentCode = StudentCode;
+
+                this.Hide();
+                if (formCamera.ShowDialog() == DialogResult.OK)
+                {
+
+                }
+                this.Close();
             }
         }
 
+
         private void CreateSendButton()
         {
-            sendButton = new Button
+            sendButton = new System.Windows.Forms.Button
             {
                 Width = 60,
                 Height = 60,

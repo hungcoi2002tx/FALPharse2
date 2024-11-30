@@ -113,10 +113,22 @@ namespace TakePictureDemo
                 // Bắt đầu luồng video
                 videoCaptureDevice.Start();
 
-                // Khởi tạo Timer để kiểm tra khung hình
-                frameCheckTimer = new Timer { Interval = 3000 }; // 3 giây
-                frameCheckTimer.Tick += FrameCheckTimer_Tick;
-                frameCheckTimer.Start();
+                // Kiểm tra nếu không nhận được khung hình trong vòng 3 giây đầu tiên
+                if (!CheckCameraAvailability(videoCaptureDevice))
+                {
+                    MessageBox.Show(
+                        "Camera is currently in use by another application or unavailable. Please try again.",
+                        "Camera Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning
+                    );
+
+                    videoCaptureDevice.SignalToStop();
+                    videoCaptureDevice.WaitForStop();
+                    videoCaptureDevice = null;
+
+                    this.Close();
+                }
             }
             catch (Exception ex)
             {
@@ -129,6 +141,30 @@ namespace TakePictureDemo
                 this.Close();
             }
         }
+
+        private bool CheckCameraAvailability(VideoCaptureDevice device)
+        {
+            bool frameReceived = false;
+
+            void OnNewFrame(object sender, NewFrameEventArgs eventArgs)
+            {
+                frameReceived = true;
+                device.NewFrame -= OnNewFrame; // Ngừng lắng nghe sự kiện sau khi nhận được khung hình
+            }
+
+            device.NewFrame += OnNewFrame;
+
+            // Chờ tối đa 3 giây
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            while (!frameReceived && stopwatch.ElapsedMilliseconds < 3000)
+            {
+                Application.DoEvents();
+            }
+
+            device.NewFrame -= OnNewFrame; // Bảo đảm gỡ sự kiện nếu timeout
+            return frameReceived;
+        }
+
 
         private void VideoCaptureDevice_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
@@ -304,57 +340,64 @@ namespace TakePictureDemo
             button.Region = new Region(graphicsPath);
         }
 
-private void CaptureAndSaveAndCropImage()
-{
-    if (pictureBox.Image == null)
-    {
-        MessageBox.Show("Không có hình ảnh để lưu và cắt.");
-        return;
-    }
-
-    try
-    {
-        EnsureFolderExists(folderPath);
-
-        // Lưu ảnh gốc
-        Bitmap originalImage = new Bitmap(pictureBox.Image);
-        string originalFilePath = SaveOriginalImage(originalImage);
-
-        // Cắt ảnh
-        using (Bitmap croppedImage = CropImage(originalImage, 350, 500))
+        private void CaptureAndSaveAndCropImage()
         {
-            string croppedFilePath = SaveCroppedImage(croppedImage);
-
-            // Hiển thị ảnh đã cắt trong PictureBox
-            pictureBox.Image = new Bitmap(croppedFilePath);
-
-            // Chuyển ảnh đã cắt sang Base64
-            base64Image = ConvertImageToBase64(croppedFilePath);
-
-            // Mở form khác với dữ liệu
-            using (ImageForm imageForm = new ImageForm())
+            if (pictureBox.Image == null)
             {
-                imageForm.ExamCode = ExamCode;
-                imageForm.StudentCode = StudentCode;
-                imageForm.CroppedFilePath = croppedFilePath;
-                imageForm.Base64Image = base64Image;
+                MessageBox.Show("Không có hình ảnh để lưu và cắt.");
+                return;
+            }
 
-                this.Hide();
-                if (imageForm.ShowDialog() == DialogResult.OK)
+            try
+            {
+                EnsureFolderExists(folderPath);
+
+                // Lưu ảnh gốc
+                Bitmap originalImage = new Bitmap(pictureBox.Image);
+                string originalFilePath = SaveOriginalImage(originalImage);
+
+                // Cắt ảnh
+                using (Bitmap croppedImage = CropImage(originalImage, 350, 500))
                 {
-                    // Xử lý nếu cần khi form con trả về DialogResult.OK
+                    string croppedFilePath = SaveCroppedImage(croppedImage);
+
+                    // Hiển thị ảnh đã cắt trong PictureBox
+                    pictureBox.Image = new Bitmap(croppedFilePath);
+
+                    // Chuyển ảnh đã cắt sang Base64
+                    base64Image = ConvertImageToBase64(croppedFilePath);
+
+                    if (videoCaptureDevice != null && videoCaptureDevice.IsRunning)
+                    {
+                        videoCaptureDevice.SignalToStop();
+                        videoCaptureDevice.WaitForStop();
+                        videoCaptureDevice = null;
+                    }
+
+                    // Mở form khác với dữ liệu
+                    using (ImageForm imageForm = new ImageForm())
+                    {
+                        imageForm.ExamCode = ExamCode;
+                        imageForm.StudentCode = StudentCode;
+                        imageForm.CroppedFilePath = croppedFilePath;
+                        imageForm.Base64Image = base64Image;
+
+                        this.Hide();
+                        if (imageForm.ShowDialog() == DialogResult.OK)
+                        {
+                            // Xử lý nếu cần khi form con trả về DialogResult.OK
+                        }
+                        this.Close();
+                    }
                 }
-                this.Close();
+
+                originalImage.Dispose();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi lưu và cắt ảnh: {ex.Message}");
             }
         }
-
-        originalImage.Dispose();
-    }
-    catch (Exception ex)
-    {
-        MessageBox.Show($"Lỗi khi lưu và cắt ảnh: {ex.Message}");
-    }
-}
 
 
         private void EnsureFolderExists(string folderPath)
