@@ -27,7 +27,7 @@ namespace FAL.FrontEnd.Pages.Auth
             var loginData = new { Username, Password };
             var content = new StringContent(JsonSerializer.Serialize(loginData), Encoding.UTF8, "application/json");
 
-            var response = await client.PostAsync("https://dev.demorecognition.click/api/Auth/login", content);
+            var response = await client.PostAsync("https://localhost:7065/api/Auth/login", content);
             if (response.IsSuccessStatusCode)
             {
                 var responseContent = await response.Content.ReadAsStringAsync();
