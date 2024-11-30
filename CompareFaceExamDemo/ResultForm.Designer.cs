@@ -67,7 +67,7 @@
             dataGridView1.Name = "dataGridView1";
             dataGridView1.RowHeadersWidth = 51;
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridView1.Size = new Size(1121, 524);
+            dataGridView1.Size = new Size(1481, 800);
             dataGridView1.TabIndex = 0;
             // 
             // button1
@@ -201,7 +201,7 @@
             // 
             // pictureBoxTargetImage
             // 
-            pictureBoxTargetImage.Location = new Point(1149, 164);
+            pictureBoxTargetImage.Location = new Point(1497, 164);
             pictureBoxTargetImage.Margin = new Padding(3, 2, 3, 2);
             pictureBoxTargetImage.Name = "pictureBoxTargetImage";
             pictureBoxTargetImage.Size = new Size(313, 164);
@@ -211,7 +211,7 @@
             // 
             // pictureBoxSourceImage
             // 
-            pictureBoxSourceImage.Location = new Point(1149, 332);
+            pictureBoxSourceImage.Location = new Point(1497, 332);
             pictureBoxSourceImage.Margin = new Padding(3, 2, 3, 2);
             pictureBoxSourceImage.Name = "pictureBoxSourceImage";
             pictureBoxSourceImage.Size = new Size(313, 167);
@@ -281,7 +281,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1491, 803);
+            ClientSize = new Size(1822, 975);
             Controls.Add(btnExport);
             Controls.Add(label3);
             Controls.Add(cmbFileList);
