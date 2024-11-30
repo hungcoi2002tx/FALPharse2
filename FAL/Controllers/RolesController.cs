@@ -1,8 +1,8 @@
 ﻿using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
-using FAL.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Share.Model;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Newtonsoft.Json.Linq;
-using Share.SystemModel;
+using Share.Constant;
 using System.Reflection.Metadata.Ecma335;
 
 namespace FAL.Utils

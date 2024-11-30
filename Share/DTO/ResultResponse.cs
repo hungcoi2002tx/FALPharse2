@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Share.DTO
 {
-    public enum RequestResultEnum
+    public class ResultResponse
     {
-        Success = 0,
-        Failed = 1,
-        Unknown = 2
+        public bool Status { get; set; }
+
+        public string Message { get; set; }
     }
 }

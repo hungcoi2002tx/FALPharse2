@@ -1,7 +1,7 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
-namespace FAL.Models;
+namespace Share.Model;
 
 [DynamoDBTable("Accounts")]
 public class Account

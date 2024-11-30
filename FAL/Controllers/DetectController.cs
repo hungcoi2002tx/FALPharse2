@@ -5,7 +5,10 @@ using FAL.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Share.SystemModel;
+using Share.Constant;
+using Share.DTO;
+using Share.Model;
+using Share.Utils;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
@@ -46,7 +49,7 @@ namespace FAL.Controllers
                 if (!bucketExists) return NotFound($"Bucket {systermId} does not exist.");
                 var fileName = Guid.NewGuid().ToString();
                 var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging,mediaId);
-                await _dynamoDbService.LogRequestAsync(systermId, Share.DTO.RequestType.Detect,Share.DTO.RequestResultEnum.Success,JsonSerializer.Serialize(new
+                await _dynamoDbService.LogRequestAsync(systermId, RequestTypeEnum.Detect,RequestResultEnum.Success,JsonSerializer.Serialize(new
                 {
                     file = file,
                     mediaId = mediaId,

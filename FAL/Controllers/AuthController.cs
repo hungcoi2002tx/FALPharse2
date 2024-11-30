@@ -7,10 +7,10 @@ using System.Security.Claims;
 using System.Text;
 using BCrypt.Net;
 using Amazon.DynamoDBv2.DataModel;
-using FAL.Models;
 using Amazon.DynamoDBv2;
 using System.ComponentModel.DataAnnotations;
 using FAL.Utils;
+using Share.Model;
 
 namespace FAL.Controllers
 {

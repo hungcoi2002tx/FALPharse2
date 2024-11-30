@@ -3,7 +3,7 @@ using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 using Amazon.Runtime.Internal.Util;
 using FAL.Services.IServices;
-using Share.SystemModel;
+using Share.Utils;
 using System.Reflection;
 
 namespace FAL.Services

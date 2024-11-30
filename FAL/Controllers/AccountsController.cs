@@ -1,10 +1,10 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2;
 using Microsoft.AspNetCore.Mvc;
-using FAL.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.WebSockets;
 using FAL.Dtos;
+using Share.Model;
 
 namespace FAL.Controllers
 {

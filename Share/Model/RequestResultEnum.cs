@@ -4,10 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Share.SystemModel
+namespace Share.Model
 {
-    public class UserIdRequest
+    public enum RequestResultEnum
     {
-        public string UserId { get; set; }
+        Success = 0,
+        Failed = 1,
+        Unknown = 2
     }
 }

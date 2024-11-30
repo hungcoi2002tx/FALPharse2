@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Share.SystemModel
+namespace Share.Model
 {
     public enum TypeOfRequest
     {
         Training = 0,
-        Tagging = 1,    
+        Tagging = 1,
     }
 
     public enum ContentType

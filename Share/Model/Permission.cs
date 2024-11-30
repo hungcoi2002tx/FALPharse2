@@ -1,4 +1,4 @@
-﻿namespace FAL.Models
+﻿namespace Share.Model
 {
     public class Permission
     {

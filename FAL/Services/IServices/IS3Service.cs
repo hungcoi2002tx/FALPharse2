@@ -1,4 +1,4 @@
-﻿using Share.SystemModel;
+﻿using Share.Model;
 
 namespace FAL.Services.IServices
 {

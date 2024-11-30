@@ -1,23 +1,18 @@
 ﻿using Amazon.Rekognition.Model;
-using Amazon.Runtime;
 using Amazon.S3;
-using Amazon.Util.Internal;
-using FAL.Services;
 using FAL.Services.IServices;
 using FAL.Utils;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using Share.Data;
+using Share.Constant;
 using Share.DTO;
-using Share.SystemModel;
+using Share.Model;
+using Share.Utils;
 using System.IO.Compression;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
+
 
 namespace FAL.Controllers
 {
@@ -79,11 +74,11 @@ namespace FAL.Controllers
                 // Check if both deletions were successful
                 if (collectionDeleted)
                 {
-                    await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.ResetUser, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(userId));
+                    await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.ResetUser, RequestResultEnum.Success, JsonSerializer.Serialize(userId));
                     return Ok(new { Status = true });
                 }
 
-                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.GetWebhookResult, Share.DTO.RequestResultEnum.Failed, JsonSerializer.Serialize(userId));
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.GetWebhookResult, RequestResultEnum.Failed, JsonSerializer.Serialize(userId));
                 return BadRequest(new { Status = false });
             }
             catch (Exception ex)
@@ -123,7 +118,7 @@ namespace FAL.Controllers
                 var (successCount, failureCount) = await ProcessImagesAsync(imageFiles, systemId);
 
                 CleanupTemporaryFiles(tempZipFilePath, extractPath);
-                await _dynamoService.LogRequestAsync(systemId, Share.DTO.RequestType.TrainByZip, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(zipFile));
+                await _dynamoService.LogRequestAsync(systemId, RequestTypeEnum.TrainByZip, RequestResultEnum.Success, JsonSerializer.Serialize(zipFile));
                 return Ok(new ResultResponse
                 {
                     Status = true,
@@ -284,7 +279,7 @@ namespace FAL.Controllers
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 var response = await _dynamoService.GetFaceIdsByUserIdAsync(userId, systermId);
                 //return 
-                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.CheckIsTrained, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(userId));
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.CheckIsTrained, RequestResultEnum.Success, JsonSerializer.Serialize(userId));
 
                 return Ok(new ResultIsTrainedModel
                 {
@@ -314,7 +309,7 @@ namespace FAL.Controllers
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
                 await TrainAsync(image, userId, systermId);
-                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.TrainByImage, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(new
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.TrainByImage, RequestResultEnum.Success, JsonSerializer.Serialize(new
                 {
                     file =file,
                     userId = userId
@@ -405,7 +400,7 @@ namespace FAL.Controllers
                 {
                     await TrainAsync(new Image { Bytes = imageStream }, model.UserId, systermId);
                 }
-                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.TrainByUrl, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(model));
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.TrainByUrl, RequestResultEnum.Success, JsonSerializer.Serialize(model));
 
                 return Ok(new ResultResponse
                 {
@@ -555,7 +550,7 @@ namespace FAL.Controllers
 
                 //train
                 await TrainFaceIdAsync(info.UserId, info.FaceId, systermId);
-                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.TrainByFaceId, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(info));
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.TrainByFaceId, RequestResultEnum.Success, JsonSerializer.Serialize(info));
 
                 //return 
                 return Ok(new ResultResponse
@@ -586,7 +581,7 @@ namespace FAL.Controllers
                 var result = await _dynamoService.IsExistFaceIdAsync(systermId, info.FaceId);
                 if (!result)
                 {
-                    await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.DisassociateFace, Share.DTO.RequestResultEnum.Failed, JsonSerializer.Serialize(info));
+                    await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.DisassociateFace, RequestResultEnum.Failed, JsonSerializer.Serialize(info));
 
                     return BadRequest(new ResultResponse
                     {
@@ -598,7 +593,7 @@ namespace FAL.Controllers
 
                 // Perform the disassociation
                 await DisassociateFaceIdAsync(info.UserId, info.FaceId, systermId);
-                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.DisassociateFace, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(info));
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.DisassociateFace, RequestResultEnum.Success, JsonSerializer.Serialize(info));
 
                 // Return explicit OkObjectResult
                 return Ok(new ResultResponse

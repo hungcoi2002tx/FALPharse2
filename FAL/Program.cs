@@ -3,7 +3,6 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.Rekognition;
 using Amazon.S3;
 using FAL.Authors;
-using FAL.Models;
 using FAL.Services;
 using FAL.Services.IServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,11 +10,11 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Share.SystemModel;
 using System.Security;
 using System.Text;
 using Amazon.SQS;
 using Microsoft.AspNetCore.HttpOverrides;
+using Share.Utils;
 
 namespace FAL
 {

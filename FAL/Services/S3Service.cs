@@ -1,12 +1,12 @@
 ﻿using Amazon.S3.Transfer;
 using Amazon.S3;
 using FAL.Services.IServices;
-using Share.SystemModel;
-using Share.Data;
 using FAL.Utils;
 using System.Drawing;
 using System.IO;
 using SixLabors.ImageSharp;
+using Share.Constant;
+using Share.Model;
 namespace FAL.Services
 {
     public class S3Service : IS3Service

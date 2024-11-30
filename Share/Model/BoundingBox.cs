@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Share.Data
+namespace Share.Model
 {
     public class BoundingBox
     {

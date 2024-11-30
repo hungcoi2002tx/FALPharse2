@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Share.DTO
+namespace Share.Model
 {
-    public enum RequestType
+    public enum RequestTypeEnum
     {
         TrainByImage = 0,
         TrainByUrl = 1,

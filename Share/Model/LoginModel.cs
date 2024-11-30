@@ -1,4 +1,4 @@
-﻿namespace FAL.Dtos
+﻿namespace Share.Model
 {
     public class LoginModel
     {

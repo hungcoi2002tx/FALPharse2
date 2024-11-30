@@ -2,7 +2,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Share.Data;
+using Share.DTO;
 
 namespace Alumniphase2.Interface.Pages.Notification
 {

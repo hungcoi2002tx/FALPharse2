@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Share
+namespace Share.Constant
 {
-    public static class Constants
+    public static class SystemConstants
     {
         public const string TYPE_OF_REQUEST = "TypeOfRequest";
         public const string CONTENT_TYPE = "ContentType";

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Share.Model;
 
-namespace Share.Data
+namespace Share.DTO
 {
     public class FaceRecognitionResponse
     {

@@ -2,7 +2,7 @@
 using Amazon.DynamoDBv2.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Share.Data;
+using Share.DTO;
 using Share.Utils;
 using System.Security.Cryptography;
 using System.Text;

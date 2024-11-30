@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Share.DTO;
+using Share.Model;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -18,7 +19,7 @@ namespace FAL.FrontEnd.Pages.Dashboard
         public RequestStatsResponse RequestStats { get; set; }
 
         // Include all request types from the enum
-        public List<string> AllRequestTypes { get; set; } = Enum.GetNames(typeof(RequestType)).ToList();
+        public List<string> AllRequestTypes { get; set; } = Enum.GetNames(typeof(RequestTypeEnum)).ToList();
 
         public async Task<IActionResult> OnGetAsync()
         {

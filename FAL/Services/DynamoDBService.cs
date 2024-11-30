@@ -4,8 +4,8 @@ using Amazon.DynamoDBv2.Model;
 using Amazon.Rekognition.Model;
 using FAL.Services.IServices;
 using Newtonsoft.Json;
-using Share.Data;
 using Share.DTO;
+using Share.Model;
 using System.Text.Json;
 
 namespace FAL.Services
@@ -442,7 +442,7 @@ namespace FAL.Services
                 return null;
             }
         }
-        public async Task<bool> LogRequestAsync(string systemName, RequestType requestType, RequestResultEnum status = RequestResultEnum.Unknown, object requestBody = null)
+        public async Task<bool> LogRequestAsync(string systemName, RequestTypeEnum requestType, RequestResultEnum status = RequestResultEnum.Unknown, object requestBody = null)
         {
             // Validate required fields
             if (string.IsNullOrEmpty(systemName))

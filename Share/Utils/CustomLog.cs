@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Share.SystemModel
+namespace Share.Utils
 {
     public class CustomLog
     {

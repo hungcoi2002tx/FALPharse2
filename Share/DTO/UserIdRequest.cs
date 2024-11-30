@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace Share.DTO
 {
-    public class TrainModel
+    public class UserIdRequest
     {
         public string UserId { get; set; }
-        public string Data { get; set; }
     }
 }

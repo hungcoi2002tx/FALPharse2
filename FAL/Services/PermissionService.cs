@@ -1,6 +1,6 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
-using FAL.Models;
 using FAL.Services.IServices;
+using Share.Model;
 using System.Security.Claims;
 
 namespace FAL.Services

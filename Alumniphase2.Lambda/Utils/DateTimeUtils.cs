@@ -10,9 +10,9 @@ namespace Alumniphase2.Lambda.Utils
     {
         public static string GetDateTimeVietNamNow()
         {
-            TimeZoneInfo vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById(Constants.TIME_ZONE_VIET_NAM);
+            TimeZoneInfo vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById(SystemConstants.TIME_ZONE_VIET_NAM);
             DateTime vietnamTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone);
-            var result = vietnamTime.ToString(Constants.DATE_FORMAT);
+            var result = vietnamTime.ToString(SystemConstants.DATE_FORMAT);
             return result;
         }
     }

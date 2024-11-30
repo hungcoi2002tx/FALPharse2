@@ -1,11 +1,10 @@
 ﻿using Amazon.DynamoDBv2.Model;
-using Amazon.Runtime.Internal;
-using FAL.Services;
 using FAL.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Share.SystemModel;
+using Share.Constant;
+using Share.Model;
+using Share.Utils;
 using System.Text.Json;
 
 namespace FAL.Controllers
@@ -34,7 +33,7 @@ namespace FAL.Controllers
 
                 var result = await _dynamoService.GetWebhookResult(GetDBResultBySystemName(systermId), mediaId);
 
-                await _dynamoService.LogRequestAsync(systermId, Share.DTO.RequestType.GetWebhookResult, Share.DTO.RequestResultEnum.Success, JsonSerializer.Serialize(mediaId));
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.GetWebhookResult, RequestResultEnum.Success, JsonSerializer.Serialize(mediaId));
                 return Ok(result);
             }
             catch (Exception ex)

@@ -1,20 +1,16 @@
-﻿using Amazon.Rekognition.Model;
-using Amazon.Rekognition;
+﻿using Amazon.Rekognition;
 using Amazon.S3;
 using FAL.Services.IServices;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Share.SystemModel;
-using System.IO.Compression;
 using Amazon.SQS.Model;
 using Amazon.SQS;
 using Amazon.S3.Model;
 using System.Net;
-using FAL.Services;
-using System.Text.Json;
 using Newtonsoft.Json;
-
+using Share.Constant;
+using Share.Utils;
+using Share.DTO;
+using Share.Model;
 namespace FAL.Controllers
 {
 
@@ -140,7 +136,7 @@ namespace FAL.Controllers
                 var message = maxSimilarity.HasValue && maxSimilarity >= 0
                     ? "Faces matched successfully."
                     : "No matching faces found.";
-                await _dynamoDbService.LogRequestAsync(systermId, Share.DTO.RequestType.CompareFace, Share.DTO.RequestResultEnum.Success, System.Text.Json.JsonSerializer.Serialize(request));
+                await _dynamoDbService.LogRequestAsync(systermId, RequestTypeEnum.CompareFace, RequestResultEnum.Success, System.Text.Json.JsonSerializer.Serialize(request));
                 return CreateResponse(maxSimilarity, message, HttpStatusCode.OK);
                 
             }

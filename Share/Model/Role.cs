@@ -1,6 +1,6 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 
-namespace FAL.Models
+namespace Share.Model
 {
     [DynamoDBTable("Roles")]
     public class Role
