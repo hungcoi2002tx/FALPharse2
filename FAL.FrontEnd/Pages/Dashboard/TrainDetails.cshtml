@@ -1,7 +1,7 @@
 ﻿@page "{userId}"
-@model Dashboard.UserDetailsModel
+@model Dashboard.TrainDetailsModel
 @{
-    ViewData["Title"] = "User Details";
+    ViewData["Title"] = "Train Details";
 }
 <div class="container">
     <h1 class="mb-4">User Details</h1>
@@ -28,7 +28,7 @@
                         <td>@detail.FaceId</td>
                         <td>@detail.CreateDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
                         <td>
-                            <a asp-page="./DeleteTrainModel"
+                            <a asp-page="./DeleteTrain"
                                asp-route-userId="@detail.UserId"
                                asp-route-faceId="@detail.FaceId"
                                class="btn btn-danger btn-sm">Delete</a>

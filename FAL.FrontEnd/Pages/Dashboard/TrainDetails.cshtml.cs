@@ -6,11 +6,11 @@ using System.Text.Json;
 
 namespace FAL.FrontEnd.Pages.Dashboard
 {
-    public class UserDetailsModel : PageModel
+    public class TrainDetailsModel : PageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public UserDetailsModel(IHttpClientFactory httpClientFactory)
+        public TrainDetailsModel(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
         }

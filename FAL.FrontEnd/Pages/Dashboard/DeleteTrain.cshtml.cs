@@ -26,7 +26,7 @@ namespace FAL.FrontEnd.Pages.Dashboard
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
 
-            var response = await client.DeleteAsync($"https://dev.demorecognition.click/api/Result/TrainStats/{userId}/{faceId}");
+            var response = await client.DeleteAsync ($"https://dev.demorecognition.click/api/Result/TrainStats/{userId}/{faceId}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -37,7 +37,17 @@ namespace FAL.FrontEnd.Pages.Dashboard
                 TempData["ErrorMessage"] = "Failed to delete the record.";
             }
 
-            return RedirectToPage("./Index");
+            // Redirect back to TrainDetails with the userId parameter
+            var referer = Request.Headers["Referer"].ToString();
+
+            if (!string.IsNullOrEmpty(referer))
+            {
+                return Redirect(referer); // Redirect to the previous page
+            }
+
+            // Fallback to TrainDetails if no referer is available
+            return RedirectToPage("./TrainDetails", null, new { userId });
         }
+
     }
 }

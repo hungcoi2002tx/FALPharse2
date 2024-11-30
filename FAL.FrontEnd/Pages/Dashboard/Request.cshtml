@@ -14,6 +14,8 @@
                 <p class="card-text"><strong>Total Failed Requests:</strong> @Model.RequestStats.TotalFailed</p>
             </div>
         </div>
+
+        <!-- Request Types Table -->
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -26,46 +28,16 @@
                 {
                     var requests = Model.RequestStats.RequestData.FirstOrDefault(r => r.RequestType == requestType);
                     <tr>
-                        <td>@requestType</td>
+                        <td>
+                            <a asp-page="./RequestDetails" asp-route-requestType="@requestType" asp-route-requests="@System.Text.Json.JsonSerializer.Serialize(requests)">
+                                @requestType
+                            </a>
+                        </td>
                         <td>@(requests?.Requests?.Count ?? 0) requests total</td>
                     </tr>
                 }
             </tbody>
         </table>
-        <div class="mt-4">
-            <h5>Detailed Requests</h5>
-            @foreach (var groupedRequest in Model.RequestStats.RequestData)
-            {
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <strong>@groupedRequest.RequestType</strong>
-                    </div>
-                    <div class="card-body">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>System Name</th>
-                                    <th>Create Date</th>
-                                    <th>Status</th>
-                                    <th>Request Body</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var request in groupedRequest.Requests)
-                                {
-                                    <tr>
-                                        <td>@request.SystemName</td>
-                                        <td>@request.CreateDate</td>
-                                        <td>@request.Status</td>
-                                        <td>@request.RequestBody</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            }
-        </div>
     }
     else
     {

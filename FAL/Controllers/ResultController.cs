@@ -138,7 +138,7 @@ namespace FAL.Controllers
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
 
-                var result = await _dynamoService.GetTrainStatsDetail(systermId, userId);
+                var result = await _dynamoService.DeleteTrainStat(systermId, userId,faceId);
 
                 if (result != null)
                 {
