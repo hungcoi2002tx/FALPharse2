@@ -164,9 +164,9 @@ namespace CompareFaceExamDemo
                     Application.Exit();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                MessageBox.Show($"Liên hệ admin", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Lỗi khi kiểm tra quyền.\n" + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Application.Exit();
             }
         }

@@ -22,7 +22,7 @@ namespace CompareFaceExamDemo.Utils
                 var response = await client.GetStringAsync(url);
 
                 // Kiểm tra kết quả trả về
-                return response.Trim().ToLower() == "true";
+                return response.Trim().Equals("true", StringComparison.CurrentCultureIgnoreCase);
             }
             catch (Exception)
             {
