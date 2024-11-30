@@ -69,7 +69,7 @@
             dataGridViewImages.Location = new Point(3, 92);
             dataGridViewImages.Margin = new Padding(4, 3, 4, 3);
             dataGridViewImages.Name = "dataGridViewImages";
-            dataGridViewImages.Size = new Size(1173, 623);
+            dataGridViewImages.Size = new Size(1910, 870);
             dataGridViewImages.TabIndex = 3;
             // 
             // progressBarCompare
@@ -92,7 +92,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1341, 720);
+            ClientSize = new Size(1787, 720);
             Controls.Add(lblProgress);
             Controls.Add(progressBarCompare);
             Controls.Add(txtFolderPath);
