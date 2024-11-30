@@ -37,7 +37,6 @@ namespace CompareFaceExamDemo
             dataGridViewImages.ReadOnly = true;
             dataGridViewImages.AllowUserToAddRows = false;
             dataGridViewImages.AllowUserToDeleteRows = false;
-
         }
 
         private void LoadListData()
@@ -60,11 +59,7 @@ namespace CompareFaceExamDemo
                 dataGridViewImages.AllowUserToAddRows = false;
                 dataGridViewImages.ScrollBars = ScrollBars.Both; // Hiển thị thanh cuộn ngang và dọc
                 dataGridViewImages.RowHeadersVisible = false;
-                dataGridViewImages.AutoGenerateColumns = false; // Tắt tự động tạo cột
 
-                AddColumn();
-
-                // Liên kết dữ liệu
                 source.DataSource = listDataCompare;
                 dataGridViewImages.DataSource = source;
             }
@@ -72,92 +67,6 @@ namespace CompareFaceExamDemo
             {
                 MessageBox.Show($"Liên hệ admin", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-
-        private void AddColumn()
-        {
-            // Định nghĩa các cột cố định
-            dataGridViewImages.Columns.Add(new DataGridViewTextBoxColumn()
-            {
-                Name = "Id",
-                HeaderText = "ID",
-                DataPropertyName = "Id", // Liên kết với thuộc tính trong ResultCompareFaceDto
-                Width = 50
-            });
-
-            dataGridViewImages.Columns.Add(new DataGridViewTextBoxColumn()
-            {
-                Name = "ExamCode",
-                HeaderText = "Mã Bài Thi",
-                DataPropertyName = "ExamCode",
-                Width = 170
-            });
-
-            dataGridViewImages.Columns.Add(new DataGridViewTextBoxColumn()
-            {
-                Name = "StudentCode",
-                HeaderText = "Mã Sinh Viên",
-                DataPropertyName = "StudentCode",
-                Width = 100
-            });
-
-            dataGridViewImages.Columns.Add(new DataGridViewTextBoxColumn()
-            {
-                Name = "Time",
-                HeaderText = "Thời Gian",
-                DataPropertyName = "Time",
-                Width = 150,
-                DefaultCellStyle = new DataGridViewCellStyle() { Format = "dd/MM/yyyy HH:mm:ss" } // Format datetime
-            });
-
-            dataGridViewImages.Columns.Add(new DataGridViewTextBoxColumn()
-            {
-                Name = "Status",
-                HeaderText = "Trạng Thái",
-                DataPropertyName = "Status",
-                Width = 100
-            });
-
-            dataGridViewImages.Columns.Add(new DataGridViewTextBoxColumn()
-            {
-                Name = "Message",
-                HeaderText = "Thông Báo",
-                DataPropertyName = "Message",
-                Width = 265
-            });
-
-            dataGridViewImages.Columns.Add(new DataGridViewTextBoxColumn()
-            {
-                Name = "Confidence",
-                HeaderText = "Độ Tin Cậy",
-                DataPropertyName = "Confidence",
-                Width = 80,
-                DefaultCellStyle = new DataGridViewCellStyle() { Format = "N2" } // Hiển thị 2 chữ số thập phân
-            });
-
-            dataGridViewImages.Columns.Add(new DataGridViewTextBoxColumn()
-            {
-                Name = "Note",
-                HeaderText = "Ghi Chú",
-                DataPropertyName = "Note",
-                Width = 250
-            });
-
-            dataGridViewImages.Columns.Add(new DataGridViewTextBoxColumn()
-            {
-                Name = "ImageTagetPath",
-                HeaderText = "Ảnh Đích",
-                DataPropertyName = "ImageTagetPath",
-                Width = 400
-            });
-
-            dataGridViewImages.Columns.Add(new DataGridViewTextBoxColumn()
-            {
-                Name = "ImageSourcePath",
-                HeaderText = "Ảnh Nguồn",
-                DataPropertyName = "ImageSourcePath",
-                Width = 350
-            });
         }
 
         private void btnSelectFolder_Click(object sender, EventArgs e)

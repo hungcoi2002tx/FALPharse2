@@ -24,16 +24,16 @@ namespace CompareFaceExamDemo
         {
             InitializeComponent();
             // Cố định chiều rộng và chiều cao của form
-            this.Size = new Size(1920, 1080); // Thay đổi kích thước theo ý muốn
+            //this.Size = new Size(1920, 1080); // Thay đổi kích thước theo ý muốn
 
             // Đặt kiểu viền cố định
             //  this.FormBorderStyle = FormBorderStyle.FixedSingle;
 
             // Tắt nút phóng to
-            this.MaximizeBox = false;
+            //this.MaximizeBox = false;
 
             // Cho phép thu nhỏ (nếu cần)
-            this.MinimizeBox = true;
+            //this.MinimizeBox = true;
 
             // Tắt khả năng thay đổi kích thước
             //this.MaximumSize = this.Size;

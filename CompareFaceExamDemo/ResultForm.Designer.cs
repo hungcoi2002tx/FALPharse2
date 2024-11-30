@@ -60,14 +60,15 @@
             // 
             // dataGridView1
             // 
-            dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+            dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells;
             dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView1.Location = new Point(10, 164);
+            dataGridView1.Location = new Point(2, 170);
             dataGridView1.Margin = new Padding(3, 2, 3, 2);
             dataGridView1.Name = "dataGridView1";
             dataGridView1.RowHeadersWidth = 51;
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridView1.Size = new Size(1481, 800);
+            dataGridView1.Size = new Size(1547, 803);
             dataGridView1.TabIndex = 0;
             // 
             // button1
@@ -201,20 +202,20 @@
             // 
             // pictureBoxTargetImage
             // 
-            pictureBoxTargetImage.Location = new Point(1497, 164);
+            pictureBoxTargetImage.Location = new Point(995, 2);
             pictureBoxTargetImage.Margin = new Padding(3, 2, 3, 2);
             pictureBoxTargetImage.Name = "pictureBoxTargetImage";
-            pictureBoxTargetImage.Size = new Size(313, 164);
+            pictureBoxTargetImage.Size = new Size(128, 164);
             pictureBoxTargetImage.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBoxTargetImage.TabIndex = 11;
             pictureBoxTargetImage.TabStop = false;
             // 
             // pictureBoxSourceImage
             // 
-            pictureBoxSourceImage.Location = new Point(1497, 332);
+            pictureBoxSourceImage.Location = new Point(1129, 2);
             pictureBoxSourceImage.Margin = new Padding(3, 2, 3, 2);
             pictureBoxSourceImage.Name = "pictureBoxSourceImage";
-            pictureBoxSourceImage.Size = new Size(313, 167);
+            pictureBoxSourceImage.Size = new Size(128, 164);
             pictureBoxSourceImage.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBoxSourceImage.TabIndex = 11;
             pictureBoxSourceImage.TabStop = false;
@@ -242,7 +243,7 @@
             button3.Location = new Point(326, 20);
             button3.Margin = new Padding(3, 2, 3, 2);
             button3.Name = "button3";
-            button3.Size = new Size(82, 22);
+            button3.Size = new Size(82, 23);
             button3.TabIndex = 14;
             button3.Text = "Choose";
             button3.UseVisualStyleBackColor = true;
@@ -254,7 +255,7 @@
             cmbFileList.Location = new Point(510, 20);
             cmbFileList.Margin = new Padding(3, 2, 3, 2);
             cmbFileList.Name = "cmbFileList";
-            cmbFileList.Size = new Size(244, 23);
+            cmbFileList.Size = new Size(394, 23);
             cmbFileList.TabIndex = 15;
             // 
             // label3
@@ -281,7 +282,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1822, 975);
+            ClientSize = new Size(1550, 975);
             Controls.Add(btnExport);
             Controls.Add(label3);
             Controls.Add(cmbFileList);

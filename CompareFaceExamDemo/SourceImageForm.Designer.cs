@@ -43,7 +43,7 @@
             // 
             // txtStudentCode
             // 
-            txtStudentCode.Location = new Point(197, 26);
+            txtStudentCode.Location = new Point(181, 26);
             txtStudentCode.Margin = new Padding(3, 2, 3, 2);
             txtStudentCode.Name = "txtStudentCode";
             txtStudentCode.Size = new Size(218, 23);
@@ -64,7 +64,7 @@
             // btnSave
             // 
             btnSave.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnSave.Location = new Point(784, 27);
+            btnSave.Location = new Point(764, 27);
             btnSave.Margin = new Padding(3, 2, 3, 2);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(106, 22);
@@ -76,7 +76,7 @@
             // btnDelete
             // 
             btnDelete.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnDelete.Location = new Point(666, 27);
+            btnDelete.Location = new Point(646, 27);
             btnDelete.Margin = new Padding(3, 2, 3, 2);
             btnDelete.Name = "btnDelete";
             btnDelete.Size = new Size(106, 22);
@@ -87,7 +87,7 @@
             // 
             // btnLoad
             // 
-            btnLoad.Location = new Point(455, 26);
+            btnLoad.Location = new Point(405, 26);
             btnLoad.Margin = new Padding(3, 2, 3, 2);
             btnLoad.Name = "btnLoad";
             btnLoad.Size = new Size(82, 24);

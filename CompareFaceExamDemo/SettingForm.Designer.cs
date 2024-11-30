@@ -34,15 +34,15 @@ namespace CompareFaceExamDemo
             // 
             // labelConfident
             // 
-            labelConfident.Location = new Point(25, 42);
+            labelConfident.Location = new Point(79, 42);
             labelConfident.Name = "labelConfident";
-            labelConfident.Size = new Size(134, 30);
+            labelConfident.Size = new Size(69, 30);
             labelConfident.TabIndex = 1;
             labelConfident.Text = "Confident:";
             // 
             // labelDirectory
             // 
-            labelDirectory.Location = new Point(25, 92);
+            labelDirectory.Location = new Point(14, 221);
             labelDirectory.Name = "labelDirectory";
             labelDirectory.Size = new Size(134, 30);
             labelDirectory.TabIndex = 3;
@@ -51,27 +51,27 @@ namespace CompareFaceExamDemo
             // 
             // txtDirectorySource
             // 
-            txtDirectorySource.Location = new Point(175, 92);
+            txtDirectorySource.Location = new Point(175, 217);
             txtDirectorySource.Name = "txtDirectorySource";
             txtDirectorySource.ReadOnly = true;
-            txtDirectorySource.Size = new Size(608, 23);
+            txtDirectorySource.Size = new Size(597, 23);
             txtDirectorySource.TabIndex = 4;
             txtDirectorySource.TextChanged += textBoxDirectorySource_TextChanged;
             // 
             // btnSave
             // 
-            btnSave.Location = new Point(885, 460);
+            btnSave.Location = new Point(394, 320);
             btnSave.Name = "btnSave";
-            btnSave.Size = new Size(126, 30);
+            btnSave.Size = new Size(234, 30);
             btnSave.TabIndex = 10;
             btnSave.Text = "Save";
             btnSave.Click += Btn_Save_Click;
             // 
             // btnBrowseSource
             // 
-            btnBrowseSource.Location = new Point(841, 91);
+            btnBrowseSource.Location = new Point(778, 217);
             btnBrowseSource.Name = "btnBrowseSource";
-            btnBrowseSource.Size = new Size(100, 23);
+            btnBrowseSource.Size = new Size(126, 23);
             btnBrowseSource.TabIndex = 13;
             btnBrowseSource.Text = "Browse";
             btnBrowseSource.UseVisualStyleBackColor = true;
@@ -81,14 +81,14 @@ namespace CompareFaceExamDemo
             // 
             numberConfident.Location = new Point(175, 40);
             numberConfident.Name = "numberConfident";
-            numberConfident.Size = new Size(120, 23);
+            numberConfident.Size = new Size(164, 23);
             numberConfident.TabIndex = 14;
             numberConfident.Value = new decimal(new int[] { 10, 0, 0, 0 });
             // 
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(364, 42);
+            label1.Location = new Point(71, 86);
             label1.Name = "label1";
             label1.Size = new Size(71, 15);
             label1.TabIndex = 15;
@@ -96,30 +96,31 @@ namespace CompareFaceExamDemo
             // 
             // numberThread
             // 
-            numberThread.Location = new Point(468, 40);
+            numberThread.Location = new Point(175, 84);
             numberThread.Maximum = new decimal(new int[] { 24, 0, 0, 0 });
             numberThread.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             numberThread.Name = "numberThread";
-            numberThread.Size = new Size(120, 23);
+            numberThread.Size = new Size(164, 23);
             numberThread.TabIndex = 16;
             numberThread.Value = new decimal(new int[] { 1, 0, 0, 0 });
             // 
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(713, 40);
+            label2.Location = new Point(105, 128);
             label2.Name = "label2";
             label2.Size = new Size(37, 15);
             label2.TabIndex = 17;
             label2.Text = "Retry:";
+            label2.Click += label2_Click;
             // 
             // txtRetry
             // 
-            txtRetry.Location = new Point(782, 38);
+            txtRetry.Location = new Point(175, 126);
             txtRetry.Maximum = new decimal(new int[] { 10, 0, 0, 0 });
             txtRetry.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             txtRetry.Name = "txtRetry";
-            txtRetry.Size = new Size(120, 23);
+            txtRetry.Size = new Size(164, 23);
             txtRetry.TabIndex = 18;
             txtRetry.Value = new decimal(new int[] { 1, 0, 0, 0 });
             txtRetry.Click += txtRetry_Click;

@@ -65,11 +65,13 @@
             // 
             dataGridViewImages.AllowUserToAddRows = false;
             dataGridViewImages.AllowUserToDeleteRows = false;
+            dataGridViewImages.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            dataGridViewImages.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells;
             dataGridViewImages.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewImages.Location = new Point(3, 92);
+            dataGridViewImages.Location = new Point(1, 104);
             dataGridViewImages.Margin = new Padding(4, 3, 4, 3);
             dataGridViewImages.Name = "dataGridViewImages";
-            dataGridViewImages.Size = new Size(1910, 870);
+            dataGridViewImages.Size = new Size(1783, 615);
             dataGridViewImages.TabIndex = 3;
             // 
             // progressBarCompare

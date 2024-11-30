@@ -22,7 +22,7 @@ namespace CompareFaceExamDemo
             dataGridView1.ReadOnly = true;
             dataGridView1.AllowUserToAddRows = false;
             dataGridView1.AllowUserToDeleteRows = false;
-            dataGridView1.AutoGenerateColumns = false; // Tắt tự động tạo cột
+            //dataGridView1.AutoGenerateColumns = false; // Tắt tự động tạo cột
             try
             {
                 // Tải cấu hình từ settings.json
@@ -100,7 +100,7 @@ namespace CompareFaceExamDemo
             var filters = GetFilters(); // Lấy các bộ lọc từ các trường giao diện
             results = GetFilteredResults(fileDataPath, filters);
             CheckConfidenceSetting();
-            AddColumn();
+            //AddColumn();
             // Cập nhật DataGridView
             dataGridView1.DataSource = results;
             // Đăng ký sự kiện RowPrePaint để định màu sắc

@@ -59,6 +59,17 @@ namespace CompareFaceExamDemo
             SettingModel _settingForm = Config.GetSetting();
             var destinationPath = Path.Combine(_settingForm.DirectoryImageSource, $"{textBox1.Text.Trim()}.jpg");
 
+            if (File.Exists(destinationPath))
+            {
+                var resultOverride = MessageBox.Show($"Ảnh của mã sinh viên {textBox1.Text.Trim()} đã tồn tại. Bạn có muốn ghi đè không?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+                if (resultOverride == DialogResult.No)
+                {
+                    return;
+                }
+            }
+
+
             // Lấy tên file
             var fileName = Path.GetFileName(textBox2.Text);
 

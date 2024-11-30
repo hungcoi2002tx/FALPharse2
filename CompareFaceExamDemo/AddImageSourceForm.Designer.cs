@@ -93,6 +93,7 @@
             // 
             // pictureBox1
             // 
+            pictureBox1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pictureBox1.Location = new Point(12, 180);
             pictureBox1.Name = "pictureBox1";
             pictureBox1.Size = new Size(652, 320);
@@ -101,12 +102,14 @@
             // 
             // button2
             // 
+            button2.BackColor = Color.Coral;
+            button2.ForeColor = SystemColors.ActiveCaptionText;
             button2.Location = new Point(516, 92);
             button2.Name = "button2";
             button2.Size = new Size(75, 67);
             button2.TabIndex = 7;
             button2.Text = "Submit";
-            button2.UseVisualStyleBackColor = true;
+            button2.UseVisualStyleBackColor = false;
             button2.Click += button2_Click;
             // 
             // AddImageSourceForm
