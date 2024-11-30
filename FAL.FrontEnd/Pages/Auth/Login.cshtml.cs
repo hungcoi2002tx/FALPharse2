@@ -7,7 +7,7 @@ namespace FAL.FrontEnd.Pages.Auth
 {
     public class LoginModel : PageModel
     {
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IHttpClientFactory _httpClientFactory;  
         public string ErrorMessage { get; set; }
 
         [BindProperty]

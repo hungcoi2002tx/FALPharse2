@@ -25,7 +25,6 @@ namespace FAL.FrontEnd.Pages.Dashboard
             }
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-
             var response = await client.DeleteAsync ($"https://dev.demorecognition.click/api/Result/TrainStats/{userId}/{faceId}");
 
             if (response.IsSuccessStatusCode)

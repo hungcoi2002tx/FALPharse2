@@ -21,7 +21,7 @@ namespace FAL.Services
                 return false;
             }
             // Lấy roleId từ custom claim "RoleId"
-            var roleIdClaim = user.FindFirst("RoleId");
+            var roleIdClaim = user.FindFirst(ClaimTypes.Role);
 
             if (!int.TryParse(roleIdClaim.Value, out var roleId))
             {

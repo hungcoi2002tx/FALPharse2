@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddHttpClient("FaceDetectionAPI", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7065/"); // TODO: sửa theo domain đúng
+    client.BaseAddress = new Uri("https://dev.demorecognition.click/"); // TODO: sửa theo domain đúng
     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
 builder.Services.AddAuthentication(options =>
