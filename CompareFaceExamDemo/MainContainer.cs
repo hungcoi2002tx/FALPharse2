@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CompareFaceExamDemo.Utils;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -26,7 +27,7 @@ namespace CompareFaceExamDemo
             this.Size = new Size(1920, 1080); // Thay đổi kích thước theo ý muốn
 
             // Đặt kiểu viền cố định
-          //  this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            //  this.FormBorderStyle = FormBorderStyle.FixedSingle;
 
             // Tắt nút phóng to
             this.MaximizeBox = false;
@@ -139,9 +140,35 @@ namespace CompareFaceExamDemo
         #endregion
 
 
-        private void MainContainer_Load(object sender, EventArgs e)
+        private async void MainContainer_Load(object sender, EventArgs e)
         {
+            try
+            {
+                string licenseKey = LicenseKeyGenerator.GetLicenseKey();
+                var isValidLicenseKey = await LicenseChecker.CheckLicenseKeyAsync(licenseKey);
+                if (!isValidLicenseKey)
+                {
 
+                    if (!string.IsNullOrEmpty(licenseKey))
+                    {
+                        Clipboard.SetText(licenseKey);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Không có nội dung để sao chép.", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+
+                    MessageBox.Show($"Chưa được cấp quyền sử dụng.\nKey của bạn: {licenseKey}\nĐã copy key vào clipboard, gửi key cho admin để sử dụng.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                    // Tắt ứng dụng
+                    Application.Exit();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi kiểm tra quyền.\n" + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Application.Exit();
+            }
         }
     }
 }
