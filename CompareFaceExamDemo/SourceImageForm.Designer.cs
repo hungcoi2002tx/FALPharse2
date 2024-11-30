@@ -43,7 +43,7 @@
             // 
             // txtStudentCode
             // 
-            txtStudentCode.Location = new Point(134, 27);
+            txtStudentCode.Location = new Point(197, 26);
             txtStudentCode.Margin = new Padding(3, 2, 3, 2);
             txtStudentCode.Name = "txtStudentCode";
             txtStudentCode.Size = new Size(218, 23);
@@ -56,7 +56,7 @@
             pictureBoxSourceImage.Location = new Point(42, 68);
             pictureBoxSourceImage.Margin = new Padding(3, 2, 3, 2);
             pictureBoxSourceImage.Name = "pictureBoxSourceImage";
-            pictureBoxSourceImage.Size = new Size(618, 397);
+            pictureBoxSourceImage.Size = new Size(828, 351);
             pictureBoxSourceImage.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBoxSourceImage.TabIndex = 1;
             pictureBoxSourceImage.TabStop = false;
@@ -64,7 +64,7 @@
             // btnSave
             // 
             btnSave.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnSave.Location = new Point(574, 27);
+            btnSave.Location = new Point(784, 27);
             btnSave.Margin = new Padding(3, 2, 3, 2);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(106, 22);
@@ -76,7 +76,7 @@
             // btnDelete
             // 
             btnDelete.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnDelete.Location = new Point(456, 27);
+            btnDelete.Location = new Point(666, 27);
             btnDelete.Margin = new Padding(3, 2, 3, 2);
             btnDelete.Name = "btnDelete";
             btnDelete.Size = new Size(106, 22);
@@ -87,7 +87,7 @@
             // 
             // btnLoad
             // 
-            btnLoad.Location = new Point(360, 26);
+            btnLoad.Location = new Point(455, 26);
             btnLoad.Margin = new Padding(3, 2, 3, 2);
             btnLoad.Name = "btnLoad";
             btnLoad.Size = new Size(82, 24);
@@ -101,14 +101,14 @@
             label1.AutoSize = true;
             label1.Location = new Point(42, 31);
             label1.Name = "label1";
-            label1.Size = new Size(79, 15);
+            label1.Size = new Size(133, 15);
             label1.TabIndex = 3;
-            label1.Text = "Student Code";
+            label1.Text = "Search by Student Code";
             // 
             // btnImport
             // 
             btnImport.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnImport.Location = new Point(456, 481);
+            btnImport.Location = new Point(646, 439);
             btnImport.Margin = new Padding(3, 2, 3, 2);
             btnImport.Name = "btnImport";
             btnImport.Size = new Size(106, 22);
@@ -120,7 +120,7 @@
             // btnDeleteBulk
             // 
             btnDeleteBulk.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnDeleteBulk.Location = new Point(574, 481);
+            btnDeleteBulk.Location = new Point(764, 439);
             btnDeleteBulk.Margin = new Padding(3, 2, 3, 2);
             btnDeleteBulk.Name = "btnDeleteBulk";
             btnDeleteBulk.Size = new Size(106, 22);
@@ -143,7 +143,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(706, 514);
+            ClientSize = new Size(916, 514);
             Controls.Add(btnDeleteBulk);
             Controls.Add(btnImport);
             Controls.Add(label1);

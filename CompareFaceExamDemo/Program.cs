@@ -20,6 +20,8 @@ namespace CompareFaceExamDemo
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             var mainForm = serviceProvider.GetRequiredService<MainContainer>();
+
+            var addImageForm = serviceProvider.GetRequiredService<AddImageSourceForm>();
             Application.Run(mainForm);
         }
 
@@ -28,6 +30,7 @@ namespace CompareFaceExamDemo
             try
             {
                 services.AddMemoryCache();
+                services.AddSingleton<AddImageSourceForm>();
                 services.AddSingleton<ResultForm>();
                 services.AddSingleton<SourceImageForm>();
                 services.AddSingleton<MainContainer>();

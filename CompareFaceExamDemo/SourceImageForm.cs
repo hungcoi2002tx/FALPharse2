@@ -58,33 +58,8 @@ namespace CompareFaceExamDemo
         }
         private void btnSaveImage_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(txtStudentCode.Text.Trim()))
-            {
-                MessageBox.Show("Vui lòng nhập mã sinh viên.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            using (var openFileDialog = new OpenFileDialog())
-            {
-                openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png";
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    // Đặt phần mở rộng mặc định là .jpg
-                    var destinationPath = Path.Combine(_settingForm.DirectoryImageSource, $"{txtStudentCode.Text.Trim()}.jpg");
-                    // Xác nhận trước khi lưu ảnh
-                    var result = MessageBox.Show($"Bạn có chắc chắn muốn thêm ảnh {openFileDialog.FileName} cho sinh viên {txtStudentCode.Text.Trim()}?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                    if (result == DialogResult.No)
-                    {
-                        return; // Dừng hành động nếu chọn "No"
-                    }
-                    // Đảm bảo ảnh được lưu dưới định dạng .jpg
-                    var image = Image.FromFile(openFileDialog.FileName);
-                    image.Save(destinationPath, System.Drawing.Imaging.ImageFormat.Jpeg);
-
-                    // Hiển thị ảnh đã lưu trên PictureBox
-                    pictureBoxSourceImage.Image = Image.FromFile(destinationPath);
-                }
-            }
+            var addImageSourceForm = new AddImageSourceForm();
+            addImageSourceForm.Show();
         }
 
 
