@@ -1,4 +1,4 @@
-﻿namespace FAL.Dtos
+﻿namespace Share.DTO
 {
     public class AccountViewDto
     {

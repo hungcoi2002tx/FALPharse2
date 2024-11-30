@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Net.WebSockets;
 using FAL.Dtos;
 using Share.Model;
+using Share.DTO;
 
 namespace FAL.Controllers
 {
@@ -39,7 +40,7 @@ namespace FAL.Controllers
             return Ok(accountDtos);
         }
 
-        // GET: api/users/{username}
+        // GET: api/accounts/{username}
         [Authorize]
         [HttpGet("{username}")]
         public async Task<IActionResult> GetUserById(string username)
@@ -64,7 +65,7 @@ namespace FAL.Controllers
         }
 
 
-        // POST: api/users
+        // POST: api/accounts
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] Account user)
@@ -77,7 +78,7 @@ namespace FAL.Controllers
             return Ok(user); // Tạo mới một user
         }
 
-        // PUT: api/users/{username}
+        // PUT: api/accounts/{username}
         [Authorize]
         [HttpPut("{username}")]
         public async Task<IActionResult> UpdateUser(string username, [FromBody] Account updatedUser)
@@ -107,7 +108,7 @@ namespace FAL.Controllers
         }
 
 
-        // DELETE: api/users/{username}
+        // DELETE: api/accounts/{username}
         [Authorize]
         [HttpDelete("{username}")]
         public async Task<IActionResult> DeleteUser(string username)
