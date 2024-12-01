@@ -28,7 +28,7 @@ namespace FAL.FrontEnd.Pages.Dashboard
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<IActionResult> OnGetAsync(string requestType, DateTime? startDate, DateTime? endDate, int page = 1)
+        public async Task<IActionResult> OnGetAsync(string requestType, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate,[FromQuery] int page = 1)
         {
             RequestType = requestType;
             StartDate = startDate;
@@ -55,7 +55,7 @@ namespace FAL.FrontEnd.Pages.Dashboard
                 { "pageSize", PageSize.ToString() }
             };
 
-            var url = QueryHelpers.AddQueryString($"https://dev.demorecognition.click/api/Result/TrainStats/Details/{requestType}", queryParams);
+            var url = QueryHelpers.AddQueryString($"https://dev.demorecognition.click/api/Result/RequestStats/Details/{requestType}", queryParams);
 
             // Make the API call
             var response = await client.GetAsync(url);
