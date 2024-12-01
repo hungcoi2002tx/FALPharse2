@@ -29,8 +29,8 @@ namespace FAL.Controllers
         /// <returns></returns>
         // PUT: api/users/{username}/webhook
         [Authorize]
-        [HttpPut("{username}/webhook")]
-        public async Task<IActionResult> UpdateWebhookInfo(string username, [FromBody] WebhookUpdateRequest webhookUpdate)
+        [HttpPut("webhook")]
+        public async Task<IActionResult> UpdateWebhookInfo([FromBody] WebhookUpdateRequest webhookUpdate)
         {
             // Xác định user hiện tại từ token (cần triển khai nếu chưa có)
             var currentUsername = User.Identity?.Name;
@@ -39,16 +39,16 @@ namespace FAL.Controllers
                 return Unauthorized("Không xác định được người dùng hiện tại!");
 
             // Load thông tin user từ DynamoDB
-            var existingUser = await _dbContext.LoadAsync<Account>(username);
+            var existingUser = await _dbContext.LoadAsync<Account>(currentUsername);
             if (existingUser == null)
                 return NotFound("User không tồn tại!");
 
             // Kiểm tra xem user hiện tại có quyền cập nhật không
-            if (currentUsername != username)
-            {
-                // Trả về 403 Forbidden với thông báo chi tiết
-                return StatusCode(StatusCodes.Status403Forbidden, "Không có quyền cập nhật thông tin webhook của user khác!");
-            }
+            //if (currentUsername != username)
+            //{
+            //    // Trả về 403 Forbidden với thông báo chi tiết
+            //    return StatusCode(StatusCodes.Status403Forbidden, "Không có quyền cập nhật thông tin webhook của user khác!");
+            //}
 
             // Cập nhật WebhookUrl và WebhookSecretKey
             existingUser.WebhookUrl = webhookUpdate.WebhookUrl;
