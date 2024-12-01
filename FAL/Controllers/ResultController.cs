@@ -86,6 +86,33 @@ namespace FAL.Controllers
             }
         }
 
+
+        [Authorize]
+        [HttpGet("RequestStats/Details/{requestType}")]
+        public async Task<IActionResult> GerRequestStatsDetail(string requestType,
+    [FromQuery] DateTime? startDate = null,
+    [FromQuery] DateTime? endDate = null,
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
+
+                var result = await _dynamoService.GetRequestStatsDetail(systermId,requestType,startDate,endDate,page,pageSize);
+
+                if (result != null)
+                {
+                    return Ok(result);
+                }
+                return StatusCode(500, "Something is wrong with da server");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Something is wrong with da server");
+            }
+        }
+
         [Authorize]
         [HttpGet("TrainStats")]
         public async Task<IActionResult> GetTrainStats([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string searchUserId = null)

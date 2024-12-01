@@ -34,12 +34,21 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var request in Model.FilteredRequests)
+            @if (Model.RequestDetails.Any())
+            {
+                @foreach (var detail in Model.RequestDetails)
+                {
+                    <tr>
+                        <td>@detail.SystemName</td>
+                        <td>@(DateTime.Parse(detail.CreateDate).ToString("yyyy-MM-dd HH:mm:ss"))</td>
+                        <td>@detail.Status</td>
+                    </tr>
+                }
+            }
+            else
             {
                 <tr>
-                    <td>@request.SystemName</td>
-                    <td>@DateTime.Parse(request.CreateDate).ToString("dd-MM-yyyy")</td>
-                    <td>@request.Status</td>
+                    <td colspan="3" class="text-center">No requests found for the selected filters.</td>
                 </tr>
             }
         </tbody>
@@ -54,10 +63,13 @@
                     <a class="page-link" href="?page=@(Model.CurrentPage - 1)&startDate=@Model.StartDate&endDate=@Model.EndDate">Previous</a>
                 </li>
             }
-            <li class="page-item active">
-                <span class="page-link">@Model.CurrentPage</span>
-            </li>
-            @if (Model.HasMorePages)
+            @for (int i = 1; i <= Math.Ceiling((double)Model.TotalRecords / Model.PageSize); i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="?page=@i&startDate=@Model.StartDate&endDate=@Model.EndDate">@i</a>
+                </li>
+            }
+            @if (Model.CurrentPage < Math.Ceiling((double)Model.TotalRecords / Model.PageSize))
             {
                 <li class="page-item">
                     <a class="page-link" href="?page=@(Model.CurrentPage + 1)&startDate=@Model.StartDate&endDate=@Model.EndDate">Next</a>

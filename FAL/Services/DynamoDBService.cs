@@ -508,6 +508,82 @@ namespace FAL.Services
             }
         }
 
+        public async Task<GroupedRequestData> GetRequestStatsDetail(
+    string systermId,
+    string requestType,
+    DateTime? startDate,
+    DateTime? endDate,
+    int page,
+    int pageSize)
+        {
+            try
+            {
+                // Fetch all data for the given system ID
+                var allData = await GetRequestsBySystemIdAsync(systermId);
+
+                if (allData == null || !allData.Any())
+                {
+                    return new GroupedRequestData
+                    {
+                        RequestType = requestType,
+                        Requests = new List<ClientRequest>(),
+                        TotalRecords = 0,
+                        CurrentPage = page,
+                        PageSize = pageSize
+                    };
+                }
+
+                // Filter by request type
+                var filteredData = allData
+                    .Where(x => x.RequestType.Equals(requestType, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                // Filter by date range if provided
+                if (startDate.HasValue)
+                {
+                    filteredData = filteredData
+                        .Where(x => DateTime.TryParse(x.CreateDate, out var createDate) && createDate >= startDate.Value)
+                        .ToList();
+                }
+
+                if (endDate.HasValue)
+                {
+                    filteredData = filteredData
+                        .Where(x => DateTime.TryParse(x.CreateDate, out var createDate) && createDate <= endDate.Value)
+                        .ToList();
+                }
+
+                // Calculate total records after filtering
+                var totalRecords = filteredData.Count;
+
+                // Apply pagination
+                if (page > 0 && pageSize > 0)
+                {
+                    var skip = (page - 1) * pageSize;
+                    filteredData = filteredData.Skip(skip).Take(pageSize).ToList();
+                }
+
+                // Return the grouped data with pagination info
+                return new GroupedRequestData
+                {
+                    RequestType = requestType,
+                    Requests = filteredData,
+                    TotalRecords = totalRecords,
+                    CurrentPage = page,
+                    PageSize = pageSize
+                };
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                Console.WriteLine($"Error in {nameof(GetRequestStatsDetail)}: {ex.Message}");
+                throw;
+            }
+        }
+
+
+
+
         public async Task<RequestStatsResponse> GetRequestStats(string systermId)
         {
             try

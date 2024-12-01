@@ -29,7 +29,7 @@
                     var requests = Model.RequestStats.RequestData.FirstOrDefault(r => r.RequestType == requestType);
                     <tr>
                         <td>
-                            <a asp-page="./RequestDetails" asp-route-requestType="@requestType" asp-route-requests="@System.Text.Json.JsonSerializer.Serialize(requests)">
+                            <a asp-page="./RequestDetails" asp-route-requestType="@requestType">
                                 @requestType
                             </a>
                         </td>

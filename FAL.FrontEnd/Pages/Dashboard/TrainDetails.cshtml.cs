@@ -20,9 +20,10 @@ namespace FAL.FrontEnd.Pages.Dashboard
         public int CurrentPage { get; set; } = 1;
         public int PageSize { get; set; } = 10;
 
-        public async Task<IActionResult> OnGetAsync(string userId, int page = 1)
+        public async Task<IActionResult> OnGetAsync(string userId, [FromQuery] int page = 1)
         {
             CurrentPage = page;
+            ViewData["userId"] = userId;
 
             var client = _httpClientFactory.CreateClient();
             var jwtToken = HttpContext.Session.GetString("JwtToken");
@@ -35,14 +36,34 @@ namespace FAL.FrontEnd.Pages.Dashboard
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
 
-            var response = await client.GetAsync($"https://dev.demorecognition.click/api/Result/TrainStats/Details/{userId}?page={CurrentPage}&pageSize={PageSize}");
-
-            if (response.IsSuccessStatusCode)
+            async Task<PaginatedTrainStatsDetailResponse> FetchPageDataAsync(int pageToFetch)
             {
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var response = await client.GetAsync($"https://dev.demorecognition.click/api/Result/TrainStats/Details/{userId}?page={pageToFetch}&pageSize={PageSize}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    return JsonSerializer.Deserialize<PaginatedTrainStatsDetailResponse>(responseContent, options);
+                }
+                return null;
+            }
 
-                var paginatedResponse = JsonSerializer.Deserialize<PaginatedTrainStatsDetailResponse>(responseContent, options);
+            // Initial fetch
+            var paginatedResponse = await FetchPageDataAsync(CurrentPage);
+
+            // Retry logic if the page >= 2 and no data is returned
+            if ((paginatedResponse == null || !paginatedResponse.Data.Any()) && CurrentPage > 1)
+            {
+                paginatedResponse = await FetchPageDataAsync(CurrentPage - 1);
+                if (paginatedResponse != null && paginatedResponse.Data.Any())
+                {
+                    CurrentPage--; // Adjust current page after successful retry
+                }
+            }
+
+            // Set data or fallback to empty
+            if (paginatedResponse != null && paginatedResponse.Data != null)
+            {
                 UserDetails = paginatedResponse.Data;
                 TotalRecords = paginatedResponse.TotalRecords;
             }
@@ -54,5 +75,6 @@ namespace FAL.FrontEnd.Pages.Dashboard
 
             return Page();
         }
+
     }
 }

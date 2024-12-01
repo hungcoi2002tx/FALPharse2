@@ -26,7 +26,7 @@
                 {
                     <tr>
                         <td>@detail.FaceId</td>
-                        <td>@detail.CreateDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>@detail.CreateDate.ToString("yyyy-MM-dd")</td>
                         <td>
                             <a asp-page="./DeleteTrain"
                                asp-route-userId="@detail.UserId"
@@ -44,11 +44,13 @@
                 @for (int i = 1; i <= Math.Ceiling((double)Model.TotalRecords / Model.PageSize); i++)
                 {
                     <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                        <a class="page-link" href="?userId=@Model.UserDetails.First().UserId&page=@i">@i</a>
+                        <a href="?page=@i" class="page-link">@i</a>
                     </li>
                 }
             </ul>
         </nav>
+
+
 
         <a asp-page="./Index" class="btn btn-secondary">Back to Dashboard</a>
     }

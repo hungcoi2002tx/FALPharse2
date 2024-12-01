@@ -23,5 +23,6 @@ namespace FAL.Services.IServices
         Task<RequestStatsResponse> GetRequestStats(string systermId);
         Task<PaginatedTrainStatsDetailResponse> GetTrainStatsDetail(string systermId, string userId,int page,int pageSize);
         Task<bool> DeleteTrainStat(string systermId, string userId, string faceId);
+        Task<GroupedRequestData> GetRequestStatsDetail(string systermId, string requestType, DateTime? startDate, DateTime? endDate, int page, int pageSize);
     }
 }
