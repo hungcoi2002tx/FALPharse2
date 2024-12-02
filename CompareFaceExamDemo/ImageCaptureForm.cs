@@ -28,6 +28,8 @@ namespace CompareFaceExamDemo
         private readonly object _logLock = new object();
         private BindingSource? source = null;
         private List<ResultCompareFaceDto>? listDataCompare = null;
+        private bool _isPaused = false;
+        private ManualResetEventSlim _pauseEvent = new ManualResetEventSlim(true);
 
         public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
@@ -58,7 +60,6 @@ namespace CompareFaceExamDemo
                 dataGridViewImages.Rows.Clear();
                 dataGridViewImages.AllowUserToAddRows = false;
                 dataGridViewImages.ScrollBars = ScrollBars.Both; // Hiển thị thanh cuộn ngang và dọc
-                dataGridViewImages.RowHeadersVisible = false;
 
                 source.DataSource = listDataCompare;
                 dataGridViewImages.DataSource = source;
@@ -168,6 +169,7 @@ namespace CompareFaceExamDemo
             return null;
         }
 
+
         private async void btnSend_Click(object sender, EventArgs e)
         {
             try
@@ -176,6 +178,7 @@ namespace CompareFaceExamDemo
                 {
                     try
                     {
+                        btnSend.Enabled = false;
                         progressBarCompare.Maximum = listDataCompare.Count;
                         var sourceFile = Config.GetSetting();
                         int maxDegreeOfParallelism = sourceFile.NumberOfThread;
@@ -197,8 +200,9 @@ namespace CompareFaceExamDemo
 
                         if (listDataCompare.Count > 0)
                         {
+                            btnSend.Enabled = true;
+                            dataGridViewImages.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.DisplayedCells);
                             string message = $"Kết quả đã được lưu:\n\nExcel: {filePathExcel}\n\nTxt: {filePathTxt}";
-
                             MessageBox.Show(message, "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }
                     }
@@ -317,6 +321,11 @@ namespace CompareFaceExamDemo
 
                         try
                         {
+                            while (_isPaused)
+                            {
+                                _pauseEvent.Wait();
+                            }
+
                             bool success = false;
                             int retryCount = 0;
                             ComparisonResponse? response = null;
@@ -326,6 +335,11 @@ namespace CompareFaceExamDemo
                                 if (itemCompare.ImageSourcePath != null)
                                 {
                                     response = await _faceCompareService.CompareFacesAsync(itemCompare.ImageSourcePath, itemCompare.ImageTagetPath ?? "");
+
+                                    while (_isPaused)
+                                    {
+                                        _pauseEvent.Wait();
+                                    }
 
                                     if (CheckResponseCompare(response))
                                     {
@@ -502,6 +516,22 @@ namespace CompareFaceExamDemo
         {
 
             progressBarCompare.Minimum = 0;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            _isPaused = true;
+            _pauseEvent.Reset();
+            button1.Enabled = false;
+            button2.Enabled = true;
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            _isPaused = false;
+            _pauseEvent.Set();
+            button1.Enabled = true;
+            button2.Enabled = false;
         }
     }
 }

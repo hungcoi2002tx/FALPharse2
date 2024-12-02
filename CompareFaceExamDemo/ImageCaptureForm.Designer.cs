@@ -27,6 +27,8 @@
             dataGridViewImages = new DataGridView();
             progressBarCompare = new ProgressBar();
             lblProgress = new Label();
+            button1 = new Button();
+            button2 = new Button();
             ((System.ComponentModel.ISupportInitialize)dataGridViewImages).BeginInit();
             SuspendLayout();
             // 
@@ -35,7 +37,7 @@
             btnSelectFolder.Location = new Point(14, 14);
             btnSelectFolder.Margin = new Padding(4, 3, 4, 3);
             btnSelectFolder.Name = "btnSelectFolder";
-            btnSelectFolder.Size = new Size(175, 35);
+            btnSelectFolder.Size = new Size(137, 35);
             btnSelectFolder.TabIndex = 0;
             btnSelectFolder.Text = "Select Folder";
             btnSelectFolder.UseVisualStyleBackColor = true;
@@ -43,10 +45,10 @@
             // 
             // btnSend
             // 
-            btnSend.Location = new Point(210, 14);
+            btnSend.Location = new Point(181, 14);
             btnSend.Margin = new Padding(4, 3, 4, 3);
             btnSend.Name = "btnSend";
-            btnSend.Size = new Size(175, 35);
+            btnSend.Size = new Size(137, 35);
             btnSend.TabIndex = 1;
             btnSend.Text = "Send";
             btnSend.UseVisualStyleBackColor = true;
@@ -58,7 +60,7 @@
             txtFolderPath.Margin = new Padding(4, 3, 4, 3);
             txtFolderPath.Name = "txtFolderPath";
             txtFolderPath.ReadOnly = true;
-            txtFolderPath.Size = new Size(583, 23);
+            txtFolderPath.Size = new Size(629, 23);
             txtFolderPath.TabIndex = 2;
             // 
             // dataGridViewImages
@@ -90,11 +92,33 @@
             lblProgress.TabIndex = 5;
             lblProgress.Text = "0%";
             // 
+            // button1
+            // 
+            button1.Location = new Point(345, 14);
+            button1.Name = "button1";
+            button1.Size = new Size(137, 35);
+            button1.TabIndex = 6;
+            button1.Text = "Pause";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
+            // 
+            // button2
+            // 
+            button2.Location = new Point(506, 14);
+            button2.Name = "button2";
+            button2.Size = new Size(137, 35);
+            button2.TabIndex = 7;
+            button2.Text = "Resume";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += button2_Click;
+            // 
             // ImageCaptureForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1787, 720);
+            Controls.Add(button2);
+            Controls.Add(button1);
             Controls.Add(lblProgress);
             Controls.Add(progressBarCompare);
             Controls.Add(txtFolderPath);
@@ -112,5 +136,7 @@
 
         private ProgressBar progressBarCompare;
         private Label lblProgress;
+        private Button button1;
+        private Button button2;
     }
 }
