@@ -33,26 +33,24 @@ namespace EOSDemo
                 // Tạo video capture device
                 videoCaptureDevice = new VideoCaptureDevice(videoDevices[cameraIndex].MonikerString);
 
-
-                // Kiểm tra xem camera có đang được sử dụng bởi ứng dụng khác không
-                if (cameraHandler.IsCameraInUse(videoCaptureDevice))
-                {
-                    MessageBox.Show(
-                        "Camera đang được sử dụng bởi ứng dụng khác. Vui lòng đóng ứng dụng đó và thử lại.",
-                        "Thông báo",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning
-                    );
-
-                    // Dừng camera nếu đang chạy
-                    cameraHandler.StopCamera(videoCaptureDevice);
-                    this.Close();
-                    return;
-                }
-
-
                 // Bắt đầu luồng camera
-                cameraHandler.StartCamera(videoCaptureDevice, pictureBoxCamera, 400, 300);
+                cameraHandler.StartCamera(videoCaptureDevice, pictureBoxCamera);
+
+                //// Kiểm tra xem camera có đang được sử dụng bởi ứng dụng khác không
+                //if (cameraHandler.IsCameraInUse(videoCaptureDevice))
+                //{
+                //    MessageBox.Show(
+                //        "Camera đang được sử dụng bởi ứng dụng khác. Vui lòng đóng ứng dụng đó và thử lại.",
+                //        "Thông báo",
+                //        MessageBoxButtons.OK,
+                //        MessageBoxIcon.Warning
+                //    );
+
+                //    // Dừng camera nếu đang chạy
+                //    cameraHandler.StopCamera(videoCaptureDevice);
+                //    this.Close();
+                //    return;
+                //}
             }
             catch (Exception ex)
             {
@@ -73,6 +71,11 @@ namespace EOSDemo
                 cameraHandler.StopCamera(videoCaptureDevice);
             }
             Application.Exit();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show(cameraHandler.CaptureAndCropImageToBinaryString(pictureBoxCamera, @"C:\MyImages",false)[..50], "Binary String", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }

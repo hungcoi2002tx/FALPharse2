@@ -2,7 +2,9 @@
 using AForge.Video.DirectShow;
 using System;
 using System.Drawing;
+using System.IO;
 using System.Runtime.Remoting.Lifetime;
+using System.Text;
 using System.Windows.Forms;
 
 namespace CameraLibrary
@@ -36,12 +38,19 @@ namespace CameraLibrary
         /// <param name="cameraIndex">Chỉ số của camera (mặc định là 0).</param>
         /// <param name="rectWidth">Chiều rộng khung hình chữ nhật.</param>
         /// <param name="rectHeight">Chiều cao khung hình chữ nhật.</param>
-        public void StartCamera(VideoCaptureDevice videoCaptureDevice, PictureBox pictureBox, int rectWidth = 350, int rectHeight = 500)
+        public void StartCamera(VideoCaptureDevice videoCaptureDevice, PictureBox pictureBox, int rectWidth = 350, int rectHeight = 500, int camWidth = 1097, int camHeight = 624)
         {
             if (videoCaptureDevice == null)
             {
                 throw new Exception("Không có camera tương ứng!");
             }
+
+            if (pictureBox == null)
+            {
+                throw new ArgumentNullException(nameof(pictureBox));
+            }
+            pictureBox.Width = camWidth;
+            pictureBox.Height = camHeight;
 
             targetPictureBox = pictureBox ?? throw new ArgumentNullException(nameof(pictureBox));
 
@@ -53,12 +62,20 @@ namespace CameraLibrary
             videoCaptureDevice.Start();
         }
 
-        public void StartCamera(PictureBox pictureBox, int rectWidth = 350, int rectHeight = 500, int cameraIndex = 0)
+        public void StartCamera(PictureBox pictureBox, int rectWidth = 350, int rectHeight = 500, int cameraIndex = 0, int camWidth = 1097, int camHeight = 624)
         {
             if (cameraIndex < 0 || cameraIndex >= filterInfoCollection.Count)
             {
                 throw new Exception("Không có camera tương ứng!");
             }
+
+            if (pictureBox == null)
+            {
+                throw new ArgumentNullException(nameof(pictureBox));
+            }
+
+            pictureBox.Width = camWidth;
+            pictureBox.Height = camHeight;
 
             targetPictureBox = pictureBox ?? throw new ArgumentNullException(nameof(pictureBox));
 
@@ -169,6 +186,195 @@ namespace CameraLibrary
             }
 
             frame.Dispose();
+        }
+
+        /// <summary>
+        /// Chụp và cắt ảnh từ PictureBox theo khung vàng.
+        /// </summary>
+        /// <param name="pictureBox">PictureBox chứa hình ảnh cần chụp.</param>
+        /// <param name="cropWidth">Chiều rộng của khung cắt.</param>
+        /// <param name="cropHeight">Chiều cao của khung cắt.</param>
+        /// <param name="outputFolderPath">Đường dẫn thư mục để lưu ảnh.</param>
+        /// <returns>Binary string ảnh đã cắt</returns>
+        public string CaptureAndCropImageToBinaryString(PictureBox pictureBox, string outputFolderPath, bool isDeleteImage = true)
+        {
+            int cropWidth = rectangleWidth;
+            int cropHeight = rectangleHeight;
+            string croppedFilePath = null;
+            string originalFilePath = null;
+
+            if (pictureBox.Image == null)
+            {
+                throw new InvalidOperationException("PictureBox không chứa hình ảnh.");
+            }
+
+            EnsureFolderExists(outputFolderPath);
+
+            // Lấy hình ảnh từ PictureBox
+            Bitmap originalImage = new Bitmap(pictureBox.Image);
+
+            try
+            {
+                // Lưu ảnh gốc
+                originalFilePath = SaveOriginalImage(originalImage, outputFolderPath);
+
+                // Cắt ảnh
+                Bitmap croppedImage = CropImage(originalImage, cropWidth, cropHeight);
+
+                // Lưu ảnh đã cắt
+                croppedFilePath = SaveCroppedImage(croppedImage, outputFolderPath);
+
+                // Trả về ảnh đã cắt dạng binary string
+                return ConvertImageToBinaryString(croppedFilePath);
+            }
+            finally
+            {
+                originalImage.Dispose();
+                if (isDeleteImage)
+                {
+                    DeleteImage(croppedFilePath);
+                    DeleteImage(originalFilePath);
+                }
+            }
+        }
+
+
+        ///// <summary>
+        ///// Chụp và cắt ảnh từ PictureBox theo khung vàng.
+        ///// </summary>
+        ///// <param name="pictureBox">PictureBox chứa hình ảnh cần chụp.</param>
+        ///// <param name="cropWidth">Chiều rộng của khung cắt.</param>
+        ///// <param name="cropHeight">Chiều cao của khung cắt.</param>
+        ///// <param name="outputFolderPath">Đường dẫn thư mục để lưu ảnh.</param>
+        ///// <returns>Đường dẫn của ảnh đã cắt.</returns>
+        //public string CaptureAndCropImage(PictureBox pictureBox, string outputFolderPath)
+        //{
+        //    int cropWidth = rectangleWidth;
+        //    int cropHeight = rectangleHeight;
+
+        //    if (pictureBox.Image == null)
+        //    {
+        //        throw new InvalidOperationException("PictureBox không chứa hình ảnh.");
+        //    }
+
+        //    EnsureFolderExists(outputFolderPath);
+
+        //    // Lấy hình ảnh từ PictureBox
+        //    Bitmap originalImage = new Bitmap(pictureBox.Image);
+
+        //    try
+        //    {
+        //        // Lưu ảnh gốc
+        //        string originalFilePath = SaveOriginalImage(originalImage, outputFolderPath);
+
+        //        // Cắt ảnh
+        //        Bitmap croppedImage = CropImage(originalImage, cropWidth, cropHeight);
+
+        //        // Lưu ảnh đã cắt
+        //        string croppedFilePath = SaveCroppedImage(croppedImage, outputFolderPath);
+
+        //        return croppedFilePath;
+        //    }
+        //    finally
+        //    {
+        //        originalImage.Dispose();
+        //    }
+        //}
+
+        /// <summary>
+        /// Xóa một ảnh trong thư mục.
+        /// </summary>
+        /// <param name="filePath">Đường dẫn đầy đủ của ảnh cần xóa.</param>
+        private void DeleteImage(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath))
+            {
+                throw new ArgumentException("Đường dẫn ảnh không hợp lệ!", nameof(filePath));
+            }
+
+            if (File.Exists(filePath))
+            {
+                try
+                {
+                    File.Delete(filePath);
+                    Console.WriteLine($"Đã xóa ảnh: {filePath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Lỗi khi xóa ảnh: {ex.Message}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Ảnh không tồn tại trong thư mục.");
+            }
+        }
+
+        private void EnsureFolderExists(string folderPath)
+        {
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+        }
+
+        /// <summary>
+        /// Chuyển đổi một ảnh thành chuỗi nhị phân.
+        /// </summary>
+        /// <param name="imagePath">Đường dẫn đến file ảnh.</param>
+        /// <returns>Chuỗi nhị phân đại diện cho ảnh, hoặc thông báo lỗi nếu không thành công.</returns>
+        private string ConvertImageToBinaryString(string imagePath)
+        {
+            if (string.IsNullOrEmpty(imagePath))
+                throw new ArgumentException("Đường dẫn ảnh không được để trống.", nameof(imagePath));
+
+            if (!File.Exists(imagePath))
+                throw new FileNotFoundException("Không tìm thấy file ảnh.", imagePath);
+
+            try
+            {
+                // Đọc toàn bộ file ảnh thành mảng byte
+                byte[] imageBytes = File.ReadAllBytes(imagePath);
+
+                // Sử dụng StringBuilder để tối ưu hóa việc nối chuỗi
+                StringBuilder binaryStringBuilder = new StringBuilder();
+
+                foreach (byte b in imageBytes)
+                {
+                    // Chuyển mỗi byte thành chuỗi nhị phân (8-bit)
+                    binaryStringBuilder.Append(Convert.ToString(b, 2).PadLeft(8, '0'));
+                }
+
+                return binaryStringBuilder.ToString();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Đã xảy ra lỗi trong quá trình chuyển đổi ảnh.", ex);
+            }
+        }
+
+        private string SaveOriginalImage(Image image, string outputFolderPath)
+        {
+            string fileName = $"original_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+            string filePath = Path.Combine(outputFolderPath, fileName);
+            image.Save(filePath, System.Drawing.Imaging.ImageFormat.Jpeg);
+            return filePath;
+        }
+
+        private Bitmap CropImage(Bitmap originalImage, int width, int height)
+        {
+            int rectX = (originalImage.Width - width) / 2;
+            int rectY = (originalImage.Height - height) / 2;
+            Rectangle cropRect = new Rectangle(rectX, rectY, width, height);
+            return originalImage.Clone(cropRect, originalImage.PixelFormat);
+        }
+
+        private string SaveCroppedImage(Bitmap croppedImage, string outputFolderPath)
+        {
+            string fileName = $"cropped_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+            string filePath = Path.Combine(outputFolderPath, fileName);
+            croppedImage.Save(filePath, System.Drawing.Imaging.ImageFormat.Jpeg);
+            return filePath;
         }
     }
 }
