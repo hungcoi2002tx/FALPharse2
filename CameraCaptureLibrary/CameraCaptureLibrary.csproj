@@ -4,6 +4,7 @@
 		<TargetFramework>net35</TargetFramework>
 		<ImplicitUsings>false</ImplicitUsings>
 		<Nullable>disable</Nullable>
+		<UseWindowsForms>true</UseWindowsForms>
 	</PropertyGroup>
 
 	<ItemGroup>
