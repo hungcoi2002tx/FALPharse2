@@ -1,0 +1,89 @@
+{
+  "accounts": [
+    {
+      "username": "khanm",
+      "email": "kha@g.com",
+      "roleId": 1,
+      "systemName": "fualumni",
+      "webhookUrl": "https://fpt-alumniapi20241109161321.azurewebsites.net/api/WebhookReceiver",
+      "webhookSecretKey": "your-secret-key",
+      "status": "Active"
+    },
+    {
+      "username": "hung",
+      "email": "hungnmhe161789@fpt.edu.vn",
+      "roleId": 2,
+      "systemName": "hung",
+      "webhookUrl": "string",
+      "webhookSecretKey": "string",
+      "status": "Active"
+    },
+    {
+      "username": "string",
+      "email": "string@string",
+      "roleId": 1,
+      "systemName": "fptualumni",
+      "webhookUrl": "https://fpt-alumniapi20241109161321.azurewebsites.net/api/WebhookReceiver",
+      "webhookSecretKey": "your-secret-key",
+      "status": "Active"
+    }
+  ],
+  "roles": [
+    {
+      "roleId": 2,
+      "roleName": "USER",
+      "permissions": [
+        {
+          "resource": "Detect",
+          "actions": [ "POST" ]
+        },
+        {
+          "resource": "Train",
+          "actions": [ "POST" ]
+        },
+        {
+          "resource": "Users",
+          "actions": [ "PUT" ]
+        }
+      ]
+    },
+    {
+      "roleId": 1,
+      "roleName": "ADMIN",
+      "permissions": [
+        {
+          "resource": "Accounts",
+          "actions": [ "DELETE", "GET", "POST", "PUT" ]
+        },
+        {
+          "resource": "Compare",
+          "actions": [ "POST" ]
+        },
+        {
+          "resource": "Auth",
+          "actions": [ "POST" ]
+        },
+        {
+          "resource": "Collection",
+          "actions": [ "DELETE", "GET", "POST" ]
+        },
+        {
+          "resource": "Detect",
+          "actions": [ "POST" ]
+        },
+        {
+          "resource": "Roles",
+          "actions": [ "DELETE", "GET", "POST", "PUT" ]
+        },
+        {
+          "resource": "Train",
+          "actions": [ "DELETE", "POST" ]
+        },
+        {
+          "resource": "Result",
+          "actions": [ "DELETE", "GET" ]
+        }
+      ]
+    }
+  ]
+}
