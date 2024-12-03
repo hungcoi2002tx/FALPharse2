@@ -74,18 +74,18 @@ namespace FAL.MiddleWare
                 var res = JsonConvert.SerializeObject(serviceResult);
                 await context.Response.WriteAsync(res);
             }
-            catch (InvalidJwtException ex)
-            {
-                context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                BaseException serviceResult = new BaseException()
-                {
-                    ErrorCode = StatusCodes.Status400BadRequest,
-                    DevMessage = ex.Message,
-                    UserMsg = "Invalid Google cridential token.",
-                };
-                var res = JsonConvert.SerializeObject(serviceResult);
-                await context.Response.WriteAsync(res);
-            }
+            //catch (InvalidJwtException ex)
+            //{
+            //    context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            //    BaseException serviceResult = new BaseException()
+            //    {
+            //        ErrorCode = StatusCodes.Status400BadRequest,
+            //        DevMessage = ex.Message,
+            //        UserMsg = "Invalid Google cridential token.",
+            //    };
+            //    var res = JsonConvert.SerializeObject(serviceResult);
+            //    await context.Response.WriteAsync(res);
+            //}
             catch (ForbiddenException ex)
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
