@@ -7,8 +7,8 @@ using Amazon.Rekognition.Model;
 using Xunit;
 using FAL.Services;
 using FAL.Services.IServices;
-using Share.SystemModel;
 using Microsoft.AspNetCore.Http;
+using Share.Utils;
 
 public class CollectionServiceTests
 {

@@ -137,7 +137,7 @@ namespace FAL.Controllers
 
         [Authorize]
         [HttpGet("TrainStats/Details/{userId}")]
-        public async Task<IActionResult> GetTrainStats(string userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetTrainStatsDetails(string userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
