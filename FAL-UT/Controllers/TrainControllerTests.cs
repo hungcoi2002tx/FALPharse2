@@ -5,16 +5,13 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using Share.Data;
+using Share.Constant;
 using Share.DTO;
-using Share.SystemModel;
-using System;
+using Share.Model;
+using Share.Utils;
 using System.IO.Compression;
-using System.Reflection;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
-using Xunit;
 
 public class TrainControllerTests
 {

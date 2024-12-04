@@ -5,8 +5,8 @@ using FAL.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using Share.Data;
-using Share.SystemModel;
+using Share.Constant;
+using Share.DTO;
 using System.Security.Claims;
 
 public class ResultControllerTests

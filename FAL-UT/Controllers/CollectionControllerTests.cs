@@ -10,9 +10,11 @@ using AutoMapper;
 using FAL.Controllers;
 using FAL.Services.IServices;
 using Microsoft.AspNetCore.Http;
-using Share.Data;
-using Share.SystemModel;
 using Amazon.Rekognition.Model;
+using Share.Utils;
+using Share.Constant;
+using Share.Model;
+using Share.DTO;
 
 public class CollectionControllerTests
 {

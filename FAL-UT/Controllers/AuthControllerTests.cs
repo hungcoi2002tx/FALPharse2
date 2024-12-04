@@ -1,17 +1,12 @@
-﻿using Xunit;
-using Moq;
+﻿using Moq;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Amazon.DynamoDBv2.DataModel;
 using FAL.Controllers;
 using FAL.Dtos;
-using FAL.Models;
 using FAL.Utils;
 using System.Text.Json;
+using Share.Model;
 
 public class AuthControllerTests
 {

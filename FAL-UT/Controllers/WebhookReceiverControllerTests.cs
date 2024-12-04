@@ -2,13 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Moq;
-using Share.Data;
-using System.Collections.Generic;
+using Share.DTO;
+using Share.Model;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Xunit;
 
 public class WebhookReceiverControllerTests
 {
