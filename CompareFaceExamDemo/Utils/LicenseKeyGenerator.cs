@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Management;
 using System.Security.Cryptography;
 
-namespace CompareFaceExamDemo.Utils
+namespace AuthenExamCompareFaceExam.Utils
 {
     public class LicenseKeyGenerator
     {

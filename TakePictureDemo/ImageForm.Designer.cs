@@ -1,4 +1,4 @@
-﻿namespace TakePictureDemo
+﻿namespace AuthenExamTakePicture
 {
     partial class ImageForm
     {

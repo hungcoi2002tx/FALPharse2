@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CompareFaceExamDemo.ExternalService.Recognition
+namespace AuthenExamCompareFaceExam.ExternalService.Recognition
 {
     public class CompareFaceAdapterRecognitionService : BaseRecognitionServices<CompareFaceAdapterRecognitionService>
     {

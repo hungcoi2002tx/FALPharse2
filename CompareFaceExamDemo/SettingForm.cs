@@ -1,10 +1,10 @@
-﻿using CompareFaceExamDemo.Models;
-using CompareFaceExamDemo.Utils;
+﻿using AuthenExamCompareFaceExam.Models;
+using AuthenExamCompareFaceExam.Utils;
 using System;
 using System.Text.Json;
 using System.Windows.Forms;
 
-namespace CompareFaceExamDemo
+namespace AuthenExamCompareFaceExam
 {
     public partial class SettingForm : Form
     {

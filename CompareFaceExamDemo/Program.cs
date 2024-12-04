@@ -1,9 +1,9 @@
-﻿using CompareFaceExamDemo.ExternalService;
-using CompareFaceExamDemo.ExternalService.Recognition;
+﻿using AuthenExamCompareFaceExam.ExternalService;
+using AuthenExamCompareFaceExam.ExternalService.Recognition;
 using Microsoft.Extensions.DependencyInjection;
 using RestSharp;
 
-namespace CompareFaceExamDemo
+namespace AuthenExamCompareFaceExam
 {
     internal static class Program
     {

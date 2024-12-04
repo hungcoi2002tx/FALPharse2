@@ -6,7 +6,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CompareFaceExamDemo.ExternalService
+namespace AuthenExamCompareFaceExam.ExternalService
 {
     /// <summary>
     /// Xử lý auth, lấy token

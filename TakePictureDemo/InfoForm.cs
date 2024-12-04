@@ -6,7 +6,7 @@ using AForge.Video;
 using AForge.Video.DirectShow;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
-namespace TakePictureDemo
+namespace AuthenExamTakePicture
 {
     public partial class InfoForm : Form
     {

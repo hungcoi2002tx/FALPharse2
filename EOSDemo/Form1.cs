@@ -1,11 +1,11 @@
 ﻿using AForge.Video.DirectShow;
-using CameraLibrary;
+using AuthenExamCameraLibrary;
 
 namespace EOSDemo
 {
     public partial class Form1 : Form
     {
-        private CameraHandler cameraHandler;
+        private AuthenExamCameraLibrary.CameraHandler cameraHandler;
         private int cameraIndex = 0;
         private VideoCaptureDevice videoCaptureDevice;
 
@@ -15,7 +15,7 @@ namespace EOSDemo
 
             try
             {
-                cameraHandler = new CameraHandler();
+                cameraHandler = new AuthenExamCameraLibrary.CameraHandler();
                 var videoDevices = cameraHandler.GetListCamera();
 
                 // Kiểm tra nếu không có thiết bị camera nào

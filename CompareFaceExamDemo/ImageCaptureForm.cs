@@ -1,8 +1,8 @@
-﻿using CompareFaceExamDemo.Dtos;
-using CompareFaceExamDemo.ExternalService;
-using CompareFaceExamDemo.ExternalService.Recognition;
-using CompareFaceExamDemo.Models;
-using CompareFaceExamDemo.Utils;
+﻿using AuthenExamCompareFaceExam.Dtos;
+using AuthenExamCompareFaceExam.ExternalService;
+using AuthenExamCompareFaceExam.ExternalService.Recognition;
+using AuthenExamCompareFaceExam.Models;
+using AuthenExamCompareFaceExam.Utils;
 using RestSharp;
 using Share.SystemModel;
 using System;
@@ -20,7 +20,7 @@ using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolBar;
 
-namespace CompareFaceExamDemo
+namespace AuthenExamCompareFaceExam
 {
     public partial class ImageCaptureForm : Form
     {

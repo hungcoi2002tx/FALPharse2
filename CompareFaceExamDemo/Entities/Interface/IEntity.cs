@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CompareFaceExamDemo.Entity.Interface
+namespace AuthenExamCompareFaceExam.Entity.Interface
 {
     public interface IEntity
     {

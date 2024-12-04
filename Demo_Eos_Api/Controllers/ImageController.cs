@@ -1,9 +1,9 @@
-﻿using Demo_Eos_Api.DTOs;
-using Demo_Eos_Api.Service.Implement;
+﻿using AuthenExamReceiveData.DTOs;
+using AuthenExamReceiveData.Service.Implement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Demo_Eos_Api.Controllers
+namespace AuthenExamReceiveData.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

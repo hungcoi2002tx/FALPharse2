@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CompareFaceExamDemo
+namespace AuthenExamCompareFaceExam
 {
     partial class SettingForm
     {

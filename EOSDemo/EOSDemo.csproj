@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CameraLibrary\CameraLibrary.csproj" />
+    <ProjectReference Include="..\CameraLibrary\AuthenExamCameraLibrary.csproj" />
   </ItemGroup>
 
 </Project>

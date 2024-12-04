@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Share.SystemModel;
 
-namespace CompareFaceExamDemo.Models
+namespace AuthenExamCompareFaceExam.Models
 {
     public class ComparisonResponse
     {

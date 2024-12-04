@@ -7,7 +7,7 @@ using System.Runtime.Remoting.Lifetime;
 using System.Text;
 using System.Windows.Forms;
 
-namespace CameraLibrary
+namespace AuthenExamCameraLibrary
 {
     public class CameraHandler
     {

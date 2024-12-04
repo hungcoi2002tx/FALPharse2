@@ -1,4 +1,4 @@
-﻿namespace CompareFaceExamDemo.Models
+﻿namespace AuthenExamCompareFaceExam.Models
 {
     public class ComparisonResult
     {

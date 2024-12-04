@@ -9,11 +9,11 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Windows.Forms;
-using TakePictureDemo.Models.DTOs;
+using AuthenExamTakePicture.Models.DTOs;
 using System.Drawing.Drawing2D;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
-namespace TakePictureDemo
+namespace AuthenExamTakePicture
 {
     public partial class ImageForm : Form
     {

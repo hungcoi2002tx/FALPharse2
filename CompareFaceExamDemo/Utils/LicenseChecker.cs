@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CompareFaceExamDemo.Utils
+namespace AuthenExamCompareFaceExam.Utils
 {
     public class LicenseChecker
     {

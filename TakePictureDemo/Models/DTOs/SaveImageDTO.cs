@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace TakePictureDemo.Models.DTOs
+namespace AuthenExamTakePicture.Models.DTOs
 {
     public class SaveImageDTO
     {

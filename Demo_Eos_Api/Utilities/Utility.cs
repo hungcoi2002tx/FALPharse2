@@ -2,7 +2,7 @@
 using System.Drawing;
 
 
-namespace Demo_Eos_Api.Utilities
+namespace AuthenExamReceiveData.Utilities
 {
     public static class Utility
     {
@@ -62,6 +62,5 @@ namespace Demo_Eos_Api.Utilities
                 }
             }
         }
-
     }
 }

@@ -1,10 +1,10 @@
-﻿using CompareFaceExamDemo.DAO;
-using CompareFaceExamDemo.Entities;
-using CompareFaceExamDemo.Models;
-using CompareFaceExamDemo.Utils;
+﻿using AuthenExamCompareFaceExam.DAO;
+using AuthenExamCompareFaceExam.Entities;
+using AuthenExamCompareFaceExam.Models;
+using AuthenExamCompareFaceExam.Utils;
 using System.Data.Common;
 
-namespace CompareFaceExamDemo
+namespace AuthenExamCompareFaceExam
 {
 
     public partial class ResultForm : Form
