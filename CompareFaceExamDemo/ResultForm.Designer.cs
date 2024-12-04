@@ -202,7 +202,7 @@
             // 
             // pictureBoxTargetImage
             // 
-            pictureBoxTargetImage.Location = new Point(995, 2);
+            pictureBoxTargetImage.Location = new Point(1051, 2);
             pictureBoxTargetImage.Margin = new Padding(3, 2, 3, 2);
             pictureBoxTargetImage.Name = "pictureBoxTargetImage";
             pictureBoxTargetImage.Size = new Size(128, 164);
@@ -212,7 +212,7 @@
             // 
             // pictureBoxSourceImage
             // 
-            pictureBoxSourceImage.Location = new Point(1129, 2);
+            pictureBoxSourceImage.Location = new Point(1303, 2);
             pictureBoxSourceImage.Margin = new Padding(3, 2, 3, 2);
             pictureBoxSourceImage.Name = "pictureBoxSourceImage";
             pictureBoxSourceImage.Size = new Size(128, 164);

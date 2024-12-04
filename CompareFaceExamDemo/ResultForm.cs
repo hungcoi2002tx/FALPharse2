@@ -56,6 +56,7 @@ namespace CompareFaceExamDemo
             // Khởi tạo giá trị cho cmbStatus
             cmbStatus.Items.AddRange(new object[]
             {
+                "ALL",
             "PROCESSING",
             "MATCHED",
             "NOTMATCHED"
@@ -168,7 +169,7 @@ namespace CompareFaceExamDemo
             var filters = new Dictionary<string, object>();
 
             if (!string.IsNullOrEmpty(txtStudentCode.Text))
-                filters.Add("StudentCode", txtStudentCode.Text);
+                filters.Add("StudentCode", txtStudentCode.Text.ToUpper());
 
             if (!string.IsNullOrEmpty(txtExamCode.Text))
                 filters.Add("ExamCode", txtExamCode.Text);
@@ -197,7 +198,7 @@ namespace CompareFaceExamDemo
             if (filters.ContainsKey("ExamCode"))
                 results = results.Where(r => r.ExamCode == (string)filters["ExamCode"]).ToList();
 
-            if (filters.ContainsKey("Status"))
+            if (filters.ContainsKey("Status") && (ResultStatus)filters["Status"] != ResultStatus.ALL)
                 results = results.Where(r => r.Status == (ResultStatus)filters["Status"]).ToList();
 
             if (filters.ContainsKey("MinConfidence"))

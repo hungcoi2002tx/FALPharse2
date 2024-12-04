@@ -48,7 +48,9 @@ public partial class EOSComparisonResult : IEntity
 
 public enum ResultStatus
 {
+  
     PROCESSING,  // Đang xử lý
     MATCHED,     // Khớp
-    NOTMATCHED   // Không khớp
+    NOTMATCHED,   // Không khớp
+          ALL
 }

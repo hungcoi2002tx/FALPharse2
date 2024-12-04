@@ -17,6 +17,7 @@ namespace CompareFaceExamDemo
         private SourceImageForm imageSourceForm;
         private SettingForm settingForm;
         private ResultForm mainForm;
+
         public MainContainer(ImageCaptureForm imageCaptureForm,
             SourceImageForm imageSourceForm,
             SettingForm settingForm,
@@ -42,6 +43,7 @@ namespace CompareFaceExamDemo
             this.imageSourceForm = imageSourceForm;
             this.settingForm = settingForm;
             this.mainForm = mainForm;
+            imageCaptureForm.BringToFront();
         }
 
         private void ImageSourceButtonClick(object sender, EventArgs e)
