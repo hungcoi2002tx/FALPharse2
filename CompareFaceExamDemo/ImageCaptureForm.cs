@@ -4,7 +4,6 @@ using AuthenExamCompareFaceExam.ExternalService.Recognition;
 using AuthenExamCompareFaceExam.Models;
 using AuthenExamCompareFaceExam.Utils;
 using RestSharp;
-using Share.SystemModel;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

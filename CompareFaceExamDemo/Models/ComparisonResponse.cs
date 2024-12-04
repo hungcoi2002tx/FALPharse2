@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Share.SystemModel;
+using Share.DTO;
 
 namespace AuthenExamCompareFaceExam.Models
 {
