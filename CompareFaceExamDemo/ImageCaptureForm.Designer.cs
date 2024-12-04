@@ -45,6 +45,7 @@
             // 
             // btnSend
             // 
+            btnSend.Enabled = false;
             btnSend.Location = new Point(181, 14);
             btnSend.Margin = new Padding(4, 3, 4, 3);
             btnSend.Name = "btnSend";
@@ -94,6 +95,7 @@
             // 
             // button1
             // 
+            button1.Enabled = false;
             button1.Location = new Point(345, 14);
             button1.Name = "button1";
             button1.Size = new Size(137, 35);
@@ -104,6 +106,7 @@
             // 
             // button2
             // 
+            button2.Enabled = false;
             button2.Location = new Point(506, 14);
             button2.Name = "button2";
             button2.Size = new Size(137, 35);

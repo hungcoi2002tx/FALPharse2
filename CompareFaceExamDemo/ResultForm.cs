@@ -19,6 +19,10 @@ namespace CompareFaceExamDemo
         {
             InitializeComponent();
 
+            cmbFileList.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbStatus.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbSortField.DropDownStyle = ComboBoxStyle.DropDownList;
+
             dataGridView1.ReadOnly = true;
             dataGridView1.AllowUserToAddRows = false;
             dataGridView1.AllowUserToDeleteRows = false;

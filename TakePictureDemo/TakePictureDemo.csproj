@@ -16,7 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CameraCaptureLibrary\CameraCaptureLibrary.csproj" />
 	  <Reference Include="System.Drawing" />
   </ItemGroup>
 

@@ -51,6 +51,8 @@
             cmbFileList = new ComboBox();
             label3 = new Label();
             btnExport = new Button();
+            label7 = new Label();
+            label10 = new Label();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)txtMinConfidence).BeginInit();
             ((System.ComponentModel.ISupportInitialize)txtMaxConfidence).BeginInit();
@@ -73,10 +75,10 @@
             // 
             // button1
             // 
-            button1.Location = new Point(822, 124);
+            button1.Location = new Point(830, 68);
             button1.Margin = new Padding(3, 2, 3, 2);
             button1.Name = "button1";
-            button1.Size = new Size(82, 22);
+            button1.Size = new Size(122, 31);
             button1.TabIndex = 1;
             button1.Text = "Load";
             button1.UseVisualStyleBackColor = true;
@@ -87,7 +89,7 @@
             txtStudentCode.Location = new Point(102, 94);
             txtStudentCode.Margin = new Padding(3, 2, 3, 2);
             txtStudentCode.Name = "txtStudentCode";
-            txtStudentCode.Size = new Size(219, 23);
+            txtStudentCode.Size = new Size(306, 23);
             txtStudentCode.TabIndex = 2;
             // 
             // label1
@@ -114,22 +116,22 @@
             cmbStatus.Location = new Point(102, 68);
             cmbStatus.Margin = new Padding(3, 2, 3, 2);
             cmbStatus.Name = "cmbStatus";
-            cmbStatus.Size = new Size(219, 23);
+            cmbStatus.Size = new Size(306, 23);
             cmbStatus.TabIndex = 5;
             // 
             // cmbSortField
             // 
             cmbSortField.FormattingEnabled = true;
-            cmbSortField.Location = new Point(446, 69);
+            cmbSortField.Location = new Point(557, 68);
             cmbSortField.Margin = new Padding(3, 2, 3, 2);
             cmbSortField.Name = "cmbSortField";
-            cmbSortField.Size = new Size(110, 23);
+            cmbSortField.Size = new Size(183, 23);
             cmbSortField.TabIndex = 5;
             // 
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(395, 72);
+            label5.Location = new Point(507, 74);
             label5.Name = "label5";
             label5.Size = new Size(44, 15);
             label5.TabIndex = 4;
@@ -138,7 +140,7 @@
             // chkSortDesc
             // 
             chkSortDesc.AutoSize = true;
-            chkSortDesc.Location = new Point(561, 71);
+            chkSortDesc.Location = new Point(744, 72);
             chkSortDesc.Margin = new Padding(3, 2, 3, 2);
             chkSortDesc.Name = "chkSortDesc";
             chkSortDesc.Size = new Size(51, 19);
@@ -151,7 +153,7 @@
             txtExamCode.Location = new Point(102, 122);
             txtExamCode.Margin = new Padding(3, 2, 3, 2);
             txtExamCode.Name = "txtExamCode";
-            txtExamCode.Size = new Size(219, 23);
+            txtExamCode.Size = new Size(306, 23);
             txtExamCode.TabIndex = 2;
             txtExamCode.Visible = false;
             // 
@@ -168,7 +170,7 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(345, 98);
+            label4.Location = new Point(457, 100);
             label4.Name = "label4";
             label4.Size = new Size(92, 15);
             label4.TabIndex = 8;
@@ -176,16 +178,16 @@
             // 
             // txtMinConfidence
             // 
-            txtMinConfidence.Location = new Point(446, 96);
+            txtMinConfidence.Location = new Point(558, 95);
             txtMinConfidence.Margin = new Padding(3, 2, 3, 2);
             txtMinConfidence.Name = "txtMinConfidence";
-            txtMinConfidence.Size = new Size(109, 23);
+            txtMinConfidence.Size = new Size(183, 23);
             txtMinConfidence.TabIndex = 10;
             // 
             // label8
             // 
             label8.AutoSize = true;
-            label8.Location = new Point(342, 122);
+            label8.Location = new Point(454, 124);
             label8.Name = "label8";
             label8.Size = new Size(93, 15);
             label8.TabIndex = 8;
@@ -193,16 +195,17 @@
             // 
             // txtMaxConfidence
             // 
-            txtMaxConfidence.Location = new Point(446, 121);
+            txtMaxConfidence.Location = new Point(558, 121);
             txtMaxConfidence.Margin = new Padding(3, 2, 3, 2);
             txtMaxConfidence.Name = "txtMaxConfidence";
-            txtMaxConfidence.Size = new Size(109, 23);
+            txtMaxConfidence.Size = new Size(183, 23);
             txtMaxConfidence.TabIndex = 10;
             txtMaxConfidence.Value = new decimal(new int[] { 100, 0, 0, 0 });
             // 
             // pictureBoxTargetImage
             // 
-            pictureBoxTargetImage.Location = new Point(1051, 2);
+            pictureBoxTargetImage.Image = Properties.Resources.avatar_trang_4;
+            pictureBoxTargetImage.Location = new Point(1106, 2);
             pictureBoxTargetImage.Margin = new Padding(3, 2, 3, 2);
             pictureBoxTargetImage.Name = "pictureBoxTargetImage";
             pictureBoxTargetImage.Size = new Size(128, 164);
@@ -212,7 +215,8 @@
             // 
             // pictureBoxSourceImage
             // 
-            pictureBoxSourceImage.Location = new Point(1303, 2);
+            pictureBoxSourceImage.Image = Properties.Resources.avatar_trang_4;
+            pictureBoxSourceImage.Location = new Point(1359, 2);
             pictureBoxSourceImage.Margin = new Padding(3, 2, 3, 2);
             pictureBoxSourceImage.Name = "pictureBoxSourceImage";
             pictureBoxSourceImage.Size = new Size(128, 164);
@@ -252,7 +256,7 @@
             // cmbFileList
             // 
             cmbFileList.FormattingEnabled = true;
-            cmbFileList.Location = new Point(510, 20);
+            cmbFileList.Location = new Point(558, 19);
             cmbFileList.Margin = new Padding(3, 2, 3, 2);
             cmbFileList.Name = "cmbFileList";
             cmbFileList.Size = new Size(394, 23);
@@ -261,7 +265,7 @@
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(435, 22);
+            label3.Location = new Point(483, 21);
             label3.Name = "label3";
             label3.Size = new Size(63, 15);
             label3.TabIndex = 16;
@@ -269,20 +273,40 @@
             // 
             // btnExport
             // 
-            btnExport.Location = new Point(694, 124);
+            btnExport.Location = new Point(830, 114);
             btnExport.Margin = new Padding(3, 2, 3, 2);
             btnExport.Name = "btnExport";
-            btnExport.Size = new Size(122, 22);
+            btnExport.Size = new Size(122, 31);
             btnExport.TabIndex = 17;
             btnExport.Text = "Export to Excel";
             btnExport.UseVisualStyleBackColor = true;
             btnExport.Click += btnExport_Click;
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Location = new Point(1311, 66);
+            label7.Name = "label7";
+            label7.Size = new Size(46, 30);
+            label7.TabIndex = 18;
+            label7.Text = "Source \r\nImage";
+            // 
+            // label10
+            // 
+            label10.AutoSize = true;
+            label10.Location = new Point(1064, 62);
+            label10.Name = "label10";
+            label10.Size = new Size(40, 30);
+            label10.TabIndex = 19;
+            label10.Text = "Target\r\nImage";
             // 
             // ResultForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1550, 975);
+            Controls.Add(label10);
+            Controls.Add(label7);
             Controls.Add(btnExport);
             Controls.Add(label3);
             Controls.Add(cmbFileList);
@@ -346,5 +370,7 @@
         private ComboBox cmbFileList;
         private Label label3;
         private Button btnExport;
+        private Label label7;
+        private Label label10;
     }
 }

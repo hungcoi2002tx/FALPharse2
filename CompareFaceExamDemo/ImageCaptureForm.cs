@@ -18,6 +18,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolBar;
 
 namespace CompareFaceExamDemo
 {
@@ -85,6 +86,11 @@ namespace CompareFaceExamDemo
                     // Load danh sách file từ thư mục được chọn
                     LoadImagesWithCheckbox(folderPath);
                     LoadListData();
+
+                    if (listDataCompare != null && listDataCompare.Count() > 0)
+                    {
+                        btnSend.Enabled = true;
+                    }
                 }
             }
         }
@@ -179,6 +185,9 @@ namespace CompareFaceExamDemo
                     try
                     {
                         btnSend.Enabled = false;
+                        button1.Enabled = true;
+                        button2.Enabled = true;
+
                         progressBarCompare.Maximum = listDataCompare.Count;
                         var sourceFile = Config.GetSetting();
                         int maxDegreeOfParallelism = sourceFile.NumberOfThread;
