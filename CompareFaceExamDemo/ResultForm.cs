@@ -114,6 +114,18 @@ namespace AuthenExamCompareFaceExam
             if (results.Count <= 0)
             {
                 MessageBox.Show($"File {fileDataPath} is blank!", "Message", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                if (pictureBoxSourceImage.Image != null)
+                {
+                    pictureBoxSourceImage.Image.Dispose();
+                    pictureBoxSourceImage.Image = null;
+                }
+
+                if (pictureBoxTargetImage.Image != null)
+                {
+                    pictureBoxTargetImage.Image.Dispose();
+                    pictureBoxTargetImage.Image = null;
+                }
+
                 return;
             }
         }

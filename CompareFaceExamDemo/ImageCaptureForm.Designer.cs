@@ -71,6 +71,7 @@
             dataGridViewImages.AllowUserToDeleteRows = false;
             dataGridViewImages.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridViewImages.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells;
+            dataGridViewImages.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
             dataGridViewImages.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dataGridViewImages.Location = new Point(1, 104);
             dataGridViewImages.Margin = new Padding(4, 3, 4, 3);

@@ -1,10 +1,12 @@
-﻿using AuthenExamCompareFaceExam.Models;
+﻿using AuthenExamCompareFaceExam.Dtos;
+using AuthenExamCompareFaceExam.Models;
 using AuthenExamCompareFaceExam.Utils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -16,9 +18,13 @@ namespace AuthenExamCompareFaceExam
 {
     public partial class AddImageSourceForm : Form
     {
+        public ImageSourceData? ImageSourceData { get; set; }
+
         public AddImageSourceForm()
         {
             InitializeComponent();
+           
+            pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
             textBox2.ReadOnly = true;
         }
 
@@ -38,8 +44,10 @@ namespace AuthenExamCompareFaceExam
                         string selectedFilePath = openFileDialog.FileName;
                         textBox2.Text = selectedFilePath;
 
-                        pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
-                        pictureBox1.Image = Image.FromFile(selectedFilePath);
+                        using (var stream = new FileStream(selectedFilePath, FileMode.Open, FileAccess.Read))
+                        {
+                            pictureBox1.Image = Image.FromStream(stream); // Load ảnh từ stream
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -48,6 +56,7 @@ namespace AuthenExamCompareFaceExam
                 }
             }
         }
+
 
         private void button2_Click(object sender, EventArgs e)
         {
@@ -58,7 +67,7 @@ namespace AuthenExamCompareFaceExam
 
             SettingModel _settingForm = Config.GetSetting();
             var destinationPath = Path.Combine(_settingForm.DirectoryImageSource, $"{textBox1.Text.Trim().ToUpper()}.jpg");
-
+            string fileName = Path.GetFileName(textBox2.Text);
             if (File.Exists(destinationPath))
             {
                 var resultOverride = MessageBox.Show($"Ảnh của mã sinh viên {textBox1.Text.Trim()} đã tồn tại. Bạn có muốn ghi đè không?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
@@ -68,17 +77,14 @@ namespace AuthenExamCompareFaceExam
                     return;
                 }
             }
-
-
-            // Lấy tên file
-            var fileName = Path.GetFileName(textBox2.Text);
-
-            // Xác nhận hành động
-            var result = MessageBox.Show($"Bạn có chắc chắn muốn thêm ảnh {fileName.Trim()} cho sinh viên {textBox1.Text.Trim()}?",
-                                         "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (result == DialogResult.No)
+            else
             {
-                return;
+                var result = MessageBox.Show($"Bạn có chắc chắn muốn thêm ảnh {fileName.Trim()} cho sinh viên {textBox1.Text.Trim()}?",
+                                             "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (result == DialogResult.No)
+                {
+                    return;
+                }
             }
 
             try
@@ -90,24 +96,57 @@ namespace AuthenExamCompareFaceExam
                     Directory.CreateDirectory(directory);
                 }
 
-                // Lưu ảnh vào thư mục đích
-                using (var image = Image.FromFile(textBox2.Text))
+                // Sử dụng FileStream để tránh khóa file
+                using (var stream = new FileStream(textBox2.Text, FileMode.Open, FileAccess.Read))
                 {
-                    image.Save(destinationPath, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    using (var image = Image.FromStream(stream))
+                    {
+                        // Tạo encoder để đảm bảo định dạng ảnh
+                        var codec = ImageCodecInfo.GetImageEncoders().FirstOrDefault(c => c.FormatID == ImageFormat.Jpeg.Guid);
+                        if (codec == null)
+                        {
+                            throw new Exception("Không tìm thấy codec JPEG.");
+                        }
+
+                        var encoderParams = new EncoderParameters(1);
+                        encoderParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 100L);
+
+                        // Ghi đè ảnh trực tiếp
+                        image.Save(destinationPath, codec, encoderParams);
+                    }
                 }
+
 
                 // Thông báo thành công
                 MessageBox.Show($"Ảnh {fileName.Trim()} đã được lưu thành công cho sinh viên {textBox1.Text.Trim()}.",
                                 "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                var parentForm = this.Owner as SourceImageForm; // Thay thế "YourParentFormName" bằng tên form gọi
+                if (parentForm != null)
+                {
+                    parentForm.GetImageSourceData();
+                    parentForm.LoadListData();
+                }
+
                 this.Close();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                MessageBox.Show($"Không có quyền truy cập vào file hoặc thư mục: {ex.Message}",
+                                "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (IOException ex)
+            {
+                MessageBox.Show($"Lỗi khi truy cập file hoặc thư mục: {ex.Message}",
+                                "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch (Exception ex)
             {
-                // Thông báo lỗi nếu có ngoại lệ xảy ra
                 MessageBox.Show($"Đã xảy ra lỗi khi lưu ảnh: {ex.Message}",
                                 "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+
 
         private bool ValidateInputs()
         {
@@ -133,5 +172,20 @@ namespace AuthenExamCompareFaceExam
 
             return true;
         }
+
+        private void AddImageSourceForm_Load(object sender, EventArgs e)
+        {
+            if (ImageSourceData != null)
+            {
+                //textBox2.Text = ImageSourceData.ImagePath;
+                textBox1.Text = ImageSourceData.StudentNumber;
+
+                //using (var stream = new FileStream(ImageSourceData.ImagePath, FileMode.Open, FileAccess.Read))
+                //{
+                //    pictureBox1.Image = Image.FromStream(stream); // Load ảnh từ stream
+                //}
+            }
+        }
+
     }
 }
