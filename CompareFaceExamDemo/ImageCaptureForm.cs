@@ -221,6 +221,7 @@ namespace AuthenExamCompareFaceExam
                     .OrderBy(r => r.Id)
                     .ToList();
                 TxtExporter.ExportListToTxt(resultCompareFaceTxtDtos, filePathTxt, "|");
+                dataGridViewImages.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.DisplayedCells);
 
                 // Hiển thị thông báo thành công
                 MessageBox.Show(
