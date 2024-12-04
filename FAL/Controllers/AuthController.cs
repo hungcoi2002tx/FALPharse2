@@ -34,12 +34,12 @@ namespace FAL.Controllers
         public async Task<IActionResult> Login([FromBody] LoginModel loginModel)
         {
             // Kiểm tra tính hợp lệ của thông tin đăng nhập
-            if (loginModel == null || string.IsNullOrEmpty(loginModel.Username) || string.IsNullOrEmpty(loginModel.Password))
+            if (!IsValidLoginModel(loginModel))
             {
                 return BadRequest(new { status = false, message = "Thông tin đăng nhập không hợp lệ." });
             }
 
-            // Tìm người dùng trong DynamoDB
+            // Lấy thông tin người dùng từ cơ sở dữ liệu
             var user = await _dbContext.LoadAsync<Account>(loginModel.Username);
             if (user == null)
             {
@@ -47,23 +47,15 @@ namespace FAL.Controllers
             }
 
             // Kiểm tra mật khẩu
-            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginModel.Password, user.Password);
-            if (!isPasswordValid)
+            if (!IsPasswordValid(loginModel.Password, user.Password))
             {
                 return Unauthorized(new { status = false, message = "Mật khẩu không chính xác." });
             }
 
-            // Tạo JWT token và lấy thời gian hết hạn của token
-            // Gọi GenerateJwtToken
-            var jwtToken = _jwtTokenGenerator.GenerateJwtToken(user.Username, user.RoleId.ToString(), user.SystemName);
+            // Tạo JWT token
+            var (tokenString, expiresIn) = GenerateToken(user);
 
-            // Lấy chuỗi token
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(jwtToken);
-
-            // Tính toán expires_in
-            var expiresIn = (int)(jwtToken.ValidTo - DateTime.UtcNow).TotalSeconds;
-
-            // Trả về thông tin người dùng và token với status true
+            // Trả về thông tin người dùng và token
             return Ok(new
             {
                 status = true,
@@ -74,6 +66,27 @@ namespace FAL.Controllers
             });
         }
 
+        private bool IsValidLoginModel(LoginModel loginModel)
+        {
+            return loginModel != null &&
+                   !string.IsNullOrWhiteSpace(loginModel.Username) &&
+                   !string.IsNullOrWhiteSpace(loginModel.Password);
+        }
+
+        // Phương thức kiểm tra mật khẩu
+        private bool IsPasswordValid(string inputPassword, string storedPassword)
+        {
+            return BCrypt.Net.BCrypt.Verify(inputPassword, storedPassword);
+        }
+
+        // Phương thức tạo token
+        private (string Token, int ExpiresIn) GenerateToken(Account user)
+        {
+            var jwtToken = _jwtTokenGenerator.GenerateJwtToken(user.Username, user.RoleId.ToString(), user.SystemName);
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+            var expiresIn = (int)(jwtToken.ValidTo - DateTime.UtcNow).TotalSeconds;
+            return (tokenString, expiresIn);
+        }
 
 
         [AllowAnonymous]

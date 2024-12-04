@@ -45,7 +45,7 @@ namespace FAL.Controllers
                 file.ValidFile();
                 #endregion
                 #region add to S3
-                var bucketExists = await _s3Service.AddBudgetAsync(systermId);
+                var bucketExists = await _s3Service.IsAddBudgetAsync(systermId);
                 if (!bucketExists) return NotFound($"Bucket {systermId} does not exist.");
                 var fileName = Guid.NewGuid().ToString();
                 var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging,mediaId);
@@ -92,7 +92,7 @@ namespace FAL.Controllers
                 {
                     return BadRequest("No files received from the upload.");
                 }
-                var bucketExists = await _s3Service.AddBudgetAsync(systermId);
+                var bucketExists = await _s3Service.IsAddBudgetAsync(systermId);
                 if (!bucketExists) return NotFound($"Bucket {systermId} does not exist.");
                 foreach (var item in files)
                 {

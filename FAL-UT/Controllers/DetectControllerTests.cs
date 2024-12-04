@@ -54,7 +54,7 @@ public class DetectControllerTests
         fileMock.Setup(f => f.FileName).Returns("test_image.jpg");
         fileMock.Setup(f => f.Length).Returns(4 * 1024 * 1024); // 4MB, valid for an image
 
-        _mockS3Service.Setup(s => s.AddBudgetAsync(It.IsAny<string>()))
+        _mockS3Service.Setup(s => s.IsAddBudgetAsync(It.IsAny<string>()))
                       .ReturnsAsync(true);
 
         _mockS3Service.Setup(s => s.AddFileToS3Async(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TypeOfRequest>(), mediaId, null))
@@ -142,7 +142,7 @@ public class DetectControllerTests
             CreateMockFile("test_image2.jpg", 1024 * 1024)  // 1MB
         };
 
-        _mockS3Service.Setup(s => s.AddBudgetAsync(It.IsAny<string>())).ReturnsAsync(true);
+        _mockS3Service.Setup(s => s.IsAddBudgetAsync(It.IsAny<string>())).ReturnsAsync(true);
         _mockS3Service.Setup(s => s.AddFileToS3Async(
     It.IsAny<IFormFile>(),
     It.IsAny<string>(),
@@ -184,7 +184,7 @@ public class DetectControllerTests
             CreateMockFile("test_image1.jpg", 1024 * 1024) // 1MB
         };
 
-        _mockS3Service.Setup(s => s.AddBudgetAsync(It.IsAny<string>())).ReturnsAsync(false);
+        _mockS3Service.Setup(s => s.IsAddBudgetAsync(It.IsAny<string>())).ReturnsAsync(false);
 
         // Act
         var result = await _controller.UploadMultipleImages(files);
@@ -204,7 +204,7 @@ public class DetectControllerTests
     };
 
         // Ensure bucket exists
-        _mockS3Service.Setup(s => s.AddBudgetAsync(It.IsAny<string>())).ReturnsAsync(true);
+        _mockS3Service.Setup(s => s.IsAddBudgetAsync(It.IsAny<string>())).ReturnsAsync(true);
 
         // Act
         var result = await _controller.UploadMultipleImages(files);

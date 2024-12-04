@@ -167,5 +167,22 @@ namespace FAL.Utils
                 throw;
             }
         }
+
+        /// <summary>
+        /// Chuyển đổi IFormFile thành mảng byte.
+        /// </summary>
+        /// <param name="file">Tệp tin cần chuyển đổi.</param>
+        /// <returns>Một mảng byte từ nội dung của tệp tin.</returns>
+        public static async Task<byte[]> ToByteArrayAsync(this IFormFile file)
+        {
+            if (file == null)
+            {
+                return null;
+            }
+
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return stream.ToArray();
+        }
     }
 }
