@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AuthenExamCompareFaceExam.Utils;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -8,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace CompareFaceExamDemo
+namespace AuthenExamCompareFaceExam
 {
     public partial class MainContainer : Form
     {
@@ -16,31 +17,33 @@ namespace CompareFaceExamDemo
         private SourceImageForm imageSourceForm;
         private SettingForm settingForm;
         private ResultForm mainForm;
+
         public MainContainer(ImageCaptureForm imageCaptureForm,
-            SourceImageForm imageSourceForm, 
-            SettingForm settingForm, 
+            SourceImageForm imageSourceForm,
+            SettingForm settingForm,
             ResultForm mainForm)
         {
             InitializeComponent();
             // Cố định chiều rộng và chiều cao của form
-            this.Size = new Size(1200, 800); // Thay đổi kích thước theo ý muốn
+            //this.Size = new Size(1920, 1080); // Thay đổi kích thước theo ý muốn
 
             // Đặt kiểu viền cố định
-            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            //  this.FormBorderStyle = FormBorderStyle.FixedSingle;
 
             // Tắt nút phóng to
-            this.MaximizeBox = false;
+            //this.MaximizeBox = false;
 
             // Cho phép thu nhỏ (nếu cần)
-            this.MinimizeBox = true;
+            //this.MinimizeBox = true;
 
             // Tắt khả năng thay đổi kích thước
-            this.MaximumSize = this.Size;
-            this.MinimumSize = this.Size;
+            //this.MaximumSize = this.Size;
+            //this.MinimumSize = this.Size;
             this.imageCaptureForm = imageCaptureForm;
             this.imageSourceForm = imageSourceForm;
             this.settingForm = settingForm;
             this.mainForm = mainForm;
+            imageCaptureForm.BringToFront();
         }
 
         private void ImageSourceButtonClick(object sender, EventArgs e)
@@ -89,7 +92,7 @@ namespace CompareFaceExamDemo
                 childForm.Show();
                 childForm.BringToFront();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -122,7 +125,7 @@ namespace CompareFaceExamDemo
             }
         }
 
-#region NOT DELETE THESE METHOD
+        #region NOT DELETE THESE METHOD
 
         private void viewImageCaptureToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -139,5 +142,46 @@ namespace CompareFaceExamDemo
         #endregion
 
 
+        private async void MainContainer_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                await CheckAndHandleLicenseKeyAsync();
+                OpenChildForm(imageCaptureForm); // Mở form con nếu giấy phép hợp lệ
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi kiểm tra quyền.\n{ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Application.Exit(); // Đóng ứng dụng khi xảy ra lỗi nghiêm trọng
+            }
+        }
+
+        private async Task CheckAndHandleLicenseKeyAsync()
+        {
+            string licenseKey = LicenseKeyGenerator.GetLicenseKey();
+            var isValidLicenseKey = await LicenseChecker.CheckLicenseKeyAsync(licenseKey);
+
+            if (!isValidLicenseKey)
+            {
+                if (!string.IsNullOrEmpty(licenseKey))
+                {
+                    Clipboard.SetText(licenseKey);
+                }
+                else
+                {
+                    MessageBox.Show("Không có nội dung để sao chép.", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+
+                MessageBox.Show(
+                    $"Chưa được cấp quyền sử dụng.\nKey của bạn: {licenseKey}\nĐã copy key vào clipboard, gửi key cho admin để sử dụng.",
+                    "Lỗi",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+
+                // Tắt ứng dụng nếu không hợp lệ
+                Application.Exit();
+            }
+        }
     }
 }

@@ -1,4 +1,4 @@
-﻿using CompareFaceExamDemo.Models;
+﻿using AuthenExamCompareFaceExam.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace CompareFaceExamDemo.Utils
+namespace AuthenExamCompareFaceExam.Utils
 {
     public class Config
     {

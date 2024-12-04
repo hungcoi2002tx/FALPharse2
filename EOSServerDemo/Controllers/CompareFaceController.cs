@@ -1,5 +1,5 @@
-﻿using CompareFaceExamDemo.DAO;
-using CompareFaceExamDemo.Entities;
+﻿using AuthenExamCompareFaceExam.DAO;
+using AuthenExamCompareFaceExam.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.IO;

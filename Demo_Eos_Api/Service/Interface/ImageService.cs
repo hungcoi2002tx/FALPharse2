@@ -1,11 +1,11 @@
-﻿using Demo_Eos_Api.DTOs;
-using Demo_Eos_Api.Service.Implement;
-using Demo_Eos_Api.Utilities;
+﻿using AuthenExamReceiveData.DTOs;
+using AuthenExamReceiveData.Service.Implement;
+using AuthenExamReceiveData.Utilities;
 using Microsoft.Extensions.Options;
 using System.Drawing.Imaging;
 using System.Net;
 
-namespace Demo_Eos_Api.Service.Interface
+namespace AuthenExamReceiveData.Service.Interface
 {
     public class FileConfig
     {

@@ -1,10 +1,10 @@
-﻿using CompareFaceExamDemo.Models;
-using CompareFaceExamDemo.Utils;
+﻿using AuthenExamCompareFaceExam.Models;
+using AuthenExamCompareFaceExam.Utils;
 using System;
 using System.Text.Json;
 using System.Windows.Forms;
 
-namespace CompareFaceExamDemo
+namespace AuthenExamCompareFaceExam
 {
     public partial class SettingForm : Form
     {
@@ -23,6 +23,7 @@ namespace CompareFaceExamDemo
                 numberConfident.Value = _settingModel.Confident;
                 numberThread.Value = _settingModel.NumberOfThread;
                 txtDirectorySource.Text = _settingModel.DirectoryImageSource;
+                txtRetry.Value = _settingModel.NumberOfRetry;
             }
             catch (Exception ex)
             {
@@ -50,7 +51,7 @@ namespace CompareFaceExamDemo
         private void btnClose_Click(object sender, EventArgs e)
         {
             this.Close();
-        }       
+        }
 
         private void Btn_Browse_Source_Click(object sender, EventArgs e)
         {
@@ -125,12 +126,23 @@ namespace CompareFaceExamDemo
             {
                 _settingModel.Confident = Convert.ToInt32(numberConfident.Value);
                 _settingModel.NumberOfThread = Convert.ToInt32(numberThread.Value);
+                _settingModel.NumberOfRetry = Convert.ToInt32(txtRetry.Value);
                 _settingModel.DirectoryImageSource = txtDirectorySource.Text;
             }
             catch (Exception)
             {
                 throw;
             }
+        }
+
+        private void txtRetry_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

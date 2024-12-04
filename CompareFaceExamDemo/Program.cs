@@ -1,8 +1,9 @@
-using CompareFaceExamDemo.ExternalService.Recognition;
+﻿using AuthenExamCompareFaceExam.ExternalService;
+using AuthenExamCompareFaceExam.ExternalService.Recognition;
 using Microsoft.Extensions.DependencyInjection;
 using RestSharp;
 
-namespace CompareFaceExamDemo
+namespace AuthenExamCompareFaceExam
 {
     internal static class Program
     {
@@ -19,6 +20,8 @@ namespace CompareFaceExamDemo
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             var mainForm = serviceProvider.GetRequiredService<MainContainer>();
+
+            var addImageForm = serviceProvider.GetRequiredService<AddImageSourceForm>();
             Application.Run(mainForm);
         }
 
@@ -27,12 +30,27 @@ namespace CompareFaceExamDemo
             try
             {
                 services.AddMemoryCache();
+                services.AddSingleton<AddImageSourceForm>();
                 services.AddSingleton<ResultForm>();
                 services.AddSingleton<SourceImageForm>();
                 services.AddSingleton<MainContainer>();
                 services.AddSingleton<ImageCaptureForm>();
                 services.AddSingleton<SettingForm>();
                 services.AddSingleton<Test>();
+                services.AddSingleton<AuthService>(provider =>
+                    new AuthService(
+                        "https://dev.demorecognition.click/api/Auth/login", 
+                        "string",                  
+                        "123456"                   
+                    ));
+                services.AddSingleton<FaceCompareService>(provider =>
+                {
+                    var authService = provider.GetRequiredService<AuthService>();
+                    return new FaceCompareService(
+                        authService,
+                        "https://dev.demorecognition.click/api/Compare/compare/result" 
+                    );
+                });
 
                 services.AddSingleton<IRecognitionRestClient>(r => new RecognitionRestClient(
                 new RestClient(new HttpClient(new HttpClientHandler

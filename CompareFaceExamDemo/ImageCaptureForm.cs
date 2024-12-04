@@ -1,52 +1,73 @@
-﻿using CompareFaceExamDemo.ExternalService.Recognition;
-using CompareFaceExamDemo.Utils;
+﻿using AuthenExamCompareFaceExam.Dtos;
+using AuthenExamCompareFaceExam.ExternalService;
+using AuthenExamCompareFaceExam.ExternalService.Recognition;
+using AuthenExamCompareFaceExam.Models;
+using AuthenExamCompareFaceExam.Utils;
+using RestSharp;
+using Share.SystemModel;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.Common;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolBar;
 
-namespace CompareFaceExamDemo
+namespace AuthenExamCompareFaceExam
 {
     public partial class ImageCaptureForm : Form
     {
         private CompareFaceAdapterRecognitionService _compareFaceService;
-        public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService)
+        private readonly FaceCompareService _faceCompareService;
+        private readonly object _logLock = new object();
+        private BindingSource? source = null;
+        private List<ResultCompareFaceDto>? listDataCompare = null;
+        private bool _isPaused = false;
+        private ManualResetEventSlim _pauseEvent = new ManualResetEventSlim(true);
+
+        public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
             InitializeComponent();
             _compareFaceService = compareFaceService;
+            _faceCompareService = faceCompareService;
+            dataGridViewImages.ReadOnly = true;
+            dataGridViewImages.AllowUserToAddRows = false;
+            dataGridViewImages.AllowUserToDeleteRows = false;
         }
 
-        private void AddCheckBoxHeader()
+        private void LoadListData()
         {
-            // Tạo checkbox header
-            CheckBox headerCheckBox = new CheckBox
+            try
             {
-                Size = new System.Drawing.Size(15, 15)
-            };
-            headerCheckBox.CheckedChanged += HeaderCheckBox_CheckedChanged;
+                if (source == null)
+                {
+                    source = new BindingSource();
+                }
 
-            // Đặt checkbox vào vị trí của cột đầu tiên
-            var cellRectangle = dataGridViewImages.GetCellDisplayRectangle(0, -1, true);
-            headerCheckBox.Location = new System.Drawing.Point(cellRectangle.Location.X + 20, cellRectangle.Location.Y + 5);
+                if (listDataCompare == null)
+                {
+                    listDataCompare = new List<ResultCompareFaceDto>();
+                }
 
-            // Thêm checkbox vào DataGridView
-            dataGridViewImages.Controls.Add(headerCheckBox);
-        }
+                dataGridViewImages.DataSource = null;
+                dataGridViewImages.Columns.Clear();
+                dataGridViewImages.Rows.Clear();
+                dataGridViewImages.AllowUserToAddRows = false;
+                dataGridViewImages.ScrollBars = ScrollBars.Both; // Hiển thị thanh cuộn ngang và dọc
 
-        private void HeaderCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            // Thay đổi trạng thái tất cả các checkbox
-            CheckBox headerCheckBox = (CheckBox)sender;
-            foreach (DataGridViewRow row in dataGridViewImages.Rows)
+                source.DataSource = listDataCompare;
+                dataGridViewImages.DataSource = source;
+            }
+            catch (Exception)
             {
-                DataGridViewCheckBoxCell checkBoxCell = (DataGridViewCheckBoxCell)row.Cells["checkBoxColumn"];
-                checkBoxCell.Value = headerCheckBox.Checked;
+                MessageBox.Show($"Liên hệ admin", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -57,14 +78,19 @@ namespace CompareFaceExamDemo
             {
                 if (folderBrowser.ShowDialog() == DialogResult.OK)
                 {
+                    progressBarCompare.Value = 0;
                     // Lấy đường dẫn của thư mục được chọn
                     string folderPath = folderBrowser.SelectedPath;
-
                     // Hiển thị đường dẫn trong TextBox
                     txtFolderPath.Text = folderPath;
-
                     // Load danh sách file từ thư mục được chọn
                     LoadImagesWithCheckbox(folderPath);
+                    LoadListData();
+
+                    if (listDataCompare != null && listDataCompare.Count() > 0)
+                    {
+                        btnSend.Enabled = true;
+                    }
                 }
             }
         }
@@ -73,51 +99,50 @@ namespace CompareFaceExamDemo
         {
             try
             {
-                // Lấy danh sách các file trong thư mục
+                var sourceFile = Config.GetSetting();
+                var urlSource = sourceFile.DirectoryImageSource;
                 string[] files = Directory.GetFiles(folderPath);
+                Regex regex = new Regex(@"^[a-zA-Z]{2}\d{6}\.(jpg|png)$");
+                List<ResultCompareFaceDto> listDataCompareGetData = new List<ResultCompareFaceDto>();
 
-                // Regex để kiểm tra định dạng tên file: 2 chữ cái + 4 số
-                Regex regex = new Regex(@"^[a-zA-Z]{2}\d{6}\.jpg$");
 
-                // Dọn sạch DataGridView
-                dataGridViewImages.Columns.Clear();
-                dataGridViewImages.Rows.Clear();
+                string[] folderPathParts = folderPath.Split('\\');
+                string lastPart = folderPathParts[folderPathParts.Length - 1];
+                string examCode = lastPart;
 
-                // Thêm cột checkbox
-                DataGridViewCheckBoxColumn checkBoxColumn = new DataGridViewCheckBoxColumn
-                {
-                    HeaderText = "",
-                    Name = "checkBoxColumn",
-                    Width = 50
-                };
-                dataGridViewImages.Columns.Add(checkBoxColumn);
-                DataGridViewTextBoxColumn fileNameColumn = new DataGridViewTextBoxColumn
-                {
-                    HeaderText = "File Name",
-                    Name = "FileName",
-                    ReadOnly = true // Không cho phép sửa tên file
-                };
-                // Thêm cột tên file
-                dataGridViewImages.Columns.Add(fileNameColumn);
+                int idCounter = 1; // Biến đếm bắt đầu từ 1
 
-                // Thêm dữ liệu vào DataGridView
                 foreach (string file in files)
                 {
-                    string fileName = Path.GetFileName(file);
+                    string ImageTagetPath = Path.GetFileName(file);
 
-                    // Kiểm tra tên file có đúng định dạng không
-                    if (regex.IsMatch(fileName))
+                    if (regex.IsMatch(ImageTagetPath))
                     {
-                        dataGridViewImages.Rows.Add(false, fileName); // False mặc định checkbox không tích
+                        string? ImageSourcePath = GetImageSourcePath(urlSource, ImageTagetPath);
+
+                        ResultCompareFaceDto rcf = new ResultCompareFaceDto
+                        {
+                            Id = idCounter++, // Gán giá trị hiện tại của idCounter, sau đó tăng lên 1
+                            ImageSourcePath = ImageSourcePath,
+                            ImageTagetPath = file,
+                            StudentCode = Path.GetFileNameWithoutExtension(ImageTagetPath),
+                            Status = ResultStatus.PROCESSING,
+                            Confidence = 0.0,
+                            ExamCode = examCode,
+                            Time = DateTime.Now,
+                            Message = "File loaded",
+                        };
+                        listDataCompareGetData.Add(rcf);
                     }
                 }
 
-                // Hiển thị thông báo nếu không tìm thấy file phù hợp
-                if (dataGridViewImages.Rows.Count == 0)
+                listDataCompare = listDataCompareGetData;
+
+                if (listDataCompare.Count == 0)
                 {
                     MessageBox.Show("Không tìm thấy file nào đáp ứng định dạng trong thư mục!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
-                AddSelectAllCheckBox();
+
             }
             catch (Exception ex)
             {
@@ -125,145 +150,75 @@ namespace CompareFaceExamDemo
             }
         }
 
-
-        private void btnSelectAll_Click(object sender, EventArgs e)
+        private string? GetImageSourcePath(string urlSource, string imageFileName)
         {
-            foreach (DataGridViewRow row in dataGridViewImages.Rows)
+            // Lấy tên file không có phần mở rộng
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(imageFileName);
+
+            // Đường dẫn cho file .jpg
+            string jpgPath = Path.Combine(urlSource, fileNameWithoutExtension + ".jpg");
+
+            if (File.Exists(jpgPath))
             {
-                DataGridViewCheckBoxCell checkBoxCell = (DataGridViewCheckBoxCell)row.Cells["checkBoxColumn"];
-                checkBoxCell.Value = true; // Chọn tất cả checkbox
+                return jpgPath; // Trả về đường dẫn nếu file .jpg tồn tại
             }
+
+            // Đường dẫn cho file .png
+            string pngPath = Path.Combine(urlSource, fileNameWithoutExtension + ".png");
+
+            if (File.Exists(pngPath))
+            {
+                return pngPath; // Trả về đường dẫn nếu file .png tồn tại
+            }
+
+            // Nếu cả hai file không tồn tại, trả về null hoặc xử lý khác
+            return null;
         }
 
-        private void AddSelectAllCheckBox()
-        {
-            // Tạo CheckBox
-            CheckBox selectAllCheckBox = new CheckBox
-            {
-                Size = new System.Drawing.Size(15, 15),
-                Location = new System.Drawing.Point(5, 5) // Tùy chỉnh vị trí
-            };
 
-            // Gắn sự kiện thay đổi trạng thái
-            selectAllCheckBox.CheckedChanged += SelectAllCheckBox_CheckedChanged;
-
-            // Đặt CheckBox vào tiêu đề của cột đầu tiên (Select Column)
-            var headerCell = dataGridViewImages.GetCellDisplayRectangle(0, -1, true);
-            selectAllCheckBox.Location = new System.Drawing.Point(headerCell.Location.X + 20, headerCell.Location.Y + 5);
-
-            // Thêm CheckBox vào DataGridView
-            dataGridViewImages.Controls.Add(selectAllCheckBox);
-        }
-
-        private void SelectAllCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            CheckBox headerCheckBox = (CheckBox)sender;
-
-            // Thay đổi trạng thái tất cả các checkbox trong bảng
-            foreach (DataGridViewRow row in dataGridViewImages.Rows)
-            {
-                DataGridViewCheckBoxCell checkBoxCell = (DataGridViewCheckBoxCell)row.Cells["checkBoxColumn"];
-                checkBoxCell.Value = headerCheckBox.Checked;
-            }
-        }
-
-        private void dataGridViewImages_SelectionChanged(object sender, EventArgs e)
-        {
-            // Kiểm tra nếu có ít nhất một hàng được chọn
-            if (dataGridViewImages.SelectedRows.Count > 0)
-            {
-                DataGridViewRow selectedRow = dataGridViewImages.SelectedRows[0];
-
-                // Lấy tên file từ cột FileName
-                string fileName = selectedRow.Cells["FileName"].Value?.ToString();
-
-                if (!string.IsNullOrEmpty(fileName))
-                {
-                    string folderPath = txtFolderPath.Text; // Đường dẫn thư mục
-                    string fullPath = Path.Combine(folderPath, fileName);
-
-                    // Kiểm tra file tồn tại và hiển thị
-                    if (File.Exists(fullPath))
-                    {
-                        if (pictureBoxPreview.Image != null)
-                        {
-                            pictureBoxPreview.Image.Dispose(); // Giải phóng ảnh cũ
-                        }
-                        pictureBoxPreview.Image = Image.FromFile(fullPath);
-                    }
-                    else
-                    {
-                        pictureBoxPreview.Image = null; // Xóa ảnh nếu file không tồn tại
-                        MessageBox.Show($"File không tồn tại: {fullPath}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
-            else
-            {
-                // Không có hàng nào được chọn
-                pictureBoxPreview.Image = null; // Xóa ảnh
-            }
-        }
-
-        private void btnSend_Click(object sender, EventArgs e)
+        private async void btnSend_Click(object sender, EventArgs e)
         {
             try
             {
-                // Tạo danh sách chứa đường dẫn các file đã được chọn
-                List<string> selectedFiles = new List<string>();
-                List<string> sourceFiles = new List<string>();
-
-                foreach (DataGridViewRow row in dataGridViewImages.Rows)
+                if (listDataCompare!.Count > 0)
                 {
-                    // Kiểm tra nếu checkbox được tích
-                    bool isChecked = Convert.ToBoolean(row.Cells["checkBoxColumn"].Value);
-                    if (isChecked)
+                    try
                     {
-                        // Lấy tên file từ cột FileName
-                        string fileName = row.Cells["FileName"].Value.ToString();
+                        btnSend.Enabled = false;
+                        button1.Enabled = true;
+                        button2.Enabled = true;
 
-                        // Kết hợp với đường dẫn thư mục để tạo đường dẫn đầy đủ
-                        string folderPath = txtFolderPath.Text; // Đường dẫn thư mục được chọn
-                        string fullPath = Path.Combine(folderPath, fileName);
+                        progressBarCompare.Maximum = listDataCompare.Count;
+                        var sourceFile = Config.GetSetting();
+                        int maxDegreeOfParallelism = sourceFile.NumberOfThread;
+                        int maxRetries = sourceFile.NumberOfRetry;
+                        await GetCompareResult(maxDegreeOfParallelism, maxRetries);
 
-                        // Thêm đường dẫn đầy đủ vào danh sách
-                        selectedFiles.Add(fullPath);
-                    }
-                }
+                        string folderPath = txtFolderPath.Text;
+                        string[] folderPathParts = folderPath.Split('\\');
+                        string lastPart = folderPathParts[folderPathParts.Length - 1];
 
-                var sourceFile = Config.GetSetting();
-                var urlSource = sourceFile.DirectoryImageSource;
-                // Kết hợp với thư mục nguồn để tạo đường dẫn đầy đủ
-                foreach (DataGridViewRow row in dataGridViewImages.Rows)
-                {
-                    // Kiểm tra nếu checkbox được tích
-                    bool isChecked = Convert.ToBoolean(row.Cells["checkBoxColumn"].Value);
-                    if (isChecked)
-                    {
-                        // Lấy tên file từ cột FileName
-                        string fileName = row.Cells["FileName"].Value.ToString();
+                        string filePathExcel = folderPath + "/" + DateTime.Now.ToString("ddMMyyyy_HHmmss_fff") + "-" + lastPart + ".xlsx";
+                        string filePathTxt = folderPath + "/" + DateTime.Now.ToString("ddMMyyyy_HHmmss_fff") + "-" + lastPart + ".txt";
 
-                        // Kết hợp với đường dẫn thư mục để tạo đường dẫn đầy đủ
-                        string folderPath = txtFolderPath.Text; // Đường dẫn thư mục được chọn
-                        string fullPath = Path.Combine(urlSource, fileName);
+                        ExcelExporter.ExportListToExcel(listDataCompare, filePathExcel);
 
-                        // Thêm đường dẫn đầy đủ vào danh sách
-                        if (File.Exists(fullPath))
+                        var resultCompareFaceTxtDtos = GetResultCompareFaceTxtDto(listDataCompare, maxDegreeOfParallelism);
+                        resultCompareFaceTxtDtos = resultCompareFaceTxtDtos.OrderBy(r => r.Id).ToList();
+                        TxtExporter.ExportListToTxt(resultCompareFaceTxtDtos, filePathTxt, "|");
+
+                        if (listDataCompare.Count > 0)
                         {
-                            sourceFiles.Add(fullPath);
-                        }
-                        else
-                        {
-                            MessageBox.Show($"File không tồn tại trong thư mục nguồn: {fileName}", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            btnSend.Enabled = true;
+                            dataGridViewImages.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.DisplayedCells);
+                            string message = $"Kết quả đã được lưu:\n\nExcel: {filePathExcel}\n\nTxt: {filePathTxt}";
+                            MessageBox.Show(message, "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }
                     }
-                }
-
-                // Hiển thị danh sách file đã được chọn (nếu cần)
-                if (selectedFiles.Count > 0)
-                {
-                    string message = "Các file được chọn:\n" + string.Join("\n", selectedFiles);
-                    MessageBox.Show(message, "File Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    catch (Exception ex)
+                    {
+                        throw new Exception(ex.Message);
+                    }
                 }
                 else
                 {
@@ -272,9 +227,320 @@ namespace CompareFaceExamDemo
             }
             catch (Exception)
             {
-
                 throw;
             }
+        }
+
+        private List<ResultCompareFaceTxtDto> GetResultCompareFaceTxtDto(List<ResultCompareFaceDto> resultCompareFaceDto, int maxDegreeOfParallelism)
+        {
+            List<ResultCompareFaceTxtDto> resultCompareFaceTxtDtos = new List<ResultCompareFaceTxtDto>(resultCompareFaceDto.Count);
+
+            try
+            {
+                // Sử dụng một đối tượng thread-safe để thêm phần tử song song
+                var concurrentList = new ConcurrentBag<ResultCompareFaceTxtDto>();
+
+                // Tạo ParallelOptions để giới hạn số luồng
+                var parallelOptions = new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = maxDegreeOfParallelism // Số luồng tối đa, tùy chỉnh theo CPU
+                };
+
+                Parallel.ForEach(resultCompareFaceDto, parallelOptions, item =>
+                {
+                    ResultCompareFaceTxtDto rcf = new ResultCompareFaceTxtDto
+                    {
+                        Id = item.Id,
+                        StudentCode = item.StudentCode,
+                        Status = GetEnumValueDirect(item.Status),
+                        Confidence = item.Confidence,
+                        ExamCode = item.ExamCode,
+                        Time = item.Time,
+                        Message = item.Message,
+                        Note = item.Note,
+                        ImageSourcePath = item.ImageSourcePath,
+                        ImageTagetPath = item.ImageTagetPath,
+                    };
+                    concurrentList.Add(rcf);
+                });
+
+                // Chuyển ConcurrentBag về List
+                resultCompareFaceTxtDtos = concurrentList.ToList();
+
+                return resultCompareFaceTxtDtos;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        private int GetEnumValueDirect(ResultStatus status)
+        {
+            return (int)status;
+        }
+
+        private string GetNote(int confident, double ConfidenceResponse)
+        {
+            if (ConfidenceResponse >= confident)
+            {
+                return "khuôn mặt giống nhau";
+            }
+            else
+            {
+                return "khuôn mặt KHÁC nhau";
+            }
+        }
+
+        public static int GetEnumValue(string input)
+        {
+            if (Enum.TryParse(input, true, out ResultStatus status))
+            {
+                return (int)status;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+
+
+        private async Task GetCompareResult(int maxDegreeOfParallelism, int maxRetries)
+        {
+            try
+            {
+                SemaphoreSlim semaphore = new SemaphoreSlim(maxDegreeOfParallelism);
+                List<Task> tasks = new List<Task>();
+                var sourceFile = Config.GetSetting();
+                var confident = sourceFile.Confident;
+
+                // Đặt giá trị tối đa cho ProgressBar
+                progressBarCompare.Invoke(new Action(() =>
+                {
+                    progressBarCompare.Maximum = listDataCompare.Count;
+                    progressBarCompare.Value = 0;
+                }));
+
+                int completedCount = 0;
+
+                foreach (var itemCompare in listDataCompare)
+                {
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        await semaphore.WaitAsync();
+
+                        try
+                        {
+                            while (_isPaused)
+                            {
+                                _pauseEvent.Wait();
+                            }
+
+                            bool success = false;
+                            int retryCount = 0;
+                            ComparisonResponse? response = null;
+
+                            while (!success && retryCount < maxRetries)
+                            {
+                                if (itemCompare.ImageSourcePath != null)
+                                {
+                                    response = await _faceCompareService.CompareFacesAsync(itemCompare.ImageSourcePath, itemCompare.ImageTagetPath ?? "");
+
+                                    while (_isPaused)
+                                    {
+                                        _pauseEvent.Wait();
+                                    }
+
+                                    if (CheckResponseCompare(response))
+                                    {
+                                        success = true;
+                                        var ConfidenceResponse = response.Data.Percentage.HasValue ? (double)response.Data.Percentage.Value : 0.0;
+                                        itemCompare.Message = response.Status + " - " + response.Message;
+                                        itemCompare.Note = GetNote(confident, ConfidenceResponse);
+                                        itemCompare.Status = (double)response.Data.Percentage.Value >= confident ? ResultStatus.MATCHED : ResultStatus.NOTMATCHED;
+                                        itemCompare.Confidence = ConfidenceResponse;
+
+                                        int rowIndex = listDataCompare.IndexOf(itemCompare);
+                                        dataGridViewImages.Invoke(new Action(() =>
+                                        {
+                                            if (ConfidenceResponse < confident)
+                                            {
+                                                dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.LightCoral;
+                                            }
+                                            else
+                                            {
+                                                dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.LightGreen;
+                                            }
+                                            dataGridViewImages.Refresh();
+                                        }));
+                                    }
+                                    else if (response.Status == 429)
+                                    {
+                                        retryCount++;
+                                        itemCompare.Message = $"Đang retry lần {retryCount}";
+
+                                        int rowIndex = listDataCompare.IndexOf(itemCompare);
+                                        dataGridViewImages.Invoke(new Action(() =>
+                                        {
+                                            dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.LightYellow;
+                                            dataGridViewImages.Refresh();
+                                        }));
+                                        await Task.Delay(1000);
+                                    }
+                                    else
+                                    {
+                                        itemCompare.Message = response.Status + " - " + response.Message;
+
+                                        int rowIndex = listDataCompare.IndexOf(itemCompare);
+                                        dataGridViewImages.Invoke(new Action(() =>
+                                        {
+                                            dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.LightYellow;
+                                            dataGridViewImages.Refresh();
+                                        }));
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    itemCompare.Message = "Không tìm thấy ảnh source!";
+                                    itemCompare.Note = "Cần thêm ảnh source vào hệ thống!";
+
+                                    int rowIndex = listDataCompare.IndexOf(itemCompare);
+                                    dataGridViewImages.Invoke(new Action(() =>
+                                    {
+                                        dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.LightYellow;
+                                        dataGridViewImages.Refresh();
+                                    }));
+                                    break;
+                                }
+                            }
+
+                            if (!success && retryCount >= maxRetries)
+                            {
+                                itemCompare.Message = response.Status + " - " + response.Message;
+
+                                int rowIndex = listDataCompare.IndexOf(itemCompare);
+                                dataGridViewImages.Invoke(new Action(() =>
+                                {
+                                    dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.LightYellow;
+                                    dataGridViewImages.Refresh();
+                                }));
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            throw;
+                        }
+                        finally
+                        {
+                            // Tăng tiến trình một cách an toàn giữa các thread
+                            Interlocked.Increment(ref completedCount);
+
+                            // Cập nhật ProgressBar và phần trăm hoàn thành trên giao diện
+                            progressBarCompare.Invoke(new Action(() =>
+                            {
+                                progressBarCompare.Value = completedCount;
+                                lblProgress.Text = $"{(completedCount * 100) / listDataCompare.Count}% hoàn thành";
+                            }));
+
+                            // Giải phóng Semaphore để các Task khác có thể chạy
+                            semaphore.Release();
+                        }
+                    }));
+                }
+
+                await Task.WhenAll(tasks);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Có lỗi xảy ra: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LogError(string logFilePath, ComparisonResponse? response, bool isRetryExceeded = false)
+        {
+            lock (_logLock)
+            {
+                try
+                {
+                    using (StreamWriter sw = new StreamWriter(logFilePath, true))
+                    {
+                        string logMessage = isRetryExceeded
+                            ? $"[{DateTime.Now}] ERROR: Retry limit exceeded. Response: {response?.ToString()}"
+                            : $"[{DateTime.Now}] ERROR: Comparison failed. Response: {response?.ToString()}";
+
+                        sw.WriteLine(logMessage);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to log error: {ex.Message}");
+                }
+            }
+        }
+
+        private bool CheckResponseCompare(ComparisonResponse cr)
+        {
+            if (cr.Status == 200)
+            {
+                return true;
+            }
+            else if (cr.Status == 429)
+            {
+                return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private string ConvertImageToBase64(Image image)
+        {
+            try
+            {
+                // Tạo một MemoryStream để lưu ảnh tạm thời
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    // Lưu ảnh vào MemoryStream dưới định dạng PNG (hoặc định dạng khác tùy chọn)
+                    image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+
+                    // Chuyển nội dung MemoryStream sang mảng byte
+                    byte[] imageBytes = ms.ToArray();
+
+                    // Chuyển mảng byte thành chuỗi base64
+                    string base64String = Convert.ToBase64String(imageBytes);
+
+                    return base64String;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Xử lý lỗi nếu cần
+                Console.WriteLine($"Lỗi chuyển đổi ảnh sang base64: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+        private void ImageCaptureForm_Load(object sender, EventArgs e)
+        {
+
+            progressBarCompare.Minimum = 0;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            _isPaused = true;
+            _pauseEvent.Reset();
+            button1.Enabled = false;
+            button2.Enabled = true;
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            _isPaused = false;
+            _pauseEvent.Set();
+            button1.Enabled = true;
+            button2.Enabled = false;
         }
     }
 }
