@@ -96,28 +96,28 @@ namespace FAL.Controllers
         [HttpPost("upload-zip")]
         public async Task<IActionResult> UploadAndProcessZipFile(IFormFile zipFile)
         {
-            if (!IsValidZipFile(zipFile, out string errorMessage))
+            if (!FileValidationExtention.IsValidZipFile(zipFile, out string errorMessage))
             {
                 return BadRequest(errorMessage);
             }
 
             try
             {
-                var tempZipFilePath = await SaveZipToTemporaryLocation(zipFile);
+                var tempZipFilePath = await FileValidationExtention.SaveZipToTemporaryLocation(zipFile);
                 var extractPath = ExtractZipFile(tempZipFilePath);
 
-                var imageFiles = GetImageFilesFromDirectory(extractPath);
+                var imageFiles = FileValidationExtention.GetImageFilesFromDirectory(extractPath);
 
                 if (!imageFiles.Any())
                 {
-                    CleanupTemporaryFiles(tempZipFilePath, extractPath);
+                    FileValidationExtention.CleanupTemporaryFiles(tempZipFilePath, extractPath);
                     return BadRequest("No valid image files found in the ZIP.");
                 }
 
                 var systemId = User.Claims.FirstOrDefault(c => c.Type == SystermId)?.Value;
                 var (successCount, failureCount) = await ProcessImagesAsync(imageFiles, systemId);
 
-                CleanupTemporaryFiles(tempZipFilePath, extractPath);
+                FileValidationExtention.CleanupTemporaryFiles(tempZipFilePath, extractPath);
                 await _dynamoService.LogRequestAsync(systemId, RequestTypeEnum.TrainByZip, RequestResultEnum.Success, JsonSerializer.Serialize(zipFile));
                 return Ok(new ResultResponse
                 {
@@ -145,33 +145,7 @@ namespace FAL.Controllers
             }
         }
 
-        private bool IsValidZipFile(IFormFile zipFile, out string errorMessage)
-        {
-            if (zipFile == null || zipFile.Length == 0)
-            {
-                errorMessage = "No ZIP file uploaded.";
-                return false;
-            }
 
-            if (!Path.GetExtension(zipFile.FileName).Equals(".zip", StringComparison.OrdinalIgnoreCase))
-            {
-                errorMessage = "Only ZIP files are supported.";
-                return false;
-            }
-
-            errorMessage = string.Empty;
-            return true;
-        }
-
-        private async Task<string> SaveZipToTemporaryLocation(IFormFile zipFile)
-        {
-            var tempZipFilePath = Path.GetTempFileName();
-            using (var stream = new FileStream(tempZipFilePath, FileMode.Create))
-            {
-                await zipFile.CopyToAsync(stream);
-            }
-            return tempZipFilePath;
-        }
 
         private string ExtractZipFile(string zipFilePath)
         {
@@ -196,14 +170,6 @@ namespace FAL.Controllers
         }
 
 
-        private List<string> GetImageFilesFromDirectory(string directoryPath)
-        {
-            return Directory.GetFiles(directoryPath)
-                .Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
-                            f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
-                            f.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
 
         private async Task<(int successCount, int failureCount)> ProcessImagesAsync(List<string> imageFiles, string systemId)
         {
@@ -240,18 +206,7 @@ namespace FAL.Controllers
             return (successCount, failureCount);
         }
 
-        private void CleanupTemporaryFiles(string tempZipFilePath, string extractPath)
-        {
-            if (System.IO.File.Exists(tempZipFilePath))
-            {
-                System.IO.File.Delete(tempZipFilePath);
-            }
-
-            if (Directory.Exists(extractPath))
-            {
-                Directory.Delete(extractPath, true);
-            }
-        }
+        
 
         private string GetContentType(string path)
         {

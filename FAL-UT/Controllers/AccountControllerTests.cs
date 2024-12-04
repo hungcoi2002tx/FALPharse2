@@ -1,11 +1,9 @@
-﻿using Xunit;
-using Moq;
+﻿using Moq;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using Amazon.DynamoDBv2.DataModel;
 using FAL.Controllers;
-using FAL.Models;
+using Share.Model;
+using Share.DTO;
 
 public class AccountsControllerTests
 {
@@ -67,7 +65,7 @@ public class AccountsControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var returnedUsers = Assert.IsType<List<Account>>(okResult.Value);
+        var returnedUsers = Assert.IsType<List<AccountViewDto>>(okResult.Value);
 
         Assert.Equal(2, returnedUsers.Count);
         Assert.Equal("user1", returnedUsers[0].Username);
@@ -91,7 +89,7 @@ public class AccountsControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var returnedUser = Assert.IsType<Account>(okResult.Value);
+        var returnedUser = Assert.IsType<AccountViewDto>(okResult.Value);
         Assert.Equal("user1", returnedUser.Username);
     }
 

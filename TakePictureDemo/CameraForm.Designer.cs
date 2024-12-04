@@ -2,7 +2,7 @@
 using System.Windows.Forms;
 using System.Drawing;
 
-namespace TakePictureDemo
+namespace AuthenExamTakePicture
 {
     partial class CameraForm
     {

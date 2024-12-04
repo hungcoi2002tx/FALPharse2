@@ -1,10 +1,10 @@
 
-using Demo_Eos_Api.Service.Implement;
-using Demo_Eos_Api.Service.Interface;
+using AuthenExamReceiveData.Service.Implement;
+using AuthenExamReceiveData.Service.Interface;
 using Microsoft.AspNetCore.SignalR;
 using SixLabors.ImageSharp;
 
-namespace Demo_Eos_Api
+namespace AuthenExamReceiveData
 {
     public class Program
     {

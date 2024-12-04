@@ -1,4 +1,4 @@
-﻿using CompareFaceExamDemo.Utils;
+﻿using AuthenExamCompareFaceExam.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using RestSharp;
@@ -11,7 +11,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace CompareFaceExamDemo.ExternalService.Recognition
+namespace AuthenExamCompareFaceExam.ExternalService.Recognition
 {
     public class BaseRecognitionServices<T> where T : class
     {

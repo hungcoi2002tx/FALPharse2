@@ -6,8 +6,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FAL.Services;
-using Share.Data;
 using System.Text.Json;
+using Share.DTO;
+using Share.Model;
 
 public class DynamoDBServiceTests
 {

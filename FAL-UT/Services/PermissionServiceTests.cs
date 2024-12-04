@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Security.Claims;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Security.Claims;
 using Amazon.DynamoDBv2.DataModel;
-using FAL.Models;
 using FAL.Services;
 using Moq;
-using Xunit;
+using Share.Model;
 
 public class PermissionServiceTests
 {

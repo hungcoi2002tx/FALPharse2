@@ -1,10 +1,10 @@
-﻿using CompareFaceExamDemo.Entity.Interface;
+﻿using AuthenExamCompareFaceExam.Entity.Interface;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace CompareFaceExamDemo.DAO
+namespace AuthenExamCompareFaceExam.DAO
 {
     public class ExamDAO<T> where T : IEntity, new()
     {

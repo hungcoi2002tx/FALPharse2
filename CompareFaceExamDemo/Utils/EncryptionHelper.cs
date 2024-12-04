@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CompareFaceExamDemo.Utils
+namespace AuthenExamCompareFaceExam.Utils
 {
     public class EncryptionHelper
     {
@@ -35,7 +35,7 @@ namespace CompareFaceExamDemo.Utils
 
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     throw;
                 }
@@ -68,7 +68,7 @@ namespace CompareFaceExamDemo.Utils
                         }
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     throw;
                 }

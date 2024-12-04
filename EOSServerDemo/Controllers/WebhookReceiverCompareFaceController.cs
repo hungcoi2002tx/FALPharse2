@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using CompareFaceExamDemo.DAO;
-using CompareFaceExamDemo.Entities;
+using AuthenExamCompareFaceExam.DAO;
+using AuthenExamCompareFaceExam.Entities;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;

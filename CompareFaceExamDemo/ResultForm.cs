@@ -1,9 +1,10 @@
-﻿using CompareFaceExamDemo.DAO;
-using CompareFaceExamDemo.Entities;
-using CompareFaceExamDemo.Models;
-using CompareFaceExamDemo.Utils;
+﻿using AuthenExamCompareFaceExam.DAO;
+using AuthenExamCompareFaceExam.Entities;
+using AuthenExamCompareFaceExam.Models;
+using AuthenExamCompareFaceExam.Utils;
+using System.Data.Common;
 
-namespace CompareFaceExamDemo
+namespace AuthenExamCompareFaceExam
 {
 
     public partial class ResultForm : Form
@@ -18,6 +19,14 @@ namespace CompareFaceExamDemo
         {
             InitializeComponent();
 
+            cmbFileList.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbStatus.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbSortField.DropDownStyle = ComboBoxStyle.DropDownList;
+
+            dataGridView1.ReadOnly = true;
+            dataGridView1.AllowUserToAddRows = false;
+            dataGridView1.AllowUserToDeleteRows = false;
+            //dataGridView1.AutoGenerateColumns = false; // Tắt tự động tạo cột
             try
             {
                 // Tải cấu hình từ settings.json
@@ -51,6 +60,7 @@ namespace CompareFaceExamDemo
             // Khởi tạo giá trị cho cmbStatus
             cmbStatus.Items.AddRange(new object[]
             {
+                "ALL",
             "PROCESSING",
             "MATCHED",
             "NOTMATCHED"
@@ -74,8 +84,9 @@ namespace CompareFaceExamDemo
         }
         private void button1_Click(object sender, EventArgs e)
         {
-            // Lấy tên file được chọn từ ComboBox
             var selectedFile = cmbFileList.SelectedItem as string;
+
+
 
             if (string.IsNullOrEmpty(selectedFile))
             {
@@ -83,25 +94,77 @@ namespace CompareFaceExamDemo
                 return;
             }
 
-            // Kết hợp đường dẫn thư mục với tên file
             fileDataPath = Path.Combine(txtDataFolder.Text, selectedFile.EndsWith(".txt") ? selectedFile : selectedFile + ".txt");
 
-
-            // Kiểm tra file tồn tại
             if (!File.Exists(fileDataPath))
             {
                 MessageBox.Show($"File {fileDataPath} does not exist.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            // Lấy các điều kiện lọc từ giao diện người dùng
             var filters = GetFilters(); // Lấy các bộ lọc từ các trường giao diện
-
-            // Lấy danh sách kết quả từ file và áp dụng bộ lọc
             results = GetFilteredResults(fileDataPath, filters);
-
-            // Cập nhật DataGridView với kết quả
+            CheckConfidenceSetting();
+            //AddColumn();
+            // Cập nhật DataGridView
             dataGridView1.DataSource = results;
+            // Đăng ký sự kiện RowPrePaint để định màu sắc
+            dataGridView1.RowPrePaint += DataGridView1_RowPrePaint;
+
+            if (results.Count <= 0)
+            {
+                MessageBox.Show($"File {fileDataPath} is blank!", "Message", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+        }
+
+        private void CheckConfidenceSetting()
+        {
+            var sourceFile = Config.GetSetting();
+            var confidence = sourceFile.Confident;
+
+            foreach (var item in results)
+            {
+                if (item.Confidence == 0.0 && item.Status == ResultStatus.PROCESSING)
+                {
+                    item.Status = ResultStatus.PROCESSING;
+                }
+                else if (item.Confidence >= confidence)
+                {
+                    item.Status = ResultStatus.MATCHED;
+                    item.Note = "khuôn mặt giống nhau";
+                }
+                else
+                {
+                    item.Status = ResultStatus.NOTMATCHED;
+                    item.Note = "khuôn mặt KHÁC nhau";
+                }
+            }
+        }
+        private void DataGridView1_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e)
+        {
+            if (dataGridView1.Rows[e.RowIndex].DataBoundItem is EOSComparisonResult result)
+            {
+                // Thay đổi màu nền của dòng dựa trên ResultStatus
+                switch (result.Status)
+                {
+                    case ResultStatus.PROCESSING:
+                        dataGridView1.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.LightYellow; // Màu vàng nhạt
+                        break;
+
+                    case ResultStatus.MATCHED:
+                        dataGridView1.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.LightGreen; // Màu xanh nhạt
+                        break;
+
+                    case ResultStatus.NOTMATCHED:
+                        dataGridView1.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.LightCoral; // Màu đỏ nhạt
+                        break;
+
+                    default:
+                        dataGridView1.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.White; // Màu trắng mặc định
+                        break;
+                }
+            }
         }
 
 
@@ -110,7 +173,7 @@ namespace CompareFaceExamDemo
             var filters = new Dictionary<string, object>();
 
             if (!string.IsNullOrEmpty(txtStudentCode.Text))
-                filters.Add("StudentCode", txtStudentCode.Text);
+                filters.Add("StudentCode", txtStudentCode.Text.ToUpper());
 
             if (!string.IsNullOrEmpty(txtExamCode.Text))
                 filters.Add("ExamCode", txtExamCode.Text);
@@ -139,7 +202,7 @@ namespace CompareFaceExamDemo
             if (filters.ContainsKey("ExamCode"))
                 results = results.Where(r => r.ExamCode == (string)filters["ExamCode"]).ToList();
 
-            if (filters.ContainsKey("Status"))
+            if (filters.ContainsKey("Status") && (ResultStatus)filters["Status"] != ResultStatus.ALL)
                 results = results.Where(r => r.Status == (ResultStatus)filters["Status"]).ToList();
 
             if (filters.ContainsKey("MinConfidence"))
@@ -182,8 +245,8 @@ namespace CompareFaceExamDemo
 
         private void DisplayImages(EOSComparisonResult result)
         {
-            var sourceImagePath = Path.Combine(_sourceImageFolder, $"{result.StudentCode}.jpg");
-            var targetImagePath = Path.Combine(txtDataFolder.Text, $"{result.ExamCode}", $"{result.StudentCode}.jpg");
+            var sourceImagePath = result.ImageSourcePath;
+            var targetImagePath = result.ImageTagetPath;
 
             // Hiển thị SourceImage
             if (File.Exists(sourceImagePath))
@@ -275,6 +338,92 @@ namespace CompareFaceExamDemo
             }
         }
 
+        private void AddColumn()
+        {
+            // Định nghĩa các cột cố định
+            dataGridView1.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "Id",
+                HeaderText = "ID",
+                DataPropertyName = "Id", // Liên kết với thuộc tính trong ResultCompareFaceDto
+                Width = 50
+            });
+
+            dataGridView1.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "ExamCode",
+                HeaderText = "Mã Bài Thi",
+                DataPropertyName = "ExamCode",
+                Width = 170
+            });
+
+            dataGridView1.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "StudentCode",
+                HeaderText = "Mã Sinh Viên",
+                DataPropertyName = "StudentCode",
+                Width = 100
+            });
+
+            dataGridView1.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "Time",
+                HeaderText = "Thời Gian",
+                DataPropertyName = "Time",
+                Width = 150,
+                DefaultCellStyle = new DataGridViewCellStyle() { Format = "dd/MM/yyyy HH:mm:ss" } // Format datetime
+            });
+
+            dataGridView1.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "Status",
+                HeaderText = "Trạng Thái",
+                DataPropertyName = "Status",
+                Width = 100
+            });
+
+            dataGridView1.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "Message",
+                HeaderText = "Thông Báo",
+                DataPropertyName = "Message",
+                Width = 265
+            });
+
+            dataGridView1.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "Confidence",
+                HeaderText = "Độ Tin Cậy",
+                DataPropertyName = "Confidence",
+                Width = 80,
+                DefaultCellStyle = new DataGridViewCellStyle() { Format = "N2" } // Hiển thị 2 chữ số thập phân
+            });
+
+            dataGridView1.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "Note",
+                HeaderText = "Ghi Chú",
+                DataPropertyName = "Note",
+                Width = 250
+            });
+
+            dataGridView1.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "ImageTagetPath",
+                HeaderText = "Ảnh Đích",
+                DataPropertyName = "ImageTagetPath",
+                Width = 400
+            });
+
+            dataGridView1.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "ImageSourcePath",
+                HeaderText = "Ảnh Nguồn",
+                DataPropertyName = "ImageSourcePath",
+                Width = 350
+            });
+        }
+
         private void btnExport_Click(object sender, EventArgs e)
         {
             // Tạo SaveFileDialog để cho người dùng chọn file lưu
@@ -309,6 +458,5 @@ namespace CompareFaceExamDemo
                 }
             }
         }
-
     }
 }

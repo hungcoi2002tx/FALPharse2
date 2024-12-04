@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace CompareFaceExamDemo
+namespace AuthenExamCompareFaceExam
 {
     public partial class BulkDeleteForm : Form
     {

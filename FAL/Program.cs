@@ -14,6 +14,7 @@ using System.Security;
 using System.Text;
 using Amazon.SQS;
 using Microsoft.AspNetCore.HttpOverrides;
+using FAL.MiddleWare;
 using Share.Utils;
 using FAL.DataInitial;
 

@@ -1,16 +1,11 @@
-﻿using Xunit;
-using Moq;
+﻿using Moq;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.AspNetCore.Http;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using FAL.Services;
-using Share.SystemModel;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
+using Share.Model;
 
 public class S3ServiceTests
 {

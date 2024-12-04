@@ -4,22 +4,15 @@ using System.IO;
 using System.Windows.Forms;
 using AForge.Video;
 using AForge.Video.DirectShow;
-using CameraCaptureLibrary;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
-namespace TakePictureDemo
+namespace AuthenExamTakePicture
 {
     public partial class InfoForm : Form
     {
-        private CameraCapture cameraCapture;
-        private ApiClient apiClient;
-
         public InfoForm()
         {
             InitializeComponent();
-            cameraCapture = new CameraCapture();
-            apiClient = new ApiClient("https://localhost:7031/api/CompareFace/register-compare");
-            cameraCapture.OnImageCaptured += OnImageCaptured;
         }
 
         private void OnImageCaptured(string imagePath)
@@ -47,18 +40,17 @@ namespace TakePictureDemo
 
         private void captureBtn_Click(object sender, EventArgs e)
         {
-            //cameraCapture.StartCamera();
-
             using (CameraForm formCamera = new CameraForm())
             {
-                this.Hide(); // Ẩn form hiện tại
+                formCamera.ExamCode = textBox3.Text;
+                formCamera.StudentCode = textBox2.Text;
+
+                this.Hide();
                 if (formCamera.ShowDialog() == DialogResult.OK)
                 {
-                    // Xử lý khi formCamera trả về kết quả OK
-                    // string savedImagePath = formCamera.SavedImagePath;
-                    // MessageBox.Show("Đường dẫn ảnh đã lưu: " + savedImagePath);
+
                 }
-                this.Close(); // Đóng form hiện tại
+                this.Close();
             }
         }
 

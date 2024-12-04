@@ -1,11 +1,8 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using FAL.Controllers;
-using FAL.Models;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
+using Share.Model;
 
 public class RolesControllerTests
 {

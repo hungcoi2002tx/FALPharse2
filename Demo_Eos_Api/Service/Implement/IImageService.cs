@@ -1,6 +1,6 @@
-﻿using Demo_Eos_Api.DTOs;
+﻿using AuthenExamReceiveData.DTOs;
 
-namespace Demo_Eos_Api.Service.Implement
+namespace AuthenExamReceiveData.Service.Implement
 {
     public interface IImageService
     {

@@ -1,4 +1,4 @@
-﻿namespace CompareFaceExamDemo
+﻿namespace AuthenExamCompareFaceExam
 {
     partial class ImageCaptureForm
     {
@@ -8,7 +8,6 @@
         private System.Windows.Forms.Button btnSelectAll;
         private System.Windows.Forms.Button btnSend;
         private System.Windows.Forms.TextBox txtFolderPath;
-        private System.Windows.Forms.PictureBox pictureBoxPreview;
 
 
         protected override void Dispose(bool disposing)
@@ -22,79 +21,125 @@
 
         private void InitializeComponent()
         {
-            this.btnSelectFolder = new System.Windows.Forms.Button();
-            this.btnSend = new System.Windows.Forms.Button();
-            this.txtFolderPath = new System.Windows.Forms.TextBox();
-            this.dataGridViewImages = new System.Windows.Forms.DataGridView();
-            this.pictureBoxPreview = new System.Windows.Forms.PictureBox();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewImages)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPreview)).BeginInit();
-            this.SuspendLayout();
+            btnSelectFolder = new Button();
+            btnSend = new Button();
+            txtFolderPath = new TextBox();
+            dataGridViewImages = new DataGridView();
+            progressBarCompare = new ProgressBar();
+            lblProgress = new Label();
+            button1 = new Button();
+            button2 = new Button();
+            ((System.ComponentModel.ISupportInitialize)dataGridViewImages).BeginInit();
+            SuspendLayout();
             // 
             // btnSelectFolder
             // 
-            this.btnSelectFolder.Location = new System.Drawing.Point(12, 12);
-            this.btnSelectFolder.Name = "btnSelectFolder";
-            this.btnSelectFolder.Size = new System.Drawing.Size(150, 30);
-            this.btnSelectFolder.TabIndex = 0;
-            this.btnSelectFolder.Text = "Select Folder";
-            this.btnSelectFolder.UseVisualStyleBackColor = true;
-            this.btnSelectFolder.Click += new System.EventHandler(this.btnSelectFolder_Click);
+            btnSelectFolder.Location = new Point(14, 14);
+            btnSelectFolder.Margin = new Padding(4, 3, 4, 3);
+            btnSelectFolder.Name = "btnSelectFolder";
+            btnSelectFolder.Size = new Size(137, 35);
+            btnSelectFolder.TabIndex = 0;
+            btnSelectFolder.Text = "Select Folder";
+            btnSelectFolder.UseVisualStyleBackColor = true;
+            btnSelectFolder.Click += btnSelectFolder_Click;
             // 
             // btnSend
             // 
-            this.btnSend.Location = new System.Drawing.Point(180, 12);
-            this.btnSend.Name = "btnSend";
-            this.btnSend.Size = new System.Drawing.Size(150, 30);
-            this.btnSend.TabIndex = 1;
-            this.btnSend.Text = "Send";
-            this.btnSend.UseVisualStyleBackColor = true;
-            this.btnSend.Click += new System.EventHandler(this.btnSend_Click);
+            btnSend.Enabled = false;
+            btnSend.Location = new Point(181, 14);
+            btnSend.Margin = new Padding(4, 3, 4, 3);
+            btnSend.Name = "btnSend";
+            btnSend.Size = new Size(137, 35);
+            btnSend.TabIndex = 1;
+            btnSend.Text = "Send";
+            btnSend.UseVisualStyleBackColor = true;
+            btnSend.Click += btnSend_Click;
             // 
             // txtFolderPath
             // 
-            this.txtFolderPath.Location = new System.Drawing.Point(12, 50);
-            this.txtFolderPath.Name = "txtFolderPath";
-            this.txtFolderPath.ReadOnly = true;
-            this.txtFolderPath.Size = new System.Drawing.Size(500, 20);
-            this.txtFolderPath.TabIndex = 2;
+            txtFolderPath.Location = new Point(14, 58);
+            txtFolderPath.Margin = new Padding(4, 3, 4, 3);
+            txtFolderPath.Name = "txtFolderPath";
+            txtFolderPath.ReadOnly = true;
+            txtFolderPath.Size = new Size(629, 23);
+            txtFolderPath.TabIndex = 2;
             // 
             // dataGridViewImages
             // 
-            this.dataGridViewImages.AllowUserToAddRows = false;
-            this.dataGridViewImages.AllowUserToDeleteRows = false;
-            this.dataGridViewImages.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridViewImages.Location = new System.Drawing.Point(12, 80);
-            this.dataGridViewImages.Name = "dataGridViewImages";
-            this.dataGridViewImages.Size = new System.Drawing.Size(350, 270);
-            this.dataGridViewImages.TabIndex = 3;
-            this.dataGridViewImages.SelectionChanged += new System.EventHandler(this.dataGridViewImages_SelectionChanged);
+            dataGridViewImages.AllowUserToAddRows = false;
+            dataGridViewImages.AllowUserToDeleteRows = false;
+            dataGridViewImages.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            dataGridViewImages.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells;
+            dataGridViewImages.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewImages.Location = new Point(1, 104);
+            dataGridViewImages.Margin = new Padding(4, 3, 4, 3);
+            dataGridViewImages.Name = "dataGridViewImages";
+            dataGridViewImages.Size = new Size(1783, 615);
+            dataGridViewImages.TabIndex = 3;
             // 
-            // pictureBoxPreview
+            // progressBarCompare
             // 
-            this.pictureBoxPreview.Location = new System.Drawing.Point(380, 80);
-            this.pictureBoxPreview.Name = "pictureBoxPreview";
-            this.pictureBoxPreview.Size = new System.Drawing.Size(150, 150);
-            this.pictureBoxPreview.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.pictureBoxPreview.TabIndex = 4;
-            this.pictureBoxPreview.TabStop = false;
+            progressBarCompare.Location = new Point(716, 58);
+            progressBarCompare.Name = "progressBarCompare";
+            progressBarCompare.Size = new Size(460, 23);
+            progressBarCompare.TabIndex = 4;
             // 
-            // Form1
+            // lblProgress
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(550, 361);
-            this.Controls.Add(this.pictureBoxPreview);
-            this.Controls.Add(this.txtFolderPath);
-            this.Controls.Add(this.dataGridViewImages);
-            this.Controls.Add(this.btnSend);
-            this.Controls.Add(this.btnSelectFolder);
-            this.Name = "Form1";
-            this.Text = "Image Viewer with Preview";
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewImages)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPreview)).EndInit();
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            lblProgress.AutoSize = true;
+            lblProgress.Location = new Point(929, 37);
+            lblProgress.Name = "lblProgress";
+            lblProgress.Size = new Size(23, 15);
+            lblProgress.TabIndex = 5;
+            lblProgress.Text = "0%";
+            // 
+            // button1
+            // 
+            button1.Enabled = false;
+            button1.Location = new Point(345, 14);
+            button1.Name = "button1";
+            button1.Size = new Size(137, 35);
+            button1.TabIndex = 6;
+            button1.Text = "Pause";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
+            // 
+            // button2
+            // 
+            button2.Enabled = false;
+            button2.Location = new Point(506, 14);
+            button2.Name = "button2";
+            button2.Size = new Size(137, 35);
+            button2.TabIndex = 7;
+            button2.Text = "Resume";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += button2_Click;
+            // 
+            // ImageCaptureForm
+            // 
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(1787, 720);
+            Controls.Add(button2);
+            Controls.Add(button1);
+            Controls.Add(lblProgress);
+            Controls.Add(progressBarCompare);
+            Controls.Add(txtFolderPath);
+            Controls.Add(dataGridViewImages);
+            Controls.Add(btnSend);
+            Controls.Add(btnSelectFolder);
+            Margin = new Padding(4, 3, 4, 3);
+            Name = "ImageCaptureForm";
+            Text = "Image Viewer with Preview";
+            Load += ImageCaptureForm_Load;
+            ((System.ComponentModel.ISupportInitialize)dataGridViewImages).EndInit();
+            ResumeLayout(false);
+            PerformLayout();
         }
+
+        private ProgressBar progressBarCompare;
+        private Label lblProgress;
+        private Button button1;
+        private Button button2;
     }
 }

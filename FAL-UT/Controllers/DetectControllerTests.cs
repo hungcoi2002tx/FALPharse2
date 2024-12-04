@@ -3,7 +3,10 @@ using FAL.Services.IServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using Share.SystemModel;
+using Share.Constant;
+using Share.DTO;
+using Share.Model;
+using Share.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,6 +19,7 @@ public class DetectControllerTests
 {
     private readonly Mock<IS3Service> _mockS3Service;
     private readonly Mock<ICollectionService> _mockCollectionService;
+    private readonly Mock<IDynamoDBService> _mockDynamoService;
     private readonly CustomLog _logger;
     private readonly DetectController _controller;
 
@@ -23,13 +27,14 @@ public class DetectControllerTests
     {
         _mockS3Service = new Mock<IS3Service>();
         _mockCollectionService = new Mock<ICollectionService>();
+        _mockDynamoService = new Mock<IDynamoDBService>();
 
         // Use a temporary file path for the CustomLog instance
         var tempLogFilePath = Path.GetTempFileName();
         _logger = new CustomLog(tempLogFilePath);
 
         // Initialize the controller with the dummy logger
-        _controller = new DetectController(_logger, _mockCollectionService.Object, _mockS3Service.Object);
+        _controller = new DetectController(_logger, _mockCollectionService.Object, _mockS3Service.Object, _mockDynamoService.Object);
 
         // Mock user claims
         var claims = new List<Claim>

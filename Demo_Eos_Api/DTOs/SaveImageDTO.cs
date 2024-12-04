@@ -1,4 +1,4 @@
-﻿namespace Demo_Eos_Api.DTOs
+﻿namespace AuthenExamReceiveData.DTOs
 {
     public class SaveImageDTO
     {

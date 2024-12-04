@@ -12,11 +12,8 @@ using Share.Model;
 using Share.Utils;
 using System;
 using System.IO.Compression;
-using System.Reflection;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
-using Xunit;
 
 public class TrainControllerTests
 {
