@@ -35,5 +35,4 @@ namespace AuthenExamCompareFaceExam
             this.Close();
         }
     }
-
 }

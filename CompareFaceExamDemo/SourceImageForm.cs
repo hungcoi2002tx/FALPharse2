@@ -1,4 +1,5 @@
-﻿using AuthenExamCompareFaceExam.Models;
+﻿using AuthenExamCompareFaceExam.Dtos;
+using AuthenExamCompareFaceExam.Models;
 using AuthenExamCompareFaceExam.Utils;
 using System;
 using System.Collections.Generic;
@@ -111,13 +112,14 @@ namespace AuthenExamCompareFaceExam
 
         private void btnImport_Click(object sender, EventArgs e)
         {
+            string selectedFolder;
             // Cho phép người dùng chọn thư mục
             using (var folderDialog = new FolderBrowserDialog())
             {
                 var dialogResult = folderDialog.ShowDialog();
                 if (dialogResult == DialogResult.OK)
                 {
-                    var selectedFolder = folderDialog.SelectedPath;
+                     selectedFolder = folderDialog.SelectedPath;
 
                     string pattern = @"^[A-Za-z]{2}\d+$"; // 2 chữ cái đầu và sau đó là các chữ số
 
@@ -132,10 +134,7 @@ namespace AuthenExamCompareFaceExam
                         return;
                     }
 
-                    // Kiểm tra và sao chép ảnh vào thư mục nguồn
-                    int importedCount = 0;
-                    int duplicateCount = 0;
-                    var errorMessages = new List<string>(); // Danh sách lưu trữ thông báo lỗi
+                    List<UpdateFileResult> importFileResults = new List<UpdateFileResult>();
 
                     foreach (var filePath in imageFiles)
                     {
@@ -149,11 +148,23 @@ namespace AuthenExamCompareFaceExam
                             try
                             {
                                 File.Copy(filePath, destinationPath, true); // Tham số `true` cho phép ghi đè
-                                duplicateCount++;
+                                UpdateFileResult importFileResult = new UpdateFileResult
+                                {
+                                    FilePath = filePath,
+                                    Message = "ảnh đã được ghi đè",
+                                    Status = "SUCCESSOVERWRITE"
+                                };
+                                importFileResults.Add(importFileResult);
                             }
                             catch (Exception ex)
                             {
-                                errorMessages.Add($"Lỗi khi ghi đè ảnh {studentCode}: {ex.Message}");
+                                UpdateFileResult importFileResult = new UpdateFileResult
+                                {
+                                    FilePath = filePath,
+                                    Message = $"Lỗi khi ghi đè ảnh {studentCode}: {ex.Message}",
+                                    Status = "FAILOVERWRITE"
+                                };
+                                importFileResults.Add(importFileResult);
                                 continue;
                             }
                         }
@@ -163,33 +174,50 @@ namespace AuthenExamCompareFaceExam
                             {
                                 // Sao chép ảnh vào thư mục nguồn
                                 File.Copy(filePath, destinationPath);
-                                importedCount++;
+                                UpdateFileResult importFileResult = new UpdateFileResult
+                                {
+                                    FilePath = filePath,
+                                    Message = "ảnh đã được lưu",
+                                    Status = "SUCCESSSAVE"
+                                };
+                                importFileResults.Add(importFileResult);
                             }
                             catch (Exception ex)
                             {
                                 // Lưu thông báo lỗi vào danh sách
-                                errorMessages.Add($"Lỗi khi sao chép ảnh {studentCode}: {ex.Message}");
+                                UpdateFileResult importFileResult = new UpdateFileResult
+                                {
+                                    FilePath = filePath,
+                                    Message = $"Lỗi khi lưu ảnh {studentCode}: {ex.Message}",
+                                    Status = "FAILSAVE"
+                                };
+                                importFileResults.Add(importFileResult);
                             }
                         }
                     }
 
-                    // Thông báo tổng hợp về kết quả import
-                    string message = $"Đã import {importedCount} ảnh thành công.";
-                    if (duplicateCount > 0)
+                    try
                     {
-                        message += $"\n{duplicateCount} ảnh đã ghi đè.";
-                    }
+                        var fileName = selectedFolder + GenerateTimestampString("//importManyFileResult");
+                        // Gọi phương thức Export để xuất danh sách ra file Excel
+                        ExcelExporter.ExportListToExcel(importFileResults, fileName);
 
-                    // Nếu có lỗi, hiển thị thông báo lỗi
-                    if (errorMessages.Any())
+                        // Thông báo thành công
+                        MessageBox.Show($"Đã thêm thành công, check kết quả trong {fileName}", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
                     {
-                        message += "\n\nCác lỗi xảy ra:\n" + string.Join("\n", errorMessages);
+                        // Nếu có lỗi, hiển thị thông báo lỗi
+                        MessageBox.Show($"Đã xảy ra lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
-
-                    // Hiển thị thông báo tổng hợp
-                    MessageBox.Show(message, "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
+        }
+        private string GenerateTimestampString(string fileName)
+        {
+            DateTime now = DateTime.Now;
+            string timestamp = now.ToString("yyyyMMdd_HHmmssfff");
+            return $"{fileName}_{timestamp}.xlsx";
         }
 
         private void btnDeleteBulk_Click(object sender, EventArgs e)
@@ -211,9 +239,7 @@ namespace AuthenExamCompareFaceExam
                     // Tách danh sách mã sinh viên từ chuỗi nhập vào, phân cách bằng dấu xuống dòng
                     var studentCodes = input.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
 
-                    int deletedCount = 0;
-                    int notFoundCount = 0;
-                    var errorMessages = new List<string>(); // Danh sách lưu trữ thông báo lỗi
+                    List<UpdateFileResult> deleteFileResult = new List<UpdateFileResult>();
 
                     foreach (var studentCode in studentCodes)
                     {
@@ -228,35 +254,48 @@ namespace AuthenExamCompareFaceExam
                             try
                             {
                                 File.Delete(filePath);
-                                deletedCount++;
+                                deleteFileResult.Add(new UpdateFileResult
+                                {
+                                    FilePath = filePath,
+                                    Message = "ảnh đã được xóa",
+                                    Status = "SUCCESSDELETE"
+                                });
                             }
                             catch (Exception ex)
                             {
-                                // Lưu thông báo lỗi vào danh sách
-                                errorMessages.Add($"Lỗi khi xóa ảnh {studentCodeTrimmed}: {ex.Message}");
+                                deleteFileResult.Add(new UpdateFileResult
+                                {
+                                    FilePath = filePath,
+                                    Message = "ảnh chưa được xóa",
+                                    Status = "FAILDELETE"
+                                });
                             }
                         }
                         else
                         {
-                            notFoundCount++;
+                            deleteFileResult.Add(new UpdateFileResult
+                            {
+                                FilePath = filePath,
+                                Message = "không tìm thấy ảnh",
+                                Status = "FAILFIND"
+                            });
                         }
                     }
 
-                    // Thông báo tổng hợp về kết quả xóa
-                    string message = $"Đã xóa {deletedCount} ảnh thành công.";
-                    if (notFoundCount > 0)
+                    try
                     {
-                        message += $"\n{notFoundCount} ảnh không tìm thấy.";
-                    }
+                        var fileName = _settingForm.DirectoryImageSource + GenerateTimestampString("//deleteManyFileResult");
+                        // Gọi phương thức Export để xuất danh sách ra file Excel
+                        ExcelExporter.ExportListToExcel(deleteFileResult, fileName);
 
-                    // Nếu có lỗi, hiển thị thông báo lỗi
-                    if (errorMessages.Any())
+                        // Thông báo thành công
+                        MessageBox.Show($"Đã xóa thành công, check kết quả trong {fileName}", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
                     {
-                        message += "\n\nCác lỗi xảy ra:\n" + string.Join("\n", errorMessages);
+                        // Nếu có lỗi, hiển thị thông báo lỗi
+                        MessageBox.Show($"Đã xảy ra lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
-
-                    // Hiển thị thông báo tổng hợp
-                    MessageBox.Show(message, "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
         }
