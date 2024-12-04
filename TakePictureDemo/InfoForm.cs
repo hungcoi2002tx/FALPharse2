@@ -4,22 +4,15 @@ using System.IO;
 using System.Windows.Forms;
 using AForge.Video;
 using AForge.Video.DirectShow;
-using CameraCaptureLibrary;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace TakePictureDemo
 {
     public partial class InfoForm : Form
     {
-        private CameraCapture cameraCapture;
-        private ApiClient apiClient;
-
         public InfoForm()
         {
             InitializeComponent();
-            cameraCapture = new CameraCapture();
-            apiClient = new ApiClient("https://localhost:7031/api/CompareFace/register-compare");
-            cameraCapture.OnImageCaptured += OnImageCaptured;
         }
 
         private void OnImageCaptured(string imagePath)
