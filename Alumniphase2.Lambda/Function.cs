@@ -11,6 +11,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
+using System.Data;
 using System.Reflection.Emit;
 using System.Security.Cryptography;
 using System.Text;
@@ -186,8 +187,8 @@ public class Function
     private async Task StoreResponseResult(FaceDetectionResult result, string fileName,string systemName)
     {
         string jsonResult = ConvertToJson(result);
-        var dictionaryResponseResult = CreateDictionaryFualumniResponeResult(fileName, jsonResult);
-        await CreateNewRecord(GetDBResultBySystemName(systemName), dictionaryResponseResult);
+        var dictionaryResponseResult = CreateDictionaryFualumniResponeResult(fileName, jsonResult, systemName);
+        await CreateNewRecord(Utils.SystemConstants.FACEID_TABLE_DYNAMODB, dictionaryResponseResult);
     }
 
     private string GetDBResultBySystemName(string systemName)
@@ -203,7 +204,7 @@ public class Function
         }
     }
 
-    private Dictionary<string, AttributeValue> CreateDictionaryFualumniResponeResult(string fileName, string data)
+    private Dictionary<string, AttributeValue> CreateDictionaryFualumniResponeResult(string fileName, string data,string systemName)
     {
         return new Dictionary<string, AttributeValue>
                {
@@ -211,6 +212,12 @@ public class Function
                        Utils.SystemConstants.FILE_NAME_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
                            S = fileName
+                       }
+                   },
+                   {
+                       Utils.SystemConstants.SYSTEM_NAME_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       {
+                           S = systemName
                        }
                    },
                    {
@@ -272,8 +279,8 @@ public class Function
                 foreach (var (userId, faceId, boundingBox) in registeredUsers)
                 {
                     await AssociateUser(userId, faceId, collectionName);
-                    var dictionary = CreateDictionaryFualumni(userId, faceId);
-                    await CreateNewRecord(dynamoDbName, dictionary);
+                    var dictionary = CreateDictionaryFualumni(userId, faceId, collectionName);
+                    await CreateNewRecord(Utils.SystemConstants.RESULT_INFO_TABLE_DYNAMODB, dictionary);
 
                     var responseObj = CreateResponseObj(fileName, null, boundingBox, faceId, userId);
                     resultRegisteredUsers.Add(responseObj);
@@ -292,7 +299,7 @@ public class Function
             throw new Exception("Index face: Cannot detect anyone");
         }
     }
-    private Dictionary<string, AttributeValue> CreateDictionaryFualumni(string userId, string faceId)
+    private Dictionary<string, AttributeValue> CreateDictionaryFualumni(string userId, string faceId, string systemName)
     {
         return new Dictionary<string, AttributeValue>
                {
@@ -300,6 +307,12 @@ public class Function
                        Utils.SystemConstants.USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
                            S = userId
+                       }
+                   },
+                   {
+                       Utils.SystemConstants.SYSTEM_NAME_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       {
+                           S = systemName
                        }
                    },
                    {

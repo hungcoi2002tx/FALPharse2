@@ -307,7 +307,7 @@ namespace FAL.Services
             await DisassociatedFaceAsync(collectionName,faceId, userId);
 
             // Delete the oldest face record from DynamoDB
-            await _dynamoDBService.DeleteItem(userId,faceId,collectionName);
+            await _dynamoDBService.DeleteItemAsync(userId,faceId,collectionName);
         }
 
         

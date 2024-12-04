@@ -1,4 +1,5 @@
 ﻿using Amazon.DynamoDBv2.Model;
+using Amazon.Rekognition.Model;
 using FAL.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -183,7 +184,7 @@ namespace FAL.Controllers
         {
             try
             {
-                return systemName + "-result";
+                return GlobalVarians.RESULT_INFO_TABLE_DYNAMODB;
             }
             catch (Exception)
             {
@@ -201,10 +202,11 @@ namespace FAL.Controllers
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
                 Dictionary<string, AttributeValue> dictionary = new Dictionary<string, AttributeValue>
                 {
+                    { ":v_systemName", new AttributeValue { S = systermId } },
                     { ":v_fileName", new AttributeValue { S = fileName } }
                 };
 
-                var result = await _dynamoService.GetRecordByKeyConditionExpressionAsync(Utils.StringExtention.GetTableNameResult(systermId), "FileName = :v_fileName", dictionary) ?? "";
+                var result = await _dynamoService.GetRecordByKeyConditionExpressionAsync(Utils.StringExtention.GetTableNameResult(systermId), "SystemName = :v_systemName and FileName = :v_fileName", dictionary) ?? "";
 
                 return Ok(result);
             }

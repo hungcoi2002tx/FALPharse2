@@ -4,6 +4,7 @@ using Amazon.DynamoDBv2.Model;
 using Amazon.Rekognition.Model;
 using FAL.Services.IServices;
 using Newtonsoft.Json;
+using Share.Constant;
 using Share.DTO;
 using Share.Model;
 using System.Text.Json;
@@ -26,13 +27,19 @@ namespace FAL.Services
             {
                 var request = new PutItemRequest
                 {
-                    TableName = tableName,
+                    TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
                     Item = new Dictionary<string, AttributeValue>
                     {
                         {
                             nameof(FaceInformation.UserId), new AttributeValue
                             {
                                 S = userId.ToLower()
+                            }
+                        },
+                        {
+                            nameof(FaceInformation.SystemName), new AttributeValue
+                            {
+                                S = tableName
                             }
                         },
                         {
@@ -59,61 +66,61 @@ namespace FAL.Services
             }
         }
 
-        public async Task<bool> IsExistFaceIdAsync(string systermId, string faceId)
+        public async Task<bool> IsExistFaceIdAsync(string systemName, string faceId)
         {
             try
             {
                 var request = new QueryRequest
                 {
-                    TableName = systermId,
-                    IndexName = "FaceIdIndex",  // Use the GSI index name
-                    KeyConditionExpression = "FaceId = :faceId",
+                    TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
+                    IndexName = GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB,
+                    KeyConditionExpression = "SystemName = :systemName AND FaceId = :faceId",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
                     {
+                        { ":systemName", new AttributeValue { S = systemName } },
                         { ":faceId", new AttributeValue { S = faceId } }
                     }
                 };
 
                 var response = await _dynamoDBService.QueryAsync(request);
-                if (response != null && response.Count > 0)
-                {
-                    return true;
-                }
-                return false;
+                // Check if any items exist
+                return response != null && response.Count > 0;
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"An error occurred: {ex.Message}");
                 throw;
             }
         }
 
-        public async Task<bool> IsExistUserAsync(string systermId, string userId)
+        public async Task<bool> IsExistUserAsync(string systemId, string userId)
         {
             try
             {
                 var queryRequest = new QueryRequest
                 {
-                    TableName = systermId,
-                    KeyConditionExpression = "UserId = :v_userId",
+                    TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
+                    IndexName = GlobalVarians.SYSTEM_NAME_ATTRIBUTE_DYNAMODB, // Sử dụng GSI trên SystemName
+                    KeyConditionExpression = "SystemName = :v_systemName and UserId = :v_userId",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-                        {
-                            { ":v_userId", new AttributeValue { S = userId.ToLower() } }
-                        },
-                    Limit = 1
+            {
+                { ":v_systemName", new AttributeValue { S = systemId } },
+                { ":v_userId", new AttributeValue { S = userId } }
+            },
+                    Limit = 1 // Giới hạn 1 kết quả để kiểm tra nhanh
                 };
+
                 var response = await _dynamoDBService.QueryAsync(queryRequest);
-                if (response != null && response.Count > 0)
-                {
-                    return true;
-                }
-                return false;
+
+                // Kiểm tra nếu có kết quả trả về
+                return response != null && response.Count > 0;
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"An error occurred: {ex.Message}");
                 throw;
             }
         }
-
 
         public async Task<string?> GetRecordByKeyConditionExpressionAsync(string systermId, string keyConditionExpression, Dictionary<string, AttributeValue> dictionary)
         {
@@ -122,7 +129,7 @@ namespace FAL.Services
             {
                 var queryRequest = new QueryRequest
                 {
-                    TableName = systermId,
+                    TableName = GlobalVarians.RESULT_INFO_TABLE_DYNAMODB,
                     KeyConditionExpression = keyConditionExpression,
                     ExpressionAttributeValues = dictionary,
                 };
@@ -148,7 +155,7 @@ namespace FAL.Services
         {
             try
             {
-                // Define the key (partition and sort keys if applicable) for the item to be deleted
+                // Xác định Partition Key (UserId) và Sort Key (FaceId) để xóa
                 var key = new Dictionary<string, AttributeValue>
         {
             {
@@ -167,13 +174,13 @@ namespace FAL.Services
 
                 var request = new DeleteItemRequest
                 {
-                    TableName = tableName,
+                    TableName = GlobalVarians.FACEID_TABLE_DYNAMODB, // Sử dụng bảng từ GlobalVarians
                     Key = key
                 };
 
                 var response = await _dynamoDBService.DeleteItemAsync(request);
 
-                // Check if the response is successful
+                // Kiểm tra trạng thái trả về có thành công hay không
                 return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
             }
             catch (Exception ex)
@@ -182,63 +189,97 @@ namespace FAL.Services
                 throw;
             }
         }
+
         public async Task<List<string>> GetFaceIdsByUserIdAsync(string userId, string systemId)
         {
-            var request = new QueryRequest
+            try
             {
-                TableName = systemId,
-                KeyConditionExpression = "UserId = :userId",
-                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-        {
-            { ":userId", new AttributeValue { S = userId } }
-        }
-            };
+                // Tạo truy vấn với KeyConditionExpression
+                var request = new QueryRequest
+                {
+                    TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
+                    KeyConditionExpression = "UserId = :userId",
+                    FilterExpression = $"{GlobalVarians.SYSTEM_NAME_ATTRIBUTE_DYNAMODB} = :systemName", // Lọc theo SystemName
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                { ":userId", new AttributeValue { S = userId } },
+                { ":systemName", new AttributeValue { S = systemId } }
+            },
+                    ProjectionExpression = nameof(FaceInformation.FaceId)
+                };
 
-            var response = await _dynamoDBService.QueryAsync(request);
-            return response.Items.Select(item => item["FaceId"].S).ToList();
+                // Gửi query request tới DynamoDB
+                var response = await _dynamoDBService.QueryAsync(request);
+
+                // Kiểm tra kết quả và trả về danh sách FaceId
+                if (response != null && response.Items.Count > 0)
+                {
+                    // Chuyển đổi kết quả từ AttributeValue sang List<string>
+                    return response.Items
+                        .Select(item => item["FaceId"].S) // Lấy giá trị của thuộc tính FaceId
+                        .ToList();
+                }
+
+                // Trả về danh sách rỗng nếu không có bản ghi nào
+                return new List<string>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetFaceIdsByUserIdAsync: {ex.Message}");
+                throw;
+            }
         }
+
 
         public async Task DeleteUserFromDynamoDbAsync(string userId, string systemId)
         {
             try
             {
-                // Step 1: Scan for all items with the given UserId
-                var scanRequest = new ScanRequest
+                // Query tất cả các bản ghi cần xóa
+                var queryRequest = new QueryRequest
                 {
-                    TableName = systemId,
-                    FilterExpression = "UserId = :userId",
+                    TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
+                    KeyConditionExpression = "UserId = :userId",
+                    FilterExpression = "SystemName = :systemName",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
-                { ":userId", new AttributeValue { S = userId } }
+                { ":userId", new AttributeValue { S = userId } },
+                { ":systemName", new AttributeValue { S = systemId } }
             }
                 };
 
-                var scanResponse = await _dynamoDBService.ScanAsync(scanRequest);
+                var queryResponse = await _dynamoDBService.QueryAsync(queryRequest);
 
-                // Step 2: Delete each item found in the scan
-                foreach (var item in scanResponse.Items)
+                // Chia danh sách thành các nhóm tối đa 25 bản ghi
+                var chunks = queryResponse.Items
+                    .Select((item, index) => new { item, index })
+                    .GroupBy(x => x.index / 25)
+                    .Select(group => group.Select(x => x.item).ToList());
+
+                foreach (var chunk in chunks)
                 {
-                    // Assuming 'FaceId' is the sort key in the schema
-                    var faceId = item.ContainsKey("FaceId") ? item["FaceId"].S : null;
-
-                    if (faceId == null)
+                    var batchWriteRequest = new BatchWriteItemRequest
                     {
-                        Console.WriteLine($"No FaceId found for UserId {userId}. Skipping item.");
-                        continue; // Skip this item if FaceId is not available
+                        RequestItems = new Dictionary<string, List<WriteRequest>>
+                {
+                    {
+                        GlobalVarians.FACEID_TABLE_DYNAMODB,
+                        chunk.Select(item => new WriteRequest
+                        {
+                            DeleteRequest = new DeleteRequest
+                            {
+                                Key = new Dictionary<string, AttributeValue>
+                                {
+                                    { nameof(FaceInformation.UserId), item[nameof(FaceInformation.UserId)] }, // Partition Key
+                                    { nameof(FaceInformation.FaceId), item[nameof(FaceInformation.FaceId)] }  // Sort Key
+                                }
+                            }
+                        }).ToList()
                     }
-
-                    var deleteRequest = new DeleteItemRequest
-                    {
-                        TableName = systemId,
-                        Key = new Dictionary<string, AttributeValue>
-                {
-                    { "UserId", new AttributeValue { S = userId } }, // Partition key
-                    { "FaceId", new AttributeValue { S = faceId } }  // Sort key
                 }
                     };
 
-                    // Delete the item
-                    await _dynamoDBService.DeleteItemAsync(deleteRequest);
+                    await _dynamoDBService.BatchWriteItemAsync(batchWriteRequest);
                 }
             }
             catch (AmazonDynamoDBException dbEx)
@@ -253,76 +294,105 @@ namespace FAL.Services
             }
         }
 
-        public async Task<string> GetFaceIdForUserAndFaceAsync(string userId, string faceId, string tableName)
+
+        public async Task<string> GetFaceIdForUserAndFaceAsync(string userId, string faceid, string systemName)
+        {
+            try
+            {
+                var queryRequest = new QueryRequest
+                {
+                    TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
+                    KeyConditionExpression = "UserId = :userId AND FaceId = :faceId",
+                    FilterExpression = $"{GlobalVarians.SYSTEM_NAME_ATTRIBUTE_DYNAMODB} = :systemName",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        { ":userId", new AttributeValue { S = userId } },
+                        { ":faceId", new AttributeValue { S = faceid } },
+                        { ":systemName", new AttributeValue { S = systemName } }
+                    }
+                };
+
+                var queryResponse = await _dynamoDBService.QueryAsync(queryRequest);
+
+                // If a record exists, return the FaceId, otherwise return null
+                return queryResponse.Items.Count > 0 ? queryResponse.Items.First()["FaceId"].S : null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetFaceIdForUserAndFaceAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<string> GetOldestFaceIdForUserAsync(string userId, string collectionName)
         {
             var queryRequest = new QueryRequest
             {
-                TableName = tableName,
-                KeyConditionExpression = "UserId = :userId and FaceId = :faceId",
+                TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
+                KeyConditionExpression = "UserId = :userId",
                 ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-        {
-            { ":userId", new AttributeValue { S = userId } },
-            { ":faceId", new AttributeValue { S = faceId } }
-        }
+                {
+                    { ":userId", new AttributeValue { S = userId } },
+                    { ":systemName", new AttributeValue { S = collectionName } }
+                }
             };
 
             var queryResponse = await _dynamoDBService.QueryAsync(queryRequest);
 
-            // If the faceId exists, return the FaceId, otherwise return null
-            return queryResponse.Items.Count > 0 ? queryResponse.Items.First()["FaceId"].S : null;
-        }
-
-        public async Task<string> GetOldestFaceIdForUserAsync(string userId, string tableName)
-        {
-            var queryRequest = new QueryRequest
+            // Kiểm tra nếu không có dữ liệu
+            if (queryResponse.Items.Count == 0)
             {
-                TableName = tableName,
-                KeyConditionExpression = "UserId = :userId",
-                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-        {
-            { ":userId", new AttributeValue { S = userId } }
-        }
-            };
+                return null;
+            }
 
-            try
-            {
-
-                var queryResponse = await _dynamoDBService.QueryAsync(queryRequest);
-
-
-                // Check if no items were found
-                if (queryResponse.Items.Count == 0)
-                {
-                    return null;
-                }
-
-                // Sort items by CreatedDate in ascending order and get the oldest one
-                var oldestItem = queryResponse.Items
-                .OrderBy(item => DateTime.Parse(item["CreateDate"].S)) // Sort by CreatedDate
+            // Lọc và tìm mục cũ nhất dựa trên CreateDate
+            var oldestItem = queryResponse.Items
+                .Where(item => item.ContainsKey("CreateDate") && DateTime.TryParse(item["CreateDate"].S, out _))
+                .OrderBy(item => DateTime.Parse(item["CreateDate"].S))
                 .FirstOrDefault();
 
-                // Log the oldest FaceId found
-                var oldestFaceId = oldestItem?["FaceId"].S;
+            return oldestItem?["FaceId"].S;
+        }
 
-                return oldestFaceId;
+
+        public async Task DeleteItemAsync(string userId, string faceId, string collectionName)
+        {
+            try
+            {
+                // Tạo yêu cầu xóa mục
+                var deleteRequest = new DeleteItemRequest
+                {
+                    TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
+                    Key = new Dictionary<string, AttributeValue>
+                    {
+                        { "UserId", new AttributeValue { S = userId } }, // Partition key
+                        { "FaceId", new AttributeValue { S = faceId } }  // Sort key
+                    }
+                };
+
+                // Thực thi yêu cầu xóa
+                var response = await _dynamoDBService.DeleteItemAsync(deleteRequest);
+
+                // Kiểm tra kết quả trả về
+                if (response.HttpStatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    Console.WriteLine($"Successfully deleted item with UserId: {userId} and FaceId: {faceId}");
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to delete item. HTTP Status: {response.HttpStatusCode}");
+                }
+            }
+            catch (AmazonDynamoDBException dbEx)
+            {
+                Console.WriteLine($"DynamoDB error occurred: {dbEx.Message}");
+                throw;
             }
             catch (Exception ex)
             {
-                throw; // Re-throw the exception after logging it
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                throw;
             }
-        }
-
-        public async Task DeleteItem(string userId, string faceId, string collectionName)
-        {
-            await _dynamoDBService.DeleteItemAsync(new DeleteItemRequest
-            {
-                TableName = collectionName,
-                Key = new Dictionary<string, AttributeValue>
-        {
-            { "UserId", new AttributeValue { S = userId } },
-            { "FaceId", new AttributeValue { S = faceId } }
-        }
-            });
         }
 
         public async Task<FaceDetectionResult> GetWebhookResult(string systermId, string mediaId)
@@ -334,12 +404,13 @@ namespace FAL.Services
                 // Define the query request to get the specific item by partition key (fileName)
                 var queryRequest = new QueryRequest
                 {
-                    TableName = systermId,
-                    KeyConditionExpression = "FileName = :fileName",
+                    TableName = GlobalVarians.RESULT_INFO_TABLE_DYNAMODB,
+                    KeyConditionExpression = "SystemName = :v_systemName and FileName = :v_fileName",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-            {
-                { ":fileName", new AttributeValue { S = mediaId.ToLower() } }
-            }
+                    {
+                        { ":v_systemName", new AttributeValue { S = systermId } },
+                        { ":v_fileName", new AttributeValue { S = mediaId } }
+                    }
                 };
 
                 // Execute the query
@@ -360,6 +431,7 @@ namespace FAL.Services
             return result;
         }
 
+        //sửa sau
         public async Task<DetectStatsResponse> GetDetectStats(string tableName)
         {
             try
@@ -581,9 +653,6 @@ namespace FAL.Services
             }
         }
 
-
-
-
         public async Task<RequestStatsResponse> GetRequestStats(string systermId)
         {
             try
@@ -722,7 +791,7 @@ namespace FAL.Services
                 };
             }
         }
-    
+
 
         public async Task<bool> DeleteTrainStat(string systemId, string userId, string faceId)
         {
@@ -761,7 +830,6 @@ namespace FAL.Services
                 return false;
             }
         }
-
     }
 
 }

@@ -15,7 +15,7 @@ namespace FAL.Services.IServices
         Task DeleteUserFromDynamoDbAsync(string userId, string systemId);
         Task<string?> GetFaceIdForUserAndFaceAsync(string userId, string faceId, string collectionName);
         Task<string> GetOldestFaceIdForUserAsync(string userId, string collectionName);
-        Task DeleteItem(string userId, string faceId, string collectionName);
+        Task DeleteItemAsync(string userId, string faceId, string collectionName);
         Task<FaceDetectionResult> GetWebhookResult(string systermId,string mediaId);
         Task<DetectStatsResponse> GetDetectStats(string v);
         Task<TrainStatsResponse> GetTrainStats(string systermId,int page, int pageSize,string searchUserId);
