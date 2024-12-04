@@ -159,7 +159,7 @@ namespace FAL.Services
             }
         }
 
-        public async Task<bool> AddBudgetAsync(string budgetName)
+        public async Task<bool> IsAddBudgetAsync(string budgetName)
         {
             try
             {

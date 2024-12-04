@@ -163,7 +163,7 @@ public class S3ServiceTests
         // Since the method currently does nothing and returns true, we can test that
 
         // Act
-        var result = await s3Service.AddBudgetAsync(bucketName);
+        var result = await s3Service.IsAddBudgetAsync(bucketName);
 
         // Assert
         Assert.True(result);

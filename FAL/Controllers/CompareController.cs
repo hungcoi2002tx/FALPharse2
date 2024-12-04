@@ -11,6 +11,7 @@ using Share.Constant;
 using Share.Utils;
 using Share.DTO;
 using Share.Model;
+using FAL.Utils;
 namespace FAL.Controllers
 {
 
@@ -117,8 +118,8 @@ namespace FAL.Controllers
                 }
 
                 // Read image data
-                byte[] sourceImageBytes = await GetImageBytesAsync(request.SourceImage);
-                byte[] targetImageBytes = await GetImageBytesAsync(request.TargetImage);
+                byte[] sourceImageBytes = await request.SourceImage.ToByteArrayAsync();
+                byte[] targetImageBytes = await request.TargetImage.ToByteArrayAsync();
 
                 // Create and send CompareFacesRequest
                 var rekognitionResponse = await _rekognitionClient.CompareFacesAsync(new Amazon.Rekognition.Model.CompareFacesRequest
@@ -176,13 +177,6 @@ namespace FAL.Controllers
 
             message = string.Empty;
             return true;
-        }
-
-        private async Task<byte[]> GetImageBytesAsync(IFormFile image)
-        {
-            using var stream = new MemoryStream();
-            await image.CopyToAsync(stream);
-            return stream.ToArray();
         }
 
         private IActionResult CreateResponse(float? percentage, string message, HttpStatusCode statusCode)
