@@ -17,7 +17,7 @@ namespace AuthenExamCompareFaceExam
     public partial class SourceImageForm : Form
     {
         private SettingModel _settingForm;
-
+        private static readonly object fileLock = new object();
         public SourceImageForm()
         {
             InitializeComponent();
@@ -121,80 +121,90 @@ namespace AuthenExamCompareFaceExam
                 {
                      selectedFolder = folderDialog.SelectedPath;
 
+                    List<UpdateFileResult> importFileResults = new List<UpdateFileResult>();
                     string pattern = @"^[A-Za-z]{2}\d+$"; // 2 chữ cái đầu và sau đó là các chữ số
 
                     // Lọc tất cả các file ảnh trong thư mục đã chọn và kiểm tra tên đúng định dạng
-                    var imageFiles = Directory.GetFiles(selectedFolder, "*.jpg")
-                                              .Where(file => Regex.IsMatch(Path.GetFileNameWithoutExtension(file), pattern)) // Kiểm tra tên file theo regex
-                                              .ToList();
+                    bool hasValidFiles = false; // Biến để theo dõi nếu có file hợp lệ
 
-                    if (imageFiles.Count == 0)
-                    {
-                        MessageBox.Show("Không tìm thấy ảnh hợp lệ trong thư mục đã chọn.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-
-                    List<UpdateFileResult> importFileResults = new List<UpdateFileResult>();
-
-                    foreach (var filePath in imageFiles)
+                    foreach (var filePath in Directory.GetFiles(selectedFolder, "*.jpg"))
                     {
                         var studentCode = Path.GetFileNameWithoutExtension(filePath);
-                        var destinationPath = Path.Combine(_settingForm.DirectoryImageSource, $"{studentCode}.jpg");
 
-                        // Kiểm tra xem ảnh đã tồn tại chưa
-                        if (File.Exists(destinationPath))
+                        // Kiểm tra tên file có đúng định dạng
+                        if (!Regex.IsMatch(studentCode, pattern))
                         {
-                            // Nếu đã tồn tại, ghi đè lên ảnh cũ
-                            try
+                            UpdateFileResult importFileResult = new UpdateFileResult
                             {
-                                File.Copy(filePath, destinationPath, true); // Tham số `true` cho phép ghi đè
-                                UpdateFileResult importFileResult = new UpdateFileResult
-                                {
-                                    FilePath = filePath,
-                                    Message = "ảnh đã được ghi đè",
-                                    Status = "SUCCESSOVERWRITE"
-                                };
-                                importFileResults.Add(importFileResult);
-                            }
-                            catch (Exception ex)
-                            {
-                                UpdateFileResult importFileResult = new UpdateFileResult
-                                {
-                                    FilePath = filePath,
-                                    Message = $"Lỗi khi ghi đè ảnh {studentCode}: {ex.Message}",
-                                    Status = "FAILOVERWRITE"
-                                };
-                                importFileResults.Add(importFileResult);
-                                continue;
-                            }
+                                FilePath = filePath,
+                                Message = "Tên file không đúng định dạng (phải có 2 chữ cái đầu và số phía sau).",
+                                Status = "INVALIDFILENAME",
+                                StudentNumber = studentCode
+                            };
+                            importFileResults.Add(importFileResult);
+                            continue; // Bỏ qua file này và tiếp tục với file khác
                         }
-                        else
+
+                        // Nếu tên file đúng, xử lý bình thường
+                        lock (fileLock) // Đảm bảo chỉ một luồng xử lý file này
                         {
+                            var destinationPath = Path.Combine(_settingForm.DirectoryImageSource, $"{studentCode}.jpg");
+
                             try
                             {
-                                // Sao chép ảnh vào thư mục nguồn
+                                // Nếu file tồn tại, xóa trước khi ghi đè
+                                if (File.Exists(destinationPath))
+                                {
+                                    File.Delete(destinationPath);
+                                }
+
+                                // Copy file từ nguồn vào đích
                                 File.Copy(filePath, destinationPath);
+
                                 UpdateFileResult importFileResult = new UpdateFileResult
                                 {
                                     FilePath = filePath,
-                                    Message = "ảnh đã được lưu",
-                                    Status = "SUCCESSSAVE"
+                                    Message = "ảnh đã được lưu thành công",
+                                    Status = "SUCCESS",
+                                    StudentNumber = studentCode
+                                };
+                                importFileResults.Add(importFileResult);
+
+                                hasValidFiles = true; // Đánh dấu có ít nhất một file hợp lệ
+                            }
+                            catch (IOException ioEx)
+                            {
+                                UpdateFileResult importFileResult = new UpdateFileResult
+                                {
+                                    FilePath = filePath,
+                                    Message = $"File bị khóa hoặc đang sử dụng: {ioEx.Message}",
+                                    Status = "FAIL",
+                                    StudentNumber = studentCode
                                 };
                                 importFileResults.Add(importFileResult);
                             }
                             catch (Exception ex)
                             {
-                                // Lưu thông báo lỗi vào danh sách
                                 UpdateFileResult importFileResult = new UpdateFileResult
                                 {
                                     FilePath = filePath,
-                                    Message = $"Lỗi khi lưu ảnh {studentCode}: {ex.Message}",
-                                    Status = "FAILSAVE"
+                                    Message = $"Lỗi không xác định: {ex.Message}",
+                                    Status = "FAIL",
+                                    StudentNumber = studentCode
                                 };
                                 importFileResults.Add(importFileResult);
                             }
                         }
                     }
+
+                    // Sau khi xử lý xong tất cả các file, kiểm tra nếu không có file hợp lệ
+                    if (!hasValidFiles)
+                    {
+                        MessageBox.Show("Không tìm thấy ảnh hợp lệ trong thư mục đã chọn.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return; // Thoát khỏi phương thức nếu không có file hợp lệ
+                    }
+
+
 
                     try
                     {
@@ -213,6 +223,7 @@ namespace AuthenExamCompareFaceExam
                 }
             }
         }
+
         private string GenerateTimestampString(string fileName)
         {
             DateTime now = DateTime.Now;
@@ -258,7 +269,8 @@ namespace AuthenExamCompareFaceExam
                                 {
                                     FilePath = filePath,
                                     Message = "ảnh đã được xóa",
-                                    Status = "SUCCESSDELETE"
+                                    Status = "SUCCESSDELETE",
+                                    StudentNumber = studentCodeTrimmed
                                 });
                             }
                             catch (Exception ex)
@@ -267,7 +279,8 @@ namespace AuthenExamCompareFaceExam
                                 {
                                     FilePath = filePath,
                                     Message = "ảnh chưa được xóa",
-                                    Status = "FAILDELETE"
+                                    Status = "FAILDELETE",
+                                    StudentNumber = studentCodeTrimmed
                                 });
                             }
                         }
@@ -277,7 +290,8 @@ namespace AuthenExamCompareFaceExam
                             {
                                 FilePath = filePath,
                                 Message = "không tìm thấy ảnh",
-                                Status = "FAILFIND"
+                                Status = "FAILFIND",
+                                StudentNumber = studentCodeTrimmed
                             });
                         }
                     }

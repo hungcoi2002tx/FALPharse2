@@ -29,6 +29,7 @@
             lblProgress = new Label();
             button1 = new Button();
             button2 = new Button();
+            btnStop = new Button();
             ((System.ComponentModel.ISupportInitialize)dataGridViewImages).BeginInit();
             SuspendLayout();
             // 
@@ -61,7 +62,7 @@
             txtFolderPath.Margin = new Padding(4, 3, 4, 3);
             txtFolderPath.Name = "txtFolderPath";
             txtFolderPath.ReadOnly = true;
-            txtFolderPath.Size = new Size(629, 23);
+            txtFolderPath.Size = new Size(790, 23);
             txtFolderPath.TabIndex = 2;
             // 
             // dataGridViewImages
@@ -79,7 +80,7 @@
             // 
             // progressBarCompare
             // 
-            progressBarCompare.Location = new Point(716, 58);
+            progressBarCompare.Location = new Point(923, 58);
             progressBarCompare.Name = "progressBarCompare";
             progressBarCompare.Size = new Size(460, 23);
             progressBarCompare.TabIndex = 4;
@@ -87,7 +88,7 @@
             // lblProgress
             // 
             lblProgress.AutoSize = true;
-            lblProgress.Location = new Point(929, 37);
+            lblProgress.Location = new Point(1136, 37);
             lblProgress.Name = "lblProgress";
             lblProgress.Size = new Size(23, 15);
             lblProgress.TabIndex = 5;
@@ -115,11 +116,23 @@
             button2.UseVisualStyleBackColor = true;
             button2.Click += button2_Click;
             // 
+            // btnStop
+            // 
+            btnStop.Enabled = false;
+            btnStop.Location = new Point(667, 14);
+            btnStop.Name = "btnStop";
+            btnStop.Size = new Size(137, 35);
+            btnStop.TabIndex = 8;
+            btnStop.Text = "Stop";
+            btnStop.UseVisualStyleBackColor = true;
+            btnStop.Click += btnStop_Click;
+            // 
             // ImageCaptureForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1787, 720);
+            Controls.Add(btnStop);
             Controls.Add(button2);
             Controls.Add(button1);
             Controls.Add(lblProgress);
@@ -141,5 +154,6 @@
         private Label lblProgress;
         private Button button1;
         private Button button2;
+        private Button btnStop;
     }
 }

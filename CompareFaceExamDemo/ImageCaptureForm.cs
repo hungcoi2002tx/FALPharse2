@@ -23,6 +23,7 @@ namespace AuthenExamCompareFaceExam
 {
     public partial class ImageCaptureForm : Form
     {
+        private CancellationTokenSource _cancellationTokenSource;
         private CompareFaceAdapterRecognitionService _compareFaceService;
         private readonly FaceCompareService _faceCompareService;
         private readonly object _logLock = new object();
@@ -77,6 +78,7 @@ namespace AuthenExamCompareFaceExam
             {
                 if (folderBrowser.ShowDialog() == DialogResult.OK)
                 {
+                    lblProgress.Text = "0%";
                     progressBarCompare.Value = 0;
                     // Lấy đường dẫn của thư mục được chọn
                     string folderPath = folderBrowser.SelectedPath;
@@ -177,76 +179,91 @@ namespace AuthenExamCompareFaceExam
 
         private async void btnSend_Click(object sender, EventArgs e)
         {
+            if (listDataCompare == null || listDataCompare.Count == 0)
+            {
+                MessageBox.Show("Không có file nào được chọn!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Khởi tạo CancellationTokenSource
+            _cancellationTokenSource = new CancellationTokenSource();
+            var cancellationToken = _cancellationTokenSource.Token;
+
             try
             {
-                if (listDataCompare!.Count > 0)
-                {
-                    try
-                    {
-                        btnSend.Enabled = false;
-                        button1.Enabled = true;
-                        button2.Enabled = true;
+                // Cấu hình giao diện
+                btnSend.Enabled = false;
+                button1.Enabled = true;
+                btnSelectFolder.Enabled = false;
 
-                        progressBarCompare.Maximum = listDataCompare.Count;
-                        var sourceFile = Config.GetSetting();
-                        int maxDegreeOfParallelism = sourceFile.NumberOfThread;
-                        int maxRetries = sourceFile.NumberOfRetry;
-                        await GetCompareResult(maxDegreeOfParallelism, maxRetries);
+                progressBarCompare.Maximum = listDataCompare.Count;
+                progressBarCompare.Value = 0;
 
-                        string folderPath = txtFolderPath.Text;
-                        string[] folderPathParts = folderPath.Split('\\');
-                        string lastPart = folderPathParts[folderPathParts.Length - 1];
+                var sourceFile = Config.GetSetting();
+                int maxDegreeOfParallelism = sourceFile.NumberOfThread;
+                int maxRetries = sourceFile.NumberOfRetry;
 
-                        string filePathExcel = folderPath + "/" + DateTime.Now.ToString("ddMMyyyy_HHmmss_fff") + "-" + lastPart + ".xlsx";
-                        string filePathTxt = folderPath + "/" + DateTime.Now.ToString("ddMMyyyy_HHmmss_fff") + "-" + lastPart + ".txt";
+                // Gọi hàm xử lý so sánh
+                await GetCompareResult(maxDegreeOfParallelism, maxRetries, cancellationToken);
 
-                        ExcelExporter.ExportListToExcel(listDataCompare, filePathExcel);
+                // Kiểm tra nếu bị hủy
+                cancellationToken.ThrowIfCancellationRequested();
 
-                        var resultCompareFaceTxtDtos = GetResultCompareFaceTxtDto(listDataCompare, maxDegreeOfParallelism);
-                        resultCompareFaceTxtDtos = resultCompareFaceTxtDtos.OrderBy(r => r.Id).ToList();
-                        TxtExporter.ExportListToTxt(resultCompareFaceTxtDtos, filePathTxt, "|");
+                // Xử lý xuất kết quả
+                string folderPath = txtFolderPath.Text;
+                string fileBaseName = DateTime.Now.ToString("ddMMyyyy_HHmmss_fff") + "-" + Path.GetFileName(folderPath);
+                string filePathExcel = Path.Combine(folderPath, fileBaseName + ".xlsx");
+                string filePathTxt = Path.Combine(folderPath, fileBaseName + ".txt");
 
-                        if (listDataCompare.Count > 0)
-                        {
-                            btnSend.Enabled = true;
-                            dataGridViewImages.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.DisplayedCells);
-                            string message = $"Kết quả đã được lưu:\n\nExcel: {filePathExcel}\n\nTxt: {filePathTxt}";
-                            MessageBox.Show(message, "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new Exception(ex.Message);
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Không có file nào được chọn!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
+                ExcelExporter.ExportListToExcel(listDataCompare, filePathExcel);
+
+                var resultCompareFaceTxtDtos = GetResultCompareFaceTxtDto(listDataCompare, maxDegreeOfParallelism, cancellationToken)
+                    .OrderBy(r => r.Id)
+                    .ToList();
+                TxtExporter.ExportListToTxt(resultCompareFaceTxtDtos, filePathTxt, "|");
+
+                // Hiển thị thông báo thành công
+                MessageBox.Show(
+                    $"Kết quả đã được lưu:\n\nExcel: {filePathExcel}\n\nTxt: {filePathTxt}",
+                    "Thông báo",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
             }
-            catch (Exception)
+            catch (OperationCanceledException)
             {
-                throw;
+            }
+            catch (Exception ex)
+            {
+                // Xử lý lỗi chung
+                MessageBox.Show($"Có lỗi xảy ra: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                // Hoàn trả trạng thái giao diện
+                btnSend.Enabled = true;
+                btnStop.Enabled = false;
+                btnSelectFolder.Enabled = true;
             }
         }
 
-        private List<ResultCompareFaceTxtDto> GetResultCompareFaceTxtDto(List<ResultCompareFaceDto> resultCompareFaceDto, int maxDegreeOfParallelism)
+
+        private List<ResultCompareFaceTxtDto> GetResultCompareFaceTxtDto(List<ResultCompareFaceDto> resultCompareFaceDto, int maxDegreeOfParallelism, CancellationToken cancellationToken)
         {
             List<ResultCompareFaceTxtDto> resultCompareFaceTxtDtos = new List<ResultCompareFaceTxtDto>(resultCompareFaceDto.Count);
 
             try
             {
-                // Sử dụng một đối tượng thread-safe để thêm phần tử song song
                 var concurrentList = new ConcurrentBag<ResultCompareFaceTxtDto>();
-
-                // Tạo ParallelOptions để giới hạn số luồng
                 var parallelOptions = new ParallelOptions
                 {
-                    MaxDegreeOfParallelism = maxDegreeOfParallelism // Số luồng tối đa, tùy chỉnh theo CPU
+                    MaxDegreeOfParallelism = maxDegreeOfParallelism,
+                    CancellationToken = cancellationToken
                 };
 
                 Parallel.ForEach(resultCompareFaceDto, parallelOptions, item =>
                 {
+                    cancellationToken.ThrowIfCancellationRequested(); // Thoát nếu bị hủy
                     ResultCompareFaceTxtDto rcf = new ResultCompareFaceTxtDto
                     {
                         Id = item.Id,
@@ -263,16 +280,21 @@ namespace AuthenExamCompareFaceExam
                     concurrentList.Add(rcf);
                 });
 
-                // Chuyển ConcurrentBag về List
                 resultCompareFaceTxtDtos = concurrentList.ToList();
 
                 return resultCompareFaceTxtDtos;
+            }
+            catch (OperationCanceledException)
+            {
+                // Xử lý khi bị hủy
+                return new List<ResultCompareFaceTxtDto>();
             }
             catch (Exception)
             {
                 throw;
             }
         }
+
         private int GetEnumValueDirect(ResultStatus status)
         {
             return (int)status;
@@ -302,8 +324,7 @@ namespace AuthenExamCompareFaceExam
             }
         }
 
-
-        private async Task GetCompareResult(int maxDegreeOfParallelism, int maxRetries)
+        private async Task GetCompareResult(int maxDegreeOfParallelism, int maxRetries, CancellationToken cancellationToken)
         {
             try
             {
@@ -325,29 +346,37 @@ namespace AuthenExamCompareFaceExam
                 {
                     tasks.Add(Task.Run(async () =>
                     {
-                        await semaphore.WaitAsync();
+                        await semaphore.WaitAsync(cancellationToken); // Tôn trọng token khi chờ Semaphore
 
                         try
                         {
-                            while (_isPaused)
-                            {
-                                _pauseEvent.Wait();
-                            }
-
                             bool success = false;
                             int retryCount = 0;
                             ComparisonResponse? response = null;
 
                             while (!success && retryCount < maxRetries)
                             {
+                                // Tạm dừng nếu ở trạng thái Pause
+                                while (_isPaused)
+                                {
+                                    cancellationToken.ThrowIfCancellationRequested(); // Kiểm tra trạng thái hủy
+                                    _pauseEvent.Wait(100); // Đợi 100ms trước khi kiểm tra lại
+                                }
+
+                                cancellationToken.ThrowIfCancellationRequested(); // Kiểm tra trạng thái hủy
+
                                 if (itemCompare.ImageSourcePath != null)
                                 {
                                     response = await _faceCompareService.CompareFacesAsync(itemCompare.ImageSourcePath, itemCompare.ImageTagetPath ?? "");
 
+                                    // Tạm dừng nếu ở trạng thái Pause
                                     while (_isPaused)
                                     {
-                                        _pauseEvent.Wait();
+                                        cancellationToken.ThrowIfCancellationRequested(); // Kiểm tra trạng thái hủy
+                                        _pauseEvent.Wait(100); // Đợi 100ms trước khi kiểm tra lại
                                     }
+
+                                    cancellationToken.ThrowIfCancellationRequested(); // Kiểm tra trạng thái hủy
 
                                     if (CheckResponseCompare(response))
                                     {
@@ -372,7 +401,7 @@ namespace AuthenExamCompareFaceExam
                                             dataGridViewImages.Refresh();
                                         }));
                                     }
-                                    else if (response.Status == 429)
+                                    else if (response.Status == 429) // Retry nếu gặp lỗi 429
                                     {
                                         retryCount++;
                                         itemCompare.Message = $"Đang retry lần {retryCount}";
@@ -383,7 +412,7 @@ namespace AuthenExamCompareFaceExam
                                             dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.LightYellow;
                                             dataGridViewImages.Refresh();
                                         }));
-                                        await Task.Delay(1000);
+                                        await Task.Delay(1000, cancellationToken); // Tôn trọng token khi trì hoãn
                                     }
                                     else
                                     {
@@ -415,7 +444,7 @@ namespace AuthenExamCompareFaceExam
 
                             if (!success && retryCount >= maxRetries)
                             {
-                                itemCompare.Message = response.Status + " - " + response.Message;
+                                itemCompare.Message = response?.Status + " - " + response?.Message;
 
                                 int rowIndex = listDataCompare.IndexOf(itemCompare);
                                 dataGridViewImages.Invoke(new Action(() =>
@@ -425,13 +454,22 @@ namespace AuthenExamCompareFaceExam
                                 }));
                             }
                         }
+                        catch (OperationCanceledException)
+                        {
+                            // Đánh dấu trạng thái bị hủy
+                            int rowIndex = listDataCompare.IndexOf(itemCompare);
+                            dataGridViewImages.Invoke(new Action(() =>
+                            {
+                                dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.LightGray;
+                                dataGridViewImages.Refresh();
+                            }));
+                        }
                         catch (Exception)
                         {
                             throw;
                         }
                         finally
                         {
-                            // Tăng tiến trình một cách an toàn giữa các thread
                             Interlocked.Increment(ref completedCount);
 
                             // Cập nhật ProgressBar và phần trăm hoàn thành trên giao diện
@@ -441,19 +479,24 @@ namespace AuthenExamCompareFaceExam
                                 lblProgress.Text = $"{(completedCount * 100) / listDataCompare.Count}% hoàn thành";
                             }));
 
-                            // Giải phóng Semaphore để các Task khác có thể chạy
-                            semaphore.Release();
+                            semaphore.Release(); // Giải phóng Semaphore
                         }
-                    }));
+                    }, cancellationToken)); // Tôn trọng token
                 }
 
-                await Task.WhenAll(tasks);
+
+                await Task.WhenAll(tasks); // Đợi tất cả Task hoàn thành
+            }
+            catch (OperationCanceledException)
+            {
+                MessageBox.Show("Quá trình so sánh đã bị hủy.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Có lỗi xảy ra: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
 
         private void LogError(string logFilePath, ComparisonResponse? response, bool isRetryExceeded = false)
         {
@@ -529,6 +572,7 @@ namespace AuthenExamCompareFaceExam
         private void button1_Click(object sender, EventArgs e)
         {
             _isPaused = true;
+            btnStop.Enabled = true;
             _pauseEvent.Reset();
             button1.Enabled = false;
             button2.Enabled = true;
@@ -537,9 +581,23 @@ namespace AuthenExamCompareFaceExam
         private void button2_Click(object sender, EventArgs e)
         {
             _isPaused = false;
+            btnStop.Enabled = false;
             _pauseEvent.Set();
             button1.Enabled = true;
             button2.Enabled = false;
+        }
+
+        private void btnStop_Click(object sender, EventArgs e)
+        {
+            _isPaused = false;
+            _pauseEvent.Set();
+            button1.Enabled = false;
+            button2.Enabled = false;
+
+            if (_cancellationTokenSource != null)
+            {
+                _cancellationTokenSource.Cancel(); // Kích hoạt hủy
+            }
         }
     }
 }

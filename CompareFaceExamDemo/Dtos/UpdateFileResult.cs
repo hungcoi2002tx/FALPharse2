@@ -11,5 +11,6 @@ namespace AuthenExamCompareFaceExam.Dtos
         public string? FilePath { get; set; }
         public string? Message { get; set; }
         public string? Status { get; set; } = null;
+        public string? StudentNumber { get; set; } = null;
     }
 }
