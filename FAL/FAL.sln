@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FAL", "FAL.csproj", "{262E4
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Share", "..\Share\Share.csproj", "{41B6FA43-01AB-4B31-8314-798F47903944}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FALClient", "..\FALClient\FALClient.csproj", "{C7F064FD-E222-47B4-8E7A-B0F7F14D7FA0}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Alumniphase2.Lambda", "..\Alumniphase2.Lambda\Alumniphase2.Lambda.csproj", "{E8B666F4-8DC0-46A4-A8C6-976400D6217A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FALWebhook", "..\FALWebhook\FALWebhook.csproj", "{CAB54BCA-4461-42FC-876F-86883B0E95D8}"
@@ -33,6 +31,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EOSDemo", "..\EOSDemo\EOSDe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthenExamTakePicture", "..\TakePictureDemo\AuthenExamTakePicture.csproj", "{D142FFE8-86B3-4BBE-AC9F-7620D4FFDE2B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FAL.FrontEnd", "..\FAL.FrontEnd\FAL.FrontEnd.csproj", "{633DF03E-1360-4B23-AF22-1FC6C0C48F48}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FAL-UT", "..\FAL-UT\FAL-UT.csproj", "{B22DFC28-DA12-4C7F-BB53-3982299575EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,10 +49,6 @@ Global
 		{41B6FA43-01AB-4B31-8314-798F47903944}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{41B6FA43-01AB-4B31-8314-798F47903944}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{41B6FA43-01AB-4B31-8314-798F47903944}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C7F064FD-E222-47B4-8E7A-B0F7F14D7FA0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C7F064FD-E222-47B4-8E7A-B0F7F14D7FA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C7F064FD-E222-47B4-8E7A-B0F7F14D7FA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C7F064FD-E222-47B4-8E7A-B0F7F14D7FA0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E8B666F4-8DC0-46A4-A8C6-976400D6217A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E8B666F4-8DC0-46A4-A8C6-976400D6217A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E8B666F4-8DC0-46A4-A8C6-976400D6217A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -91,6 +89,14 @@ Global
 		{D142FFE8-86B3-4BBE-AC9F-7620D4FFDE2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D142FFE8-86B3-4BBE-AC9F-7620D4FFDE2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D142FFE8-86B3-4BBE-AC9F-7620D4FFDE2B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{633DF03E-1360-4B23-AF22-1FC6C0C48F48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{633DF03E-1360-4B23-AF22-1FC6C0C48F48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{633DF03E-1360-4B23-AF22-1FC6C0C48F48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{633DF03E-1360-4B23-AF22-1FC6C0C48F48}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B22DFC28-DA12-4C7F-BB53-3982299575EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B22DFC28-DA12-4C7F-BB53-3982299575EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B22DFC28-DA12-4C7F-BB53-3982299575EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B22DFC28-DA12-4C7F-BB53-3982299575EC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

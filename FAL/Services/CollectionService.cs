@@ -3,7 +3,7 @@ using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 using Amazon.Runtime.Internal.Util;
 using FAL.Services.IServices;
-using Share.SystemModel;
+using Share.Utils;
 using System.Reflection;
 
 namespace FAL.Services
@@ -127,7 +127,7 @@ namespace FAL.Services
             }
         }
 
-        public async Task<bool> DisassociatedFaceAsync(string systermId, string faceId, string userId)
+        public virtual async Task<bool> DisassociatedFaceAsync(string systermId, string faceId, string userId)
         {
             try
             {
@@ -540,7 +540,7 @@ namespace FAL.Services
             }
         }
 
-        public async Task DeleteUserFromRekognitionCollectionAsync(string systemId, string userId)
+        public virtual async Task DeleteUserFromRekognitionCollectionAsync(string systemId, string userId)
         {
             try
             {

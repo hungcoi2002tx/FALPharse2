@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Text.Json;
 using Amazon.DynamoDBv2.DataModel;
-using FAL.Models;
+using Share.Model;
 
 namespace FAL.Authors
 {

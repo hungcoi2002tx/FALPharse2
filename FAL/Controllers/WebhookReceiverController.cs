@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Share.Data;
+using Share.DTO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;

@@ -1,8 +1,11 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2;
 using Microsoft.AspNetCore.Mvc;
-using FAL.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Net.WebSockets;
+using FAL.Dtos;
+using Share.Model;
+using Share.DTO;
 
 namespace FAL.Controllers
 {
@@ -10,37 +13,59 @@ namespace FAL.Controllers
     [ApiController]
     public class AccountsController : ControllerBase
     {
-        private readonly IAmazonDynamoDB _dynamoDbClient;
-        private readonly DynamoDBContext _dbContext;
+        private readonly IDynamoDBContext _dbContext;
 
-        public AccountsController(IAmazonDynamoDB dynamoDbClient)
+        public AccountsController(IDynamoDBContext dbContext)
         {
-            _dynamoDbClient = dynamoDbClient;
-            _dbContext = new DynamoDBContext(dynamoDbClient);
+            _dbContext = dbContext;
         }
 
-        // GET: api/users
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
-            var users = await _dbContext.ScanAsync<Account>(new List<ScanCondition>()).GetRemainingAsync();
-            return Ok(users);
+            var accounts = await _dbContext.ScanAsync<Account>(new List<ScanCondition>()).GetRemainingAsync();
+            var accountDtos = accounts.Select(account => new AccountViewDto
+            {
+                Username = account.Username,
+                Password = account.Password,
+                Email = account.Email,
+                RoleId = account.RoleId,
+                SystemName = account.SystemName,
+                WebhookUrl = account.WebhookUrl,
+                WebhookSecretKey = account.WebhookSecretKey,
+                Status = account.Status
+            }).ToList();
+
+            return Ok(accountDtos);
         }
 
-        // GET: api/users/{username}
+        // GET: api/accounts/{username}
         [Authorize]
         [HttpGet("{username}")]
         public async Task<IActionResult> GetUserById(string username)
         {
-            var user = await _dbContext.LoadAsync<Account>(username);
-            if (user == null)
+            var account = await _dbContext.LoadAsync<Account>(username);
+            if (account == null)
                 return NotFound("User không tìm thấy!");
 
-            return Ok(user);
+            var accountDto = new AccountViewDto
+            {
+                Username = account.Username,
+                Password = account.Password,
+                Email = account.Email,
+                RoleId = account.RoleId,
+                SystemName = account.SystemName,
+                WebhookUrl = account.WebhookUrl,
+                WebhookSecretKey = account.WebhookSecretKey,
+                Status = account.Status
+            };
+
+            return Ok(accountDto);
         }
 
-        // POST: api/users
+
+        // POST: api/accounts
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] Account user)
@@ -53,7 +78,7 @@ namespace FAL.Controllers
             return Ok(user); // Tạo mới một user
         }
 
-        // PUT: api/users/{username}
+        // PUT: api/accounts/{username}
         [Authorize]
         [HttpPut("{username}")]
         public async Task<IActionResult> UpdateUser(string username, [FromBody] Account updatedUser)
@@ -83,7 +108,7 @@ namespace FAL.Controllers
         }
 
 
-        // DELETE: api/users/{username}
+        // DELETE: api/accounts/{username}
         [Authorize]
         [HttpDelete("{username}")]
         public async Task<IActionResult> DeleteUser(string username)

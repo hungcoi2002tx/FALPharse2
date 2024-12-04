@@ -1,6 +1,6 @@
 ﻿using Amazon.Rekognition.Model;
 using AutoMapper;
-using Share.Data;
+using Share.Model;
 
 namespace FAL.Utils
 {

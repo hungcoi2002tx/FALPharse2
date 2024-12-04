@@ -1,0 +1,39 @@
+﻿@page
+@model FAL.FrontEnd.Pages.Auth.RegisterModel
+@{
+    Layout = "_Layout";
+}
+
+<h2>Register</h2>
+<form method="post">
+    <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" asp-for="Username" class="form-control" required />
+    </div>
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" asp-for="Email" class="form-control" required />
+    </div>
+    <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" asp-for="Password" class="form-control" required />
+    </div>
+    <div class="form-group">
+        <label for="systemName">System Name</label>
+        <input type="text" id="systemName" asp-for="SystemName" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="webhookUrl">Webhook URL</label>
+        <input type="url" id="webhookUrl" asp-for="WebhookUrl" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="webhookSecretKey">Webhook Secret Key</label>
+        <input type="text" id="webhookSecretKey" asp-for="WebhookSecretKey" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary">Register</button>
+</form>
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}

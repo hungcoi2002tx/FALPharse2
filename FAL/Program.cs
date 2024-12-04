@@ -3,7 +3,6 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.Rekognition;
 using Amazon.S3;
 using FAL.Authors;
-using FAL.Models;
 using FAL.Services;
 using FAL.Services.IServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,18 +10,19 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Share.SystemModel;
 using System.Security;
 using System.Text;
 using Amazon.SQS;
 using Microsoft.AspNetCore.HttpOverrides;
 using FAL.MiddleWare;
+using Share.Utils;
+using FAL.DataInitial;
 
 namespace FAL
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -76,7 +76,8 @@ namespace FAL
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
             builder.Services.AddSingleton<IS3Service, S3Service>();
             builder.Services.AddSingleton<IPermissionService, PermissionService>();
-            //builder.Services.AddSingleton<CustomAuthorizationFilter>();
+            builder.Services.AddSingleton<DefaultDataInitializer>();
+            builder.Services.AddSingleton<CustomAuthorizationFilter>();
 
             var key = builder.Configuration["Jwt:Key"] ?? "";
             var issuer = builder.Configuration["Jwt:Issuer"] ?? "";
@@ -124,7 +125,22 @@ namespace FAL
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
+            using (var scope = app.Services.CreateScope())
+            {
+                var dataInitializer = scope.ServiceProvider.GetRequiredService<DefaultDataInitializer>();
+                try
+                {
+                    await dataInitializer.SeedDefaultDataAsync();
+                    Console.WriteLine("Dữ liệu mặc định đã được khởi tạo thành công.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Lỗi khi khởi tạo dữ liệu mặc định: {ex.Message}");
+                }
+            }
             app.Run();
+
+
         }
     }
 }

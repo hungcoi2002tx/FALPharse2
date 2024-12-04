@@ -1,21 +1,18 @@
 ﻿using Amazon.Rekognition.Model;
-using Amazon.Runtime;
 using Amazon.S3;
-using FAL.Services;
 using FAL.Services.IServices;
 using FAL.Utils;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using Share.Data;
+using Share.Constant;
 using Share.DTO;
-using Share.SystemModel;
+using Share.Model;
+using Share.Utils;
 using System.IO.Compression;
 using System.Net;
 using System.Reflection;
+using System.Text.Json;
+
 
 namespace FAL.Controllers
 {
@@ -76,8 +73,12 @@ namespace FAL.Controllers
 
                 // Check if both deletions were successful
                 if (collectionDeleted)
+                {
+                    await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.ResetUser, RequestResultEnum.Success, JsonSerializer.Serialize(userId));
                     return Ok(new { Status = true });
+                }
 
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.GetWebhookResult, RequestResultEnum.Failed, JsonSerializer.Serialize(userId));
                 return BadRequest(new { Status = false });
             }
             catch (Exception ex)
@@ -95,79 +96,29 @@ namespace FAL.Controllers
         [HttpPost("upload-zip")]
         public async Task<IActionResult> UploadAndProcessZipFile(IFormFile zipFile)
         {
-            if (zipFile == null || zipFile.Length == 0)
+            if (!FileValidationExtention.IsValidZipFile(zipFile, out string errorMessage))
             {
-                return BadRequest("No ZIP file uploaded.");
-            }
-
-            if (!Path.GetExtension(zipFile.FileName).Equals(".zip", StringComparison.OrdinalIgnoreCase))
-            {
-                return BadRequest("Only ZIP files are supported.");
+                return BadRequest(errorMessage);
             }
 
             try
             {
-                // Save the ZIP file to a temporary location
-                var tempZipFilePath = Path.GetTempFileName();
-                using (var stream = new FileStream(tempZipFilePath, FileMode.Create))
+                var tempZipFilePath = await FileValidationExtention.SaveZipToTemporaryLocation(zipFile);
+                var extractPath = ExtractZipFile(tempZipFilePath);
+
+                var imageFiles = FileValidationExtention.GetImageFilesFromDirectory(extractPath);
+
+                if (!imageFiles.Any())
                 {
-                    await zipFile.CopyToAsync(stream);
+                    FileValidationExtention.CleanupTemporaryFiles(tempZipFilePath, extractPath);
+                    return BadRequest("No valid image files found in the ZIP.");
                 }
-
-                // Extract ZIP file to a temporary folder
-                var extractPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                Directory.CreateDirectory(extractPath);
-                ZipFile.ExtractToDirectory(tempZipFilePath, extractPath);
-
-                // Find image files in the extracted folder
-                var imageFiles = Directory.GetFiles(extractPath)
-                    .Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
-                                f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
-                                f.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
 
                 var systemId = User.Claims.FirstOrDefault(c => c.Type == SystermId)?.Value;
+                var (successCount, failureCount) = await ProcessImagesAsync(imageFiles, systemId);
 
-                int successCount = 0;
-                int failureCount = 0;
-
-                foreach (var imageFile in imageFiles)
-                {
-                    var fileName = Path.GetFileNameWithoutExtension(imageFile);
-                    var imageName = Path.GetFileName(imageFile);
-
-                    // Read the image file and validate it
-                    using (var imageStream = new FileStream(imageFile, FileMode.Open, FileAccess.Read))
-                    {
-                        var formFile = new FormFile(imageStream, 0, imageStream.Length, null, imageName)
-                        {
-                            Headers = new HeaderDictionary(),
-                            ContentType = GetContentType(imageFile)
-                        };
-
-                        try
-                        {
-                            // Validate the file with Rekognition
-                            await ValidateFileWithRekognitionAsync(formFile);
-
-                            // Train the system for each user with the image
-                            var image = await GetImageAsync(formFile);
-                            await TrainAsync(image, fileName, systemId);
-                            successCount++; // Increment success count
-                        }
-                        catch (Exception ex)
-                        {
-                            // Log the exception for this specific image
-                            _logger.LogException($"{MethodBase.GetCurrentMethod().Name} - {GetType().Name}", ex);
-                            failureCount++; // Increment failure count
-                        }
-                    }
-                }
-
-                // Cleanup
-                System.IO.File.Delete(tempZipFilePath);
-                Directory.Delete(extractPath, true);
-
+                FileValidationExtention.CleanupTemporaryFiles(tempZipFilePath, extractPath);
+                await _dynamoService.LogRequestAsync(systemId, RequestTypeEnum.TrainByZip, RequestResultEnum.Success, JsonSerializer.Serialize(zipFile));
                 return Ok(new ResultResponse
                 {
                     Status = true,
@@ -195,6 +146,73 @@ namespace FAL.Controllers
         }
 
 
+
+        private string ExtractZipFile(string zipFilePath)
+        {
+            var extractPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(extractPath);
+
+            try
+            {
+                ZipFile.ExtractToDirectory(zipFilePath, extractPath);
+            }
+            catch (InvalidDataException ex)
+            {
+                // Cleanup if extraction fails
+                if (Directory.Exists(extractPath))
+                {
+                    Directory.Delete(extractPath, true);
+                }
+                throw new ArgumentException("The uploaded ZIP file is invalid or corrupted.", ex);
+            }
+
+            return extractPath;
+        }
+
+
+
+        private async Task<(int successCount, int failureCount)> ProcessImagesAsync(List<string> imageFiles, string systemId)
+        {
+            int successCount = 0;
+            int failureCount = 0;
+
+
+
+            foreach (var imageFile in imageFiles)
+            {
+                var fileName = Path.GetFileNameWithoutExtension(imageFile);
+                var imageName = Path.GetFileName(imageFile);
+
+                using (var imageStream = new FileStream(imageFile, FileMode.Open, FileAccess.Read))
+                {
+                    var formFile = new FormFile(imageStream, 0, imageStream.Length, null, imageName)
+                    {
+                        Headers = new HeaderDictionary(),
+                        ContentType = GetContentType(imageFile)
+                    };
+
+                    try
+                    {
+                        await ValidateFileWithRekognitionAsync(formFile);
+                        var image = await GetImageAsync(formFile);
+                        await TrainAsync(image, fileName, systemId);
+                        successCount++;
+                    }
+                    catch
+                    {
+                        failureCount++;
+                    }
+                }
+            }
+
+            return (successCount, failureCount);
+        }
+
+        
+
+
+
+
         private string GetContentType(string path)
         {
             var types = new Dictionary<string, string>
@@ -216,6 +234,8 @@ namespace FAL.Controllers
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 var response = await _dynamoService.GetFaceIdsByUserIdAsync(userId, systermId);
                 //return 
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.CheckIsTrained, RequestResultEnum.Success, JsonSerializer.Serialize(userId));
+
                 return Ok(new ResultIsTrainedModel
                 {
                     Status = true,
@@ -244,6 +264,11 @@ namespace FAL.Controllers
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
                 await TrainAsync(image, userId, systermId);
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.TrainByImage, RequestResultEnum.Success, JsonSerializer.Serialize(new
+                {
+                    file =file,
+                    userId = userId
+                }));
                 //return 
                 return Ok(new ResultResponse
                 {
@@ -330,6 +355,7 @@ namespace FAL.Controllers
                 {
                     await TrainAsync(new Image { Bytes = imageStream }, model.UserId, systermId);
                 }
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.TrainByUrl, RequestResultEnum.Success, JsonSerializer.Serialize(model));
 
                 return Ok(new ResultResponse
                 {
@@ -479,6 +505,7 @@ namespace FAL.Controllers
 
                 //train
                 await TrainFaceIdAsync(info.UserId, info.FaceId, systermId);
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.TrainByFaceId, RequestResultEnum.Success, JsonSerializer.Serialize(info));
 
                 //return 
                 return Ok(new ResultResponse
@@ -504,25 +531,39 @@ namespace FAL.Controllers
             try
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
-                //check faceId in dynamodb
+
+                // Check if the FaceId exists in DynamoDB
                 var result = await _dynamoService.IsExistFaceIdAsync(systermId, info.FaceId);
                 if (!result)
                 {
+                    await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.DisassociateFace, RequestResultEnum.Failed, JsonSerializer.Serialize(info));
+
                     return BadRequest(new ResultResponse
                     {
                         Status = false,
                         Message = "FaceId is not existed in systerm"
                     });
+
                 }
 
-                //train
+                // Perform the disassociation
                 await DisassociateFaceIdAsync(info.UserId, info.FaceId, systermId);
+                await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.DisassociateFace, RequestResultEnum.Success, JsonSerializer.Serialize(info));
 
-                //return 
+                // Return explicit OkObjectResult
                 return Ok(new ResultResponse
                 {
                     Status = true,
                     Message = "The disassociate was successful."
+                });
+            }
+            catch (InvalidOperationException ex)  // Specifically catch InvalidOperationException
+            {
+                // This exception is thrown when user doesn't exist
+                return BadRequest(new ResultResponse
+                {
+                    Status = false,
+                    Message = ex.Message  // Return the exception message directly
                 });
             }
             catch (Exception ex)
@@ -535,6 +576,7 @@ namespace FAL.Controllers
                 });
             }
         }
+
 
         private async Task<bool> ValidateFileWithRekognitionAsync(IFormFile file)
         {

@@ -33,7 +33,7 @@ namespace FAL.Utils
         new Claim(JwtRegisteredClaimNames.Sub, username),
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique token ID
         new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64), // Thời điểm phát hành token
-        new Claim("roleId", roleId), // Thêm RoleId vào claims
+        new Claim(ClaimTypes.Role, roleId), // Thêm RoleId vào claims
         new Claim("systemName", systemName), // Thêm SystemName vào claims
         new Claim(ClaimTypes.Name, username) // Đặt username như tên người dùng
     };

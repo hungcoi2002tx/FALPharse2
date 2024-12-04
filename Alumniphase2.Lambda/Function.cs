@@ -49,23 +49,17 @@ public class Function
 
             if (s3Record == null)
             {
-                context.Logger.LogError("No S3 record found in the event.");
                 return;
             }
 
             var bucket = s3Record.Bucket.Name;
             var key = s3Record.Object.Key;
-            await logger.LogMessageAsync($"Key: {key}");
 
             var metadataResponse = await _s3Client.GetObjectMetadataAsync(bucket, key);
             var contentType = CheckContentType(metadataResponse);
-            var fileName = metadataResponse.Metadata[Utils.Constants.ORIGINAL_FILE_NAME];
+            var fileName = metadataResponse.Metadata[Utils.SystemConstants.ORIGINAL_FILE_NAME];
             var imageWidth = metadataResponse.Metadata["ImageWidth"];
             var imageHeight = metadataResponse.Metadata["ImageHeight"];
-
-            await logger.LogMessageAsync($"fileName: {fileName}");
-            await logger.LogMessageAsync($"ImageWidth: {imageWidth}");
-            await logger.LogMessageAsync($"imageHeight: {imageHeight}");
 
             switch (contentType)
             {
@@ -75,19 +69,19 @@ public class Function
                     result.Height = int.Parse(imageHeight);
                     result.Key = key;
                     var (webhookUrlImage, webhookSecretkeyImage) = await CreateResponseResult(bucket, result);
-                    await SendResult(result, logger, webhookSecretkeyImage, webhookUrlImage);
                     await StoreResponseResult(result, fileName, bucket);
+                    await SendResult(result, logger, webhookSecretkeyImage, webhookUrlImage);
                     break;
                 case (true):
-                    result = await DetectVideoProcess(bucket, key, fileName);
+                    result = await DetectVideoProcess(bucket, key, fileName);   
                     result.Width = int.Parse(imageWidth);
                     result.Height = int.Parse(imageHeight);
                     result.Key = key;
                     var (webhookUrlVideo, webhookSecretkeyVideo) = await CreateResponseResult(bucket, result);
                     await logger.LogMessageAsync($"Add vao db {webhookUrlVideo}");
                     await logger.LogMessageAsync($"Add vao db {webhookSecretkeyVideo}");
-                    await SendResult(result, logger, webhookSecretkeyVideo, webhookUrlVideo);
                     await StoreResponseResult(result, fileName, bucket);
+                    await SendResult(result, logger, webhookSecretkeyVideo, webhookUrlVideo);
                     await logger.LogMessageAsync($"Add vao db {result.RegisteredFaces.Count}");
                     break;
             }
@@ -214,19 +208,19 @@ public class Function
         return new Dictionary<string, AttributeValue>
                {
                    {
-                       Utils.Constants.FILE_NAME_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       Utils.SystemConstants.FILE_NAME_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
                            S = fileName
                        }
                    },
                    {
-                       Utils.Constants.DATA_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       Utils.SystemConstants.DATA_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
                            S = data
                        }
                    },
                    {
-                       Utils.Constants.CREATE_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       Utils.SystemConstants.CREATE_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
                            S = DateTimeUtils.GetDateTimeVietNamNow()
                        }
@@ -303,19 +297,19 @@ public class Function
         return new Dictionary<string, AttributeValue>
                {
                    {
-                       Utils.Constants.USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       Utils.SystemConstants.USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
                            S = userId
                        }
                    },
                    {
-                       Utils.Constants.FACE_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       Utils.SystemConstants.FACE_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
                            S = faceId
                        }
                    },
                    {
-                       Utils.Constants.CREATE_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
+                       Utils.SystemConstants.CREATE_DATE_ATTRIBUTE_DYNAMODB, new AttributeValue
                        {
                            S = DateTimeUtils.GetDateTimeVietNamNow()
                        }
@@ -683,13 +677,13 @@ public class Function
     }
     private bool CheckContentType(GetObjectMetadataResponse metadataResponse)
     {
-        var contentType = metadataResponse.Metadata[Utils.Constants.CONTENT_TYPE];
+        var contentType = metadataResponse.Metadata[Utils.SystemConstants.CONTENT_TYPE];
 
-        if (contentType.Contains(Utils.Constants.VIDEO))
+        if (contentType.Contains(Utils.SystemConstants.VIDEO))
         {
             return true;
         }
-        else if (contentType.Contains(Utils.Constants.IMAGE))
+        else if (contentType.Contains(Utils.SystemConstants.IMAGE))
         {
             return false;
         }
