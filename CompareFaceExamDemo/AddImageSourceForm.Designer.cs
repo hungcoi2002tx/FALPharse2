@@ -127,6 +127,7 @@
             Controls.Add(label1);
             Name = "AddImageSourceForm";
             Text = "AddImageSourceForm";
+            Load += AddImageSourceForm_Load;
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ResumeLayout(false);
             PerformLayout();

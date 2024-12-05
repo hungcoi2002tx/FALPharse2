@@ -1,6 +1,6 @@
 ﻿using AuthenExamCompareFaceExam.Models;
 using Newtonsoft.Json;
-using Share.SystemModel;
+using Share.DTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;

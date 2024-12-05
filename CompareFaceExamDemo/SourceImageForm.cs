@@ -1,5 +1,9 @@
-﻿using AuthenExamCompareFaceExam.Models;
+﻿using Amazon.Auth.AccessControlPolicy;
+using AuthenExamCompareFaceExam.Dtos;
+using AuthenExamCompareFaceExam.Entities;
+using AuthenExamCompareFaceExam.Models;
 using AuthenExamCompareFaceExam.Utils;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,16 +19,20 @@ namespace AuthenExamCompareFaceExam
 {
     public partial class SourceImageForm : Form
     {
-        private SettingModel _settingForm;
-
+        private static readonly object fileLock = new object();
+        private BindingSource? source = null;
+        private List<ImageSourceData>? imageSourceData = null;
+        private string sourcePath;
+        private string pattern = @"^[A-Za-z]{2}\d+$";
         public SourceImageForm()
         {
             InitializeComponent();
 
             try
             {
-                _settingForm = Config.GetSetting();
 
+                var _settingForm = Config.GetSetting();
+                sourcePath = _settingForm.DirectoryImageSource;
                 if (string.IsNullOrEmpty(_settingForm.DirectoryImageSource))
                 {
                     MessageBox.Show("Không tìm thấy thư mục DirectoryImageSource trong cấu hình.", "Lỗi cấu hình", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -46,22 +54,38 @@ namespace AuthenExamCompareFaceExam
                 return;
             }
 
-            var filePath = Path.Combine(_settingForm.DirectoryImageSource, $"{txtStudentCode.Text.Trim().ToUpper()}.jpg");
-            if (File.Exists(filePath))
+            var studentCode = txtStudentCode.Text.Trim().ToUpper();
+
+            // Kiểm tra danh sách imageSourceData
+            if (imageSourceData != null)
             {
-                pictureBoxSourceImage.Image = Image.FromFile(filePath);
+                // Tìm kiếm trong imageSourceData
+                var matchedData = imageSourceData.FirstOrDefault(data => data.StudentNumber.ToUpper() == studentCode);
+                dataGridViewSourceImage.DataSource = new List<ImageSourceData> { matchedData ?? new ImageSourceData() };
+                if (matchedData != null)
+                {
+                    return;
+                }
             }
-            else
-            {
-                MessageBox.Show("Không tìm thấy ảnh nguồn cho sinh viên này.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
+
+            // Nếu không tìm thấy trong imageSourceData, hiển thị thông báo
+            MessageBox.Show("Không tìm thấy sinh viên này.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+
 
         private void btnSaveImage_Click(object sender, EventArgs e)
         {
-            var addImageSourceForm = new AddImageSourceForm();
-            addImageSourceForm.Show();
+            var selectedResult = (ImageSourceData)dataGridViewSourceImage.SelectedRows[0].DataBoundItem;
+
+            var addImageSourceForm = new AddImageSourceForm
+            {
+                ImageSourceData = selectedResult // Gán dữ liệu qua thuộc tính
+            };
+
+            addImageSourceForm.Owner = this; // Thiết lập form cha
+            addImageSourceForm.ShowDialog(); // Hiển thị form con dưới dạng modal
         }
+
 
         private void btnDeleteImage_Click(object sender, EventArgs e)
         {
@@ -71,6 +95,8 @@ namespace AuthenExamCompareFaceExam
                 return;
             }
 
+            var _settingForm = Config.GetSetting();
+            sourcePath = _settingForm.DirectoryImageSource;
             var filePath = Path.Combine(_settingForm.DirectoryImageSource, $"{txtStudentCode.Text.Trim()}.jpg");
 
             // Xác nhận trước khi xóa ảnh
@@ -95,6 +121,8 @@ namespace AuthenExamCompareFaceExam
                     // Xóa ảnh
                     File.Delete(filePath);
                     MessageBox.Show("Đã xóa ảnh thành công.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    GetImageSourceData();
+                    LoadListData();
                 }
                 catch (IOException ex)
                 {
@@ -111,85 +139,126 @@ namespace AuthenExamCompareFaceExam
 
         private void btnImport_Click(object sender, EventArgs e)
         {
+            string selectedFolder;
             // Cho phép người dùng chọn thư mục
             using (var folderDialog = new FolderBrowserDialog())
             {
                 var dialogResult = folderDialog.ShowDialog();
                 if (dialogResult == DialogResult.OK)
                 {
-                    var selectedFolder = folderDialog.SelectedPath;
+                    selectedFolder = folderDialog.SelectedPath;
 
-                    string pattern = @"^[A-Za-z]{2}\d+$"; // 2 chữ cái đầu và sau đó là các chữ số
+                    List<UpdateFileResult> importFileResults = new List<UpdateFileResult>();
 
                     // Lọc tất cả các file ảnh trong thư mục đã chọn và kiểm tra tên đúng định dạng
-                    var imageFiles = Directory.GetFiles(selectedFolder, "*.jpg")
-                                              .Where(file => Regex.IsMatch(Path.GetFileNameWithoutExtension(file), pattern)) // Kiểm tra tên file theo regex
-                                              .ToList();
+                    bool hasValidFiles = false; // Biến để theo dõi nếu có file hợp lệ
 
-                    if (imageFiles.Count == 0)
-                    {
-                        MessageBox.Show("Không tìm thấy ảnh hợp lệ trong thư mục đã chọn.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-
-                    // Kiểm tra và sao chép ảnh vào thư mục nguồn
-                    int importedCount = 0;
-                    int duplicateCount = 0;
-                    var errorMessages = new List<string>(); // Danh sách lưu trữ thông báo lỗi
-
-                    foreach (var filePath in imageFiles)
+                    foreach (var filePath in Directory.GetFiles(selectedFolder, "*.jpg"))
                     {
                         var studentCode = Path.GetFileNameWithoutExtension(filePath);
-                        var destinationPath = Path.Combine(_settingForm.DirectoryImageSource, $"{studentCode}.jpg");
 
-                        // Kiểm tra xem ảnh đã tồn tại chưa
-                        if (File.Exists(destinationPath))
+                        // Kiểm tra tên file có đúng định dạng
+                        if (!Regex.IsMatch(studentCode, pattern))
                         {
-                            // Nếu đã tồn tại, ghi đè lên ảnh cũ
-                            try
+                            UpdateFileResult importFileResult = new UpdateFileResult
                             {
-                                File.Copy(filePath, destinationPath, true); // Tham số `true` cho phép ghi đè
-                                duplicateCount++;
-                            }
-                            catch (Exception ex)
-                            {
-                                errorMessages.Add($"Lỗi khi ghi đè ảnh {studentCode}: {ex.Message}");
-                                continue;
-                            }
+                                FilePath = filePath,
+                                Message = "Tên file không đúng định dạng (phải có 2 chữ cái đầu và số phía sau).",
+                                Status = "INVALIDFILENAME",
+                                StudentNumber = studentCode
+                            };
+                            importFileResults.Add(importFileResult);
+                            continue; // Bỏ qua file này và tiếp tục với file khác
                         }
-                        else
+
+                        // Nếu tên file đúng, xử lý bình thường
+                        lock (fileLock) // Đảm bảo chỉ một luồng xử lý file này
                         {
+                            var _settingForm = Config.GetSetting();
+                            sourcePath = _settingForm.DirectoryImageSource;
+                            var destinationPath = Path.Combine(_settingForm.DirectoryImageSource, $"{studentCode}.jpg");
+
                             try
                             {
-                                // Sao chép ảnh vào thư mục nguồn
+                                // Nếu file tồn tại, xóa trước khi ghi đè
+                                if (File.Exists(destinationPath))
+                                {
+                                    File.Delete(destinationPath);
+                                }
+
+                                // Copy file từ nguồn vào đích
                                 File.Copy(filePath, destinationPath);
-                                importedCount++;
+
+                                UpdateFileResult importFileResult = new UpdateFileResult
+                                {
+                                    FilePath = filePath,
+                                    Message = "ảnh đã được lưu thành công",
+                                    Status = "SUCCESS",
+                                    StudentNumber = studentCode
+                                };
+                                importFileResults.Add(importFileResult);
+
+                                hasValidFiles = true; // Đánh dấu có ít nhất một file hợp lệ
+                            }
+                            catch (IOException ioEx)
+                            {
+                                UpdateFileResult importFileResult = new UpdateFileResult
+                                {
+                                    FilePath = filePath,
+                                    Message = $"File bị khóa hoặc đang sử dụng: {ioEx.Message}",
+                                    Status = "FAIL",
+                                    StudentNumber = studentCode
+                                };
+                                importFileResults.Add(importFileResult);
                             }
                             catch (Exception ex)
                             {
-                                // Lưu thông báo lỗi vào danh sách
-                                errorMessages.Add($"Lỗi khi sao chép ảnh {studentCode}: {ex.Message}");
+                                UpdateFileResult importFileResult = new UpdateFileResult
+                                {
+                                    FilePath = filePath,
+                                    Message = $"Lỗi không xác định: {ex.Message}",
+                                    Status = "FAIL",
+                                    StudentNumber = studentCode
+                                };
+                                importFileResults.Add(importFileResult);
                             }
                         }
                     }
 
-                    // Thông báo tổng hợp về kết quả import
-                    string message = $"Đã import {importedCount} ảnh thành công.";
-                    if (duplicateCount > 0)
+                    // Sau khi xử lý xong tất cả các file, kiểm tra nếu không có file hợp lệ
+                    if (!hasValidFiles)
                     {
-                        message += $"\n{duplicateCount} ảnh đã ghi đè.";
+                        MessageBox.Show("Không tìm thấy ảnh hợp lệ trong thư mục đã chọn.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return; // Thoát khỏi phương thức nếu không có file hợp lệ
                     }
 
-                    // Nếu có lỗi, hiển thị thông báo lỗi
-                    if (errorMessages.Any())
-                    {
-                        message += "\n\nCác lỗi xảy ra:\n" + string.Join("\n", errorMessages);
-                    }
 
-                    // Hiển thị thông báo tổng hợp
-                    MessageBox.Show(message, "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    try
+                    {
+                        var fileName = selectedFolder + GenerateTimestampString("//importManyFileResult");
+                        // Gọi phương thức Export để xuất danh sách ra file Excel
+                        ExcelExporter.ExportListToExcel(importFileResults, fileName);
+
+                        // Thông báo thành công
+                        MessageBox.Show($"Đã thêm thành công, check kết quả trong {fileName}", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        GetImageSourceData();
+                        LoadListData();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Nếu có lỗi, hiển thị thông báo lỗi
+                        MessageBox.Show($"Đã xảy ra lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             }
+        }
+
+        private string GenerateTimestampString(string fileName)
+        {
+            DateTime now = DateTime.Now;
+            string timestamp = now.ToString("yyyyMMdd_HHmmssfff");
+            return $"{fileName}_{timestamp}.xlsx";
         }
 
         private void btnDeleteBulk_Click(object sender, EventArgs e)
@@ -211,15 +280,15 @@ namespace AuthenExamCompareFaceExam
                     // Tách danh sách mã sinh viên từ chuỗi nhập vào, phân cách bằng dấu xuống dòng
                     var studentCodes = input.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
 
-                    int deletedCount = 0;
-                    int notFoundCount = 0;
-                    var errorMessages = new List<string>(); // Danh sách lưu trữ thông báo lỗi
+                    List<UpdateFileResult> deleteFileResult = new List<UpdateFileResult>();
 
                     foreach (var studentCode in studentCodes)
                     {
                         var studentCodeTrimmed = studentCode.Trim(); // Loại bỏ khoảng trắng dư thừa
                         if (string.IsNullOrEmpty(studentCodeTrimmed)) continue;
 
+                        var _settingForm = Config.GetSetting();
+                        sourcePath = _settingForm.DirectoryImageSource;
                         var filePath = Path.Combine(_settingForm.DirectoryImageSource, $"{studentCodeTrimmed}.jpg");
 
                         // Kiểm tra xem ảnh có tồn tại không
@@ -228,42 +297,197 @@ namespace AuthenExamCompareFaceExam
                             try
                             {
                                 File.Delete(filePath);
-                                deletedCount++;
+                                deleteFileResult.Add(new UpdateFileResult
+                                {
+                                    FilePath = filePath,
+                                    Message = "ảnh đã được xóa",
+                                    Status = "SUCCESSDELETE",
+                                    StudentNumber = studentCodeTrimmed
+                                });
                             }
                             catch (Exception ex)
                             {
-                                // Lưu thông báo lỗi vào danh sách
-                                errorMessages.Add($"Lỗi khi xóa ảnh {studentCodeTrimmed}: {ex.Message}");
+                                deleteFileResult.Add(new UpdateFileResult
+                                {
+                                    FilePath = filePath,
+                                    Message = "ảnh chưa được xóa",
+                                    Status = "FAILDELETE",
+                                    StudentNumber = studentCodeTrimmed
+                                });
                             }
                         }
                         else
                         {
-                            notFoundCount++;
+                            deleteFileResult.Add(new UpdateFileResult
+                            {
+                                FilePath = filePath,
+                                Message = "không tìm thấy ảnh",
+                                Status = "FAILFIND",
+                                StudentNumber = studentCodeTrimmed
+                            });
                         }
                     }
 
-                    // Thông báo tổng hợp về kết quả xóa
-                    string message = $"Đã xóa {deletedCount} ảnh thành công.";
-                    if (notFoundCount > 0)
+                    try
                     {
-                        message += $"\n{notFoundCount} ảnh không tìm thấy.";
-                    }
+                        var _settingForm = Config.GetSetting();
+                        sourcePath = _settingForm.DirectoryImageSource;
+                        var fileName = _settingForm.DirectoryImageSource + GenerateTimestampString("//deleteManyFileResult");
+                        // Gọi phương thức Export để xuất danh sách ra file Excel
+                        ExcelExporter.ExportListToExcel(deleteFileResult, fileName);
 
-                    // Nếu có lỗi, hiển thị thông báo lỗi
-                    if (errorMessages.Any())
+                        // Thông báo thành công
+                        MessageBox.Show($"Đã xóa thành công, check kết quả trong {fileName}", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        GetImageSourceData();
+                        LoadListData();
+                    }
+                    catch (Exception ex)
                     {
-                        message += "\n\nCác lỗi xảy ra:\n" + string.Join("\n", errorMessages);
+                        // Nếu có lỗi, hiển thị thông báo lỗi
+                        MessageBox.Show($"Đã xảy ra lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
-
-                    // Hiển thị thông báo tổng hợp
-                    MessageBox.Show(message, "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
         }
 
         private void SourceImageForm_Load(object sender, EventArgs e)
         {
+            dataGridViewSourceImage.Height = 905;
+            pictureBoxSourceImage.Height = 750;
+            dataGridViewSourceImage.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            btnToggleSelectionMode.Text = "Switch to Cell Select"; // Cập nhật nút
+            GetImageSourceData();
+            LoadListData();
+        }
 
+        public void LoadListData()
+        {
+            try
+            {
+                if (source == null)
+                {
+                    source = new BindingSource();
+                }
+
+                if (imageSourceData == null)
+                {
+                    imageSourceData = new List<ImageSourceData>();
+                }
+
+                dataGridViewSourceImage.DataSource = null;
+                dataGridViewSourceImage.Columns.Clear();
+                dataGridViewSourceImage.Rows.Clear();
+                dataGridViewSourceImage.AllowUserToAddRows = false;
+                dataGridViewSourceImage.ScrollBars = ScrollBars.Both; // Hiển thị thanh cuộn ngang và dọc
+
+                source.DataSource = imageSourceData;
+                dataGridViewSourceImage.DataSource = source;
+            }
+            catch (Exception)
+            {
+                MessageBox.Show($"Liên hệ admin", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        public void GetImageSourceData()
+        {
+            try
+            {
+                var _settingForm = Config.GetSetting();
+                sourcePath = _settingForm.DirectoryImageSource;
+                List<ImageSourceData> imageSourceDataClone = new List<ImageSourceData>();
+                foreach (var filePath in Directory.GetFiles(sourcePath, "*.jpg"))
+                {
+                    var studentCode = Path.GetFileNameWithoutExtension(filePath);
+
+                    // Kiểm tra tên file có đúng định dạng
+                    if (!Regex.IsMatch(studentCode, pattern))
+                    {
+                        continue; // Bỏ qua file này và tiếp tục với file khác
+                    }
+                    else
+                    {
+                        ImageSourceData isd = new ImageSourceData
+                        {
+                            StudentNumber = studentCode,
+                            ImagePath = filePath
+                        };
+                        imageSourceDataClone.Add(isd);
+                    }
+                }
+                imageSourceData = imageSourceDataClone;
+            }
+            catch (Exception)
+            {
+                MessageBox.Show($"Liên hệ admin", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void dataGridViewSourceImage_SelectionChanged(object sender, EventArgs e)
+        {
+            if (dataGridViewSourceImage.SelectedRows.Count > 0)
+            {
+                var selectedResult = (ImageSourceData)dataGridViewSourceImage.SelectedRows[0].DataBoundItem;
+                DisplayImages(selectedResult);
+                txtStudentCode.Text = selectedResult.StudentNumber;
+            }
+            else
+            {
+                if (pictureBoxSourceImage.Image != null)
+                {
+                    pictureBoxSourceImage.Image.Dispose();
+                    pictureBoxSourceImage.Image = null;
+                }
+            }
+        }
+
+        private void DisplayImages(ImageSourceData result)
+        {
+            var sourceImagePath = result.ImagePath;
+
+            // Giải phóng ảnh hiện tại nếu có
+            if (pictureBoxSourceImage.Image != null)
+            {
+                pictureBoxSourceImage.Image.Dispose();
+                pictureBoxSourceImage.Image = null;
+            }
+
+            // Hiển thị SourceImage
+            if (File.Exists(sourceImagePath))
+            {
+                try
+                {
+                    using (var stream = new FileStream(sourceImagePath, FileMode.Open, FileAccess.Read))
+                    {
+                        pictureBoxSourceImage.Image = Image.FromStream(stream); // Load ảnh từ stream
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Không thể tải ảnh: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+
+        private void btnLoadDataSource_Click(object sender, EventArgs e)
+        {
+            GetImageSourceData();
+            LoadListData();
+        }
+
+        private void btnToggleSelectionMode_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewSourceImage.SelectionMode == DataGridViewSelectionMode.FullRowSelect)
+            {
+                dataGridViewSourceImage.SelectionMode = DataGridViewSelectionMode.CellSelect;
+                btnToggleSelectionMode.Text = "Switch to Full Row Select"; // Cập nhật nút
+            }
+            else
+            {
+                dataGridViewSourceImage.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+                btnToggleSelectionMode.Text = "Switch to Cell Select"; // Cập nhật nút
+            }
         }
     }
 }
