@@ -15,7 +15,6 @@ namespace FAL.Services
     public class DynamoDBService : IDynamoDBService
     {
         private readonly IAmazonDynamoDB _dynamoDBService;
-        private static readonly string LOG_TABLE_NAME = "ClientRequests";
 
         public DynamoDBService(IAmazonDynamoDB dynamoDBService)
         {
@@ -647,7 +646,7 @@ namespace FAL.Services
             // Create the PutItem request
             var putItemRequest = new PutItemRequest
             {
-                TableName = LOG_TABLE_NAME,
+                TableName = GlobalVarians.CLIENT_REQUESTS_TABLE_DYNAMODB,
                 Item = item
             };
 
@@ -786,7 +785,7 @@ namespace FAL.Services
         {
             var request = new QueryRequest
             {
-                TableName = "ClientRequests",
+                TableName = GlobalVarians.CLIENT_REQUESTS_TABLE_DYNAMODB,
                 KeyConditionExpression = "SystemName = :systemId",
                 ExpressionAttributeValues = new Dictionary<string, AttributeValue>
         {
