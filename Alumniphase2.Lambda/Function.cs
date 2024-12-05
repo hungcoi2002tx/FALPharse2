@@ -280,7 +280,7 @@ public class Function
                 {
                     await AssociateUser(userId, faceId, collectionName);
                     var dictionary = CreateDictionaryFualumni(userId, faceId, collectionName);
-                    await CreateNewRecord(Utils.SystemConstants.RESULT_INFO_TABLE_DYNAMODB, dictionary);
+                    await CreateNewRecord(Utils.SystemConstants.FACEID_TABLE_DYNAMODB, dictionary);
 
                     var responseObj = CreateResponseObj(fileName, null, boundingBox, faceId, userId);
                     resultRegisteredUsers.Add(responseObj);
