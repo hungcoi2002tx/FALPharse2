@@ -549,10 +549,10 @@ namespace FAL.Services
                     IndexName = GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB,
                     KeyExpression = new Expression
                     {
-                        ExpressionStatement = "#sysId = :v_systemId",
+                        ExpressionStatement = "#SystemName = :v_systemId",
                         ExpressionAttributeNames = new Dictionary<string, string>
                         {
-                            { "#sysId", "SystemId" }
+                            { "#SystemName", "SystemName" }
                         },
                                 ExpressionAttributeValues = new Dictionary<string, DynamoDBEntry>
                         {

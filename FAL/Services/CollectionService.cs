@@ -310,8 +310,6 @@ namespace FAL.Services
             await _dynamoDBService.DeleteItemAsync(userId,faceId,collectionName);
         }
 
-        
-
         public async Task<bool> IsUserExistByUserIdAsync(string systermId, string userId)
         {
             try
