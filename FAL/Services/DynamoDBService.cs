@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Share.Constant;
 using Share.DTO;
 using Share.Model;
+using System.Collections;
 using System.Text.Json;
 
 namespace FAL.Services
@@ -194,18 +195,22 @@ namespace FAL.Services
         {
             try
             {
-                // Tạo truy vấn với KeyConditionExpression
                 var request = new QueryRequest
                 {
                     TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
-                    KeyConditionExpression = "UserId = :userId",
-                    FilterExpression = $"{GlobalVarians.SYSTEM_NAME_ATTRIBUTE_DYNAMODB} = :systemName", // Lọc theo SystemName
+                    IndexName = GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB,
+                    KeyConditionExpression = "#sysName = :v_systemName and #userId = :v_userId",
+                    ExpressionAttributeNames = new Dictionary<string, string>
+            {
+                { "#sysName", "SystemName" },
+                { "#userId", "UserId" }
+            },
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
-                { ":userId", new AttributeValue { S = userId } },
-                { ":systemName", new AttributeValue { S = systemId } }
+                { ":v_systemName", new AttributeValue { S = systemId } },
+                { ":v_userId", new AttributeValue { S = userId } }
             },
-                    ProjectionExpression = nameof(FaceInformation.FaceId)
+                    ProjectionExpression = "FaceId"
                 };
 
                 // Gửi query request tới DynamoDB
@@ -329,7 +334,8 @@ namespace FAL.Services
             var queryRequest = new QueryRequest
             {
                 TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
-                KeyConditionExpression = "UserId = :userId",
+                IndexName = GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB,
+                KeyConditionExpression = "UserId = :userId AND SystemName = :systemName", // Sử dụng cả UserId và SystemName
                 ExpressionAttributeValues = new Dictionary<string, AttributeValue>
                 {
                     { ":userId", new AttributeValue { S = userId } },
@@ -395,6 +401,7 @@ namespace FAL.Services
             }
         }
 
+        //chưa test
         public async Task<FaceDetectionResult> GetWebhookResult(string systermId, string mediaId)
         {
             FaceDetectionResult result = null;
@@ -430,37 +437,29 @@ namespace FAL.Services
 
             return result;
         }
-
-        //sửa sau
+        //chưa test
         public async Task<DetectStatsResponse> GetDetectStats(string tableName)
         {
             try
             {
-                // Connect to the DynamoDB table
-                var table = Table.LoadTable(_dynamoDBService, tableName);
-
-                // Scan the table to retrieve all items
-                var search = table.Scan(new ScanOperationConfig());
-                var results = new List<Document>();
-                do
+                var request = new ScanRequest
                 {
-                    results.AddRange(await search.GetNextSetAsync());
-                } while (!search.IsDone);
+                    TableName = GlobalVarians.RESULT_INFO_TABLE_DYNAMODB, // Tên bảng DynamoDB
+                    FilterExpression = "SystemName = :systemName",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        { ":systemName", new AttributeValue { S = tableName } } // Điều kiện trên Sort Key
+                    },
+                    Select = "COUNT" // Chỉ trả về số lượng bản ghi
+                };
 
-                // Extract the "FileName" field
-                var fileNames = results
-                    .Select(doc => doc["FileName"].AsString())
-                    .ToList();
-
-                // Calculate unique and duplicate counts
-                var uniqueMediaCount = fileNames.Distinct().Count();
-                var duplicateMediaCount = fileNames.Count() - uniqueMediaCount;
+                var response = await _dynamoDBService.ScanAsync(request);
 
                 // Return the response
                 return new DetectStatsResponse
                 {
-                    TotalMediaDetected = uniqueMediaCount,
-                    TotalMediaRetries = duplicateMediaCount
+                    TotalMediaDetected = response.Count,
+                    TotalMediaRetries = 0
                 };
             }
             catch (System.Exception ex)
@@ -470,22 +469,107 @@ namespace FAL.Services
         }
 
 
-        public async Task<TrainStatsResponse> GetTrainStats(string systermId, int page, int pageSize, string searchUserId)
+        //public async Task<TrainStatsResponse> GetTrainStats(string systemId, int page, int pageSize, string searchUserId)
+        //{
+        //    try
+        //    {
+        //        // Load the table
+        //        var table = Table.LoadTable(_dynamoDBService, "YourMainTableName");
+
+        //        // Query using the GSI for systemId
+        //        var queryConfig = new QueryOperationConfig
+        //        {
+        //            IndexName = "systemId-index", // Replace with the name of your GSI
+        //            KeyExpression = new Expression
+        //            {
+        //                ExpressionStatement = "systemId = :v_systemId",
+        //                ExpressionAttributeValues = new Dictionary<string, DynamoDBEntry>
+        //        {
+        //            { ":v_systemId", systemId }
+        //        }
+        //            },
+        //            Limit = pageSize, // Only fetch the number of records needed for the page
+        //            PaginationToken = GetPaginationTokenForPage(page) // Optional: Use token for efficient pagination
+        //        };
+
+        //        var search = table.Query(queryConfig);
+        //        var results = await search.GetNextSetAsync();
+
+        //        // Filter by UserId if searchUserId is provided
+        //        var filteredResults = results;
+        //        if (!string.IsNullOrEmpty(searchUserId))
+        //        {
+        //            filteredResults = results
+        //                .Where(doc => doc["UserId"].AsString().IndexOf(searchUserId, StringComparison.OrdinalIgnoreCase) >= 0)
+        //                .ToList();
+        //        }
+
+        //        // Group by UserId and count FaceId for each user
+        //        var groupedData = filteredResults
+        //            .GroupBy(doc => doc["UserId"].AsString())
+        //            .Select(group => new TrainStatsOfUser
+        //            {
+        //                UserId = group.Key,
+        //                TotalNumberOfFaceTrained = group.Count()
+        //            })
+        //            .ToList();
+
+        //        // Total trained face IDs
+        //        var totalTrainedFaceId = filteredResults.Count;
+
+        //        // Return the response
+        //        return new TrainStatsResponse
+        //        {
+        //            TotalTrainedUserId = groupedData.Count,
+        //            TotalTrainedFaceId = totalTrainedFaceId,
+        //            TotalRecords = results.Count, // Only count records fetched for this page
+        //            CurrentPage = page,
+        //            PageSize = pageSize,
+        //            UserStats = groupedData
+        //        };
+        //    }
+        //    catch (System.Exception ex)
+        //    {
+        //        // Handle exceptions gracefully (e.g., log the error)
+        //        return null;
+        //    }
+        //}
+
+        //chưa test
+        public async Task<TrainStatsResponse> GetTrainStats(string systemId, int page, int pageSize, string searchUserId)
         {
             try
             {
-                // Load the table
-                var table = Table.LoadTable(_dynamoDBService, systermId);
+                // Load the table (using a single table design)
+                var table = Table.LoadTable(_dynamoDBService, GlobalVarians.FACEID_TABLE_DYNAMODB);
 
-                // Scan the table to retrieve all records
-                var search = table.Scan(new ScanOperationConfig());
+                // Query the table using the GSI for the specific systemId
+                var queryConfig = new QueryOperationConfig
+                {
+                    IndexName = GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB,
+                    KeyExpression = new Expression
+                    {
+                        ExpressionStatement = "#sysId = :v_systemId",
+                        ExpressionAttributeNames = new Dictionary<string, string>
+                        {
+                            { "#sysId", "SystemId" }
+                        },
+                                ExpressionAttributeValues = new Dictionary<string, DynamoDBEntry>
+                        {
+                            { ":v_systemId", systemId }
+                        }
+                    }
+                };
+
+                // Execute the query
+                var search = table.Query(queryConfig);
                 var results = new List<Document>();
                 do
                 {
                     results.AddRange(await search.GetNextSetAsync());
                 } while (!search.IsDone);
 
-                // Filter by UserId if searchUserId is provided (partial matching)
+                // Filter by UserId if searchUserId is provided (partial matching on the partition key)
                 var filteredResults = results;
                 if (!string.IsNullOrEmpty(searchUserId))
                 {
@@ -739,18 +823,20 @@ namespace FAL.Services
             try
             {
                 // Define the query parameters
-                var request = new QueryRequest
+                var queryRequest = new QueryRequest
                 {
-                    TableName = tableName,
-                    KeyConditionExpression = "UserId = :userId",
+                    TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
+                    IndexName = GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB,
+                    KeyConditionExpression = "UserId = :userId AND SystemName = :systemName", // Sử dụng cả UserId và SystemName
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-            {
-                { ":userId", new AttributeValue { S = userId } }
-            }
+                {
+                    { ":userId", new AttributeValue { S = userId } },
+                    { ":systemName", new AttributeValue { S = systemId } }
+                }
                 };
 
                 // Execute the query
-                var response = await _dynamoDBService.QueryAsync(request);
+                var response = await _dynamoDBService.QueryAsync(queryRequest);
 
                 // Map the results to the DTO
                 result = response.Items.Select(item => new TrainStatsDetailDTO
@@ -792,7 +878,7 @@ namespace FAL.Services
             }
         }
 
-
+        //bỏ
         public async Task<bool> DeleteTrainStat(string systemId, string userId, string faceId)
         {
             var tableName = systemId; // The table name is the system ID

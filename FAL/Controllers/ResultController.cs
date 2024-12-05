@@ -51,7 +51,7 @@ namespace FAL.Controllers
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
 
-                var result = await _dynamoService.GetDetectStats(GetDBResultBySystemName(systermId));
+                var result = await _dynamoService.GetDetectStats(systermId);
 
                 if (result != null)
                 {
