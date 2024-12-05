@@ -100,7 +100,7 @@ namespace FAL.Services
                 var queryRequest = new QueryRequest
                 {
                     TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
-                    IndexName = GlobalVarians.SYSTEM_NAME_ATTRIBUTE_DYNAMODB, // Sử dụng GSI trên SystemName
+                    IndexName = GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB, // Sử dụng GSI trên SystemName
                     KeyConditionExpression = "SystemName = :v_systemName and UserId = :v_userId",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
