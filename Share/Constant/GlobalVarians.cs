@@ -16,8 +16,8 @@ namespace Share.Constant
 
         public const string FACEID_TABLE_DYNAMODB = "FaceInfo";
         public const string RESULT_INFO_TABLE_DYNAMODB = "ResultInfo";
+        public const string CLIENT_REQUESTS_TABLE_DYNAMODB = "ClientRequests";
         public const string SYSTEM_NAME_ATTRIBUTE_DYNAMODB = "SystemName";
         public const string FACEID_INDEX_ATTRIBUTE_DYNAMODB = "SystemNameIndex";
-
     }
 }
