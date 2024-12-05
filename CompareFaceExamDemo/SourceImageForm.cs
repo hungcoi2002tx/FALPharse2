@@ -354,8 +354,6 @@ namespace AuthenExamCompareFace
         {
             dataGridViewSourceImage.Height = 905;
             pictureBoxSourceImage.Height = 750;
-            dataGridViewSourceImage.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            btnToggleSelectionMode.Text = "Switch to Cell Select"; // Cập nhật nút
             GetImageSourceData();
             LoadListData();
         }
@@ -396,43 +394,57 @@ namespace AuthenExamCompareFace
                 var _settingForm = Config.GetSetting();
                 sourcePath = _settingForm.DirectoryImageSource;
                 List<ImageSourceDto> imageSourceDataClone = new List<ImageSourceDto>();
-                foreach (var filePath in Directory.GetFiles(sourcePath, "*.jpg"))
+                var jpgFiles = Directory.GetFiles(sourcePath, "*.jpg");
+                if (jpgFiles.Length > 0)
                 {
-                    var studentCode = Path.GetFileNameWithoutExtension(filePath);
+                    foreach (var filePath in Directory.GetFiles(sourcePath, "*.jpg"))
+                    {
+                        var studentCode = Path.GetFileNameWithoutExtension(filePath);
 
-                    // Kiểm tra tên file có đúng định dạng
-                    if (!Regex.IsMatch(studentCode, pattern))
-                    {
-                        continue; // Bỏ qua file này và tiếp tục với file khác
-                    }
-                    else
-                    {
-                        ImageSourceDto isd = new ImageSourceDto
+                        // Kiểm tra tên file có đúng định dạng
+                        if (!Regex.IsMatch(studentCode, pattern))
                         {
-                            StudentNumber = studentCode,
-                            ImagePath = filePath
-                        };
-                        imageSourceDataClone.Add(isd);
+                            continue; // Bỏ qua file này và tiếp tục với file khác
+                        }
+                        else
+                        {
+                            ImageSourceDto isd = new ImageSourceDto
+                            {
+                                StudentNumber = studentCode,
+                                ImagePath = filePath
+                            };
+                            imageSourceDataClone.Add(isd);
+                        }
                     }
+                    imageSourceData = imageSourceDataClone;
                 }
-                imageSourceData = imageSourceDataClone;
+                else
+                {
+                    MessageBox.Show($"Không tìm thấy file .jpg nào trong thư mục.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             catch (Exception)
             {
-                MessageBox.Show($"Liên hệ admin", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Không tìm thấy file .jpg nào trong thư mục.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void dataGridViewSourceImage_SelectionChanged(object sender, EventArgs e)
         {
-            if (dataGridViewSourceImage.SelectedRows.Count > 0)
+            if (dataGridViewSourceImage.CurrentCell != null)
             {
-                var selectedResult = (ImageSourceDto)dataGridViewSourceImage.SelectedRows[0].DataBoundItem;
-                DisplayImages(selectedResult);
-                txtStudentCode.Text = selectedResult.StudentNumber;
+                int rowIndex = dataGridViewSourceImage.CurrentCell.RowIndex; // Lấy dòng hiện tại
+                var selectedRow = dataGridViewSourceImage.Rows[rowIndex];   // Dòng tương ứng
+
+                if (selectedRow.DataBoundItem is ImageSourceDto selectedResult)
+                {
+                    DisplayImages(selectedResult);
+                    txtStudentCode.Text = selectedResult.StudentNumber;
+                }
             }
             else
             {
+                // Xử lý khi không có dòng nào được chọn
                 if (pictureBoxSourceImage.Image != null)
                 {
                     pictureBoxSourceImage.Image.Dispose();
@@ -469,25 +481,10 @@ namespace AuthenExamCompareFace
             }
         }
 
-
         private void btnLoadDataSource_Click(object sender, EventArgs e)
         {
             GetImageSourceData();
             LoadListData();
-        }
-
-        private void btnToggleSelectionMode_Click(object sender, EventArgs e)
-        {
-            if (dataGridViewSourceImage.SelectionMode == DataGridViewSelectionMode.FullRowSelect)
-            {
-                dataGridViewSourceImage.SelectionMode = DataGridViewSelectionMode.CellSelect;
-                btnToggleSelectionMode.Text = "Switch to Full Row Select"; // Cập nhật nút
-            }
-            else
-            {
-                dataGridViewSourceImage.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-                btnToggleSelectionMode.Text = "Switch to Cell Select"; // Cập nhật nút
-            }
         }
     }
 }

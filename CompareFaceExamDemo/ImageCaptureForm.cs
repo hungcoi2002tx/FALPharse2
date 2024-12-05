@@ -212,10 +212,10 @@ namespace AuthenExamCompareFace
                 // Xử lý xuất kết quả
                 string folderPath = txtFolderPath.Text;
                 string fileBaseName = DateTime.Now.ToString("ddMMyyyy_HHmmss_fff") + "-" + Path.GetFileName(folderPath);
-                string filePathExcel = Path.Combine(folderPath, fileBaseName + ".xlsx");
+                //string filePathExcel = Path.Combine(folderPath, fileBaseName + ".xlsx");
                 string filePathTxt = Path.Combine(folderPath, fileBaseName + ".txt");
 
-                ExcelExporter.ExportListToExcel(listDataCompare, filePathExcel);
+                //ExcelExporter.ExportListToExcel(listDataCompare, filePathExcel);
 
                 var resultCompareFaceTxtDtos = GetResultCompareFaceTxtDto(listDataCompare, maxDegreeOfParallelism, cancellationToken)
                     .OrderBy(r => r.Id)
@@ -224,12 +224,19 @@ namespace AuthenExamCompareFace
                 dataGridViewImages.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.DisplayedCells);
 
                 // Hiển thị thông báo thành công
+                //MessageBox.Show(
+                //    $"Kết quả đã được lưu:\n\nExcel: {filePathExcel}\n\nTxt: {filePathTxt}",
+                //    "Thông báo",
+                //    MessageBoxButtons.OK,
+                //    MessageBoxIcon.Information
+                //);
+
                 MessageBox.Show(
-                    $"Kết quả đã được lưu:\n\nExcel: {filePathExcel}\n\nTxt: {filePathTxt}",
-                    "Thông báo",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information
-                );
+                  $"Kết quả đã được lưu:\n\nTxt: {filePathTxt}, Bạn có thể sử dụng kết quả txt ở tab result trong ứng dụng!",
+                  "Thông báo",
+                  MessageBoxButtons.OK,
+                  MessageBoxIcon.Information
+              );
             }
             catch (OperationCanceledException)
             {
@@ -414,6 +421,19 @@ namespace AuthenExamCompareFace
                                             dataGridViewImages.Refresh();
                                         }));
                                         await Task.Delay(1000, cancellationToken); // Tôn trọng token khi trì hoãn
+                                    }
+                                    else if (response.Status == 413)
+                                    {
+                                        retryCount++;
+                                        itemCompare.Message = response.Status + " - " + response.Message;
+
+                                        int rowIndex = listDataCompare.IndexOf(itemCompare);
+                                        dataGridViewImages.Invoke(new Action(() =>
+                                        {
+                                            dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.LightYellow;
+                                            dataGridViewImages.Refresh();
+                                        }));
+                                        break;
                                     }
                                     else
                                     {
