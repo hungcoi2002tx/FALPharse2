@@ -188,7 +188,7 @@ public class Function
     {
         string jsonResult = ConvertToJson(result);
         var dictionaryResponseResult = CreateDictionaryFualumniResponeResult(fileName, jsonResult, systemName);
-        await CreateNewRecord(Utils.SystemConstants.FACEID_TABLE_DYNAMODB, dictionaryResponseResult);
+        await CreateNewRecord(Utils.SystemConstants.RESULT_INFO_TABLE_DYNAMODB, dictionaryResponseResult);
     }
 
     private string GetDBResultBySystemName(string systemName)
