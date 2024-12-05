@@ -1,4 +1,4 @@
-﻿using AuthenExamCompareFaceExam.Models;
+﻿using AuthenExamCompareFace.Models;
 using Newtonsoft.Json;
 using Share.DTO;
 using System;
@@ -8,7 +8,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AuthenExamCompareFaceExam.ExternalService
+namespace AuthenExamCompareFace.ExternalService
 {
     /// <summary>
     /// Xử lý call api bên FAL để nhận về data

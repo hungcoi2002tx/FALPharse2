@@ -1,4 +1,4 @@
-﻿using AuthenExamCompareFaceExam.Utils;
+﻿using AuthenExamCompareFace.Utils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace AuthenExamCompareFaceExam
+namespace AuthenExamCompareFace
 {
     public partial class MainContainer : Form
     {

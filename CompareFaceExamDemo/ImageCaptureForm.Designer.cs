@@ -1,4 +1,4 @@
-﻿namespace AuthenExamCompareFaceExam
+﻿namespace AuthenExamCompareFace
 {
     partial class ImageCaptureForm
     {

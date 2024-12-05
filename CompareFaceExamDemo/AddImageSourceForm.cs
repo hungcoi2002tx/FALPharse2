@@ -1,6 +1,6 @@
-﻿using AuthenExamCompareFaceExam.Dtos;
-using AuthenExamCompareFaceExam.Models;
-using AuthenExamCompareFaceExam.Utils;
+﻿using AuthenExamCompareFace.Dtos;
+using AuthenExamCompareFace.Models;
+using AuthenExamCompareFace.Utils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,11 +14,11 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
-namespace AuthenExamCompareFaceExam
+namespace AuthenExamCompareFace
 {
     public partial class AddImageSourceForm : Form
     {
-        public ImageSourceData? ImageSourceData { get; set; }
+        public ImageSourceDto? ImageSourceData { get; set; }
 
         public AddImageSourceForm()
         {
@@ -177,10 +177,10 @@ namespace AuthenExamCompareFaceExam
         {
             if (ImageSourceData != null)
             {
-                //textBox2.Text = ImageSourceData.ImagePath;
+                //textBox2.Text = ImageSourceDto.ImagePath;
                 textBox1.Text = ImageSourceData.StudentNumber;
 
-                //using (var stream = new FileStream(ImageSourceData.ImagePath, FileMode.Open, FileAccess.Read))
+                //using (var stream = new FileStream(ImageSourceDto.ImagePath, FileMode.Open, FileAccess.Read))
                 //{
                 //    pictureBox1.Image = Image.FromStream(stream); // Load ảnh từ stream
                 //}

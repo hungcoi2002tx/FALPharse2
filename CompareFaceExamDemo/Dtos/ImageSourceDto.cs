@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AuthenExamCompareFaceExam.Dtos
+namespace AuthenExamCompareFace.Dtos
 {
-    public class ImageSourceData
+    public class ImageSourceDto
     {
         public string? ImagePath { get; set; } = null;
         public string? StudentNumber { get; set; } = null;

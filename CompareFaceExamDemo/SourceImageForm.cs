@@ -1,8 +1,8 @@
 ﻿using Amazon.Auth.AccessControlPolicy;
-using AuthenExamCompareFaceExam.Dtos;
-using AuthenExamCompareFaceExam.Entities;
-using AuthenExamCompareFaceExam.Models;
-using AuthenExamCompareFaceExam.Utils;
+using AuthenExamCompareFace.Dtos;
+using AuthenExamCompareFace.Entities;
+using AuthenExamCompareFace.Models;
+using AuthenExamCompareFace.Utils;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using System;
 using System.Collections.Generic;
@@ -15,13 +15,13 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace AuthenExamCompareFaceExam
+namespace AuthenExamCompareFace
 {
     public partial class SourceImageForm : Form
     {
         private static readonly object fileLock = new object();
         private BindingSource? source = null;
-        private List<ImageSourceData>? imageSourceData = null;
+        private List<ImageSourceDto>? imageSourceData = null;
         private string sourcePath;
         private string pattern = @"^[A-Za-z]{2}\d+$";
         public SourceImageForm()
@@ -61,7 +61,7 @@ namespace AuthenExamCompareFaceExam
             {
                 // Tìm kiếm trong imageSourceData
                 var matchedData = imageSourceData.FirstOrDefault(data => data.StudentNumber.ToUpper() == studentCode);
-                dataGridViewSourceImage.DataSource = new List<ImageSourceData> { matchedData ?? new ImageSourceData() };
+                dataGridViewSourceImage.DataSource = new List<ImageSourceDto> { matchedData ?? new ImageSourceDto() };
                 if (matchedData != null)
                 {
                     return;
@@ -75,7 +75,7 @@ namespace AuthenExamCompareFaceExam
 
         private void btnSaveImage_Click(object sender, EventArgs e)
         {
-            var selectedResult = (ImageSourceData)dataGridViewSourceImage.SelectedRows[0].DataBoundItem;
+            var selectedResult = (ImageSourceDto)dataGridViewSourceImage.SelectedRows[0].DataBoundItem;
 
             var addImageSourceForm = new AddImageSourceForm
             {
@@ -148,7 +148,7 @@ namespace AuthenExamCompareFaceExam
                 {
                     selectedFolder = folderDialog.SelectedPath;
 
-                    List<UpdateFileResult> importFileResults = new List<UpdateFileResult>();
+                    List<UpdateFileResultDto> importFileResults = new List<UpdateFileResultDto>();
 
                     // Lọc tất cả các file ảnh trong thư mục đã chọn và kiểm tra tên đúng định dạng
                     bool hasValidFiles = false; // Biến để theo dõi nếu có file hợp lệ
@@ -160,7 +160,7 @@ namespace AuthenExamCompareFaceExam
                         // Kiểm tra tên file có đúng định dạng
                         if (!Regex.IsMatch(studentCode, pattern))
                         {
-                            UpdateFileResult importFileResult = new UpdateFileResult
+                            UpdateFileResultDto importFileResult = new UpdateFileResultDto
                             {
                                 FilePath = filePath,
                                 Message = "Tên file không đúng định dạng (phải có 2 chữ cái đầu và số phía sau).",
@@ -189,7 +189,7 @@ namespace AuthenExamCompareFaceExam
                                 // Copy file từ nguồn vào đích
                                 File.Copy(filePath, destinationPath);
 
-                                UpdateFileResult importFileResult = new UpdateFileResult
+                                UpdateFileResultDto importFileResult = new UpdateFileResultDto
                                 {
                                     FilePath = filePath,
                                     Message = "ảnh đã được lưu thành công",
@@ -202,7 +202,7 @@ namespace AuthenExamCompareFaceExam
                             }
                             catch (IOException ioEx)
                             {
-                                UpdateFileResult importFileResult = new UpdateFileResult
+                                UpdateFileResultDto importFileResult = new UpdateFileResultDto
                                 {
                                     FilePath = filePath,
                                     Message = $"File bị khóa hoặc đang sử dụng: {ioEx.Message}",
@@ -213,7 +213,7 @@ namespace AuthenExamCompareFaceExam
                             }
                             catch (Exception ex)
                             {
-                                UpdateFileResult importFileResult = new UpdateFileResult
+                                UpdateFileResultDto importFileResult = new UpdateFileResultDto
                                 {
                                     FilePath = filePath,
                                     Message = $"Lỗi không xác định: {ex.Message}",
@@ -280,7 +280,7 @@ namespace AuthenExamCompareFaceExam
                     // Tách danh sách mã sinh viên từ chuỗi nhập vào, phân cách bằng dấu xuống dòng
                     var studentCodes = input.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
 
-                    List<UpdateFileResult> deleteFileResult = new List<UpdateFileResult>();
+                    List<UpdateFileResultDto> deleteFileResult = new List<UpdateFileResultDto>();
 
                     foreach (var studentCode in studentCodes)
                     {
@@ -297,7 +297,7 @@ namespace AuthenExamCompareFaceExam
                             try
                             {
                                 File.Delete(filePath);
-                                deleteFileResult.Add(new UpdateFileResult
+                                deleteFileResult.Add(new UpdateFileResultDto
                                 {
                                     FilePath = filePath,
                                     Message = "ảnh đã được xóa",
@@ -307,7 +307,7 @@ namespace AuthenExamCompareFaceExam
                             }
                             catch (Exception ex)
                             {
-                                deleteFileResult.Add(new UpdateFileResult
+                                deleteFileResult.Add(new UpdateFileResultDto
                                 {
                                     FilePath = filePath,
                                     Message = "ảnh chưa được xóa",
@@ -318,7 +318,7 @@ namespace AuthenExamCompareFaceExam
                         }
                         else
                         {
-                            deleteFileResult.Add(new UpdateFileResult
+                            deleteFileResult.Add(new UpdateFileResultDto
                             {
                                 FilePath = filePath,
                                 Message = "không tìm thấy ảnh",
@@ -371,7 +371,7 @@ namespace AuthenExamCompareFaceExam
 
                 if (imageSourceData == null)
                 {
-                    imageSourceData = new List<ImageSourceData>();
+                    imageSourceData = new List<ImageSourceDto>();
                 }
 
                 dataGridViewSourceImage.DataSource = null;
@@ -395,7 +395,7 @@ namespace AuthenExamCompareFaceExam
             {
                 var _settingForm = Config.GetSetting();
                 sourcePath = _settingForm.DirectoryImageSource;
-                List<ImageSourceData> imageSourceDataClone = new List<ImageSourceData>();
+                List<ImageSourceDto> imageSourceDataClone = new List<ImageSourceDto>();
                 foreach (var filePath in Directory.GetFiles(sourcePath, "*.jpg"))
                 {
                     var studentCode = Path.GetFileNameWithoutExtension(filePath);
@@ -407,7 +407,7 @@ namespace AuthenExamCompareFaceExam
                     }
                     else
                     {
-                        ImageSourceData isd = new ImageSourceData
+                        ImageSourceDto isd = new ImageSourceDto
                         {
                             StudentNumber = studentCode,
                             ImagePath = filePath
@@ -427,7 +427,7 @@ namespace AuthenExamCompareFaceExam
         {
             if (dataGridViewSourceImage.SelectedRows.Count > 0)
             {
-                var selectedResult = (ImageSourceData)dataGridViewSourceImage.SelectedRows[0].DataBoundItem;
+                var selectedResult = (ImageSourceDto)dataGridViewSourceImage.SelectedRows[0].DataBoundItem;
                 DisplayImages(selectedResult);
                 txtStudentCode.Text = selectedResult.StudentNumber;
             }
@@ -441,7 +441,7 @@ namespace AuthenExamCompareFaceExam
             }
         }
 
-        private void DisplayImages(ImageSourceData result)
+        private void DisplayImages(ImageSourceDto result)
         {
             var sourceImagePath = result.ImagePath;
 

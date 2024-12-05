@@ -1,4 +1,4 @@
-﻿using AuthenExamReceiveData.DTOs;
+﻿using AuthenExamReceiveData.Dtos;
 using AuthenExamReceiveData.Service.Implement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

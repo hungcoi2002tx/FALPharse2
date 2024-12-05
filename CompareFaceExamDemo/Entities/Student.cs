@@ -1,7 +1,7 @@
-﻿using AuthenExamCompareFaceExam.Entity.Interface;
+﻿using AuthenExamCompareFace.Entity.Interface;
 using System;
 
-namespace AuthenExamCompareFaceExam.Entities
+namespace AuthenExamCompareFace.Entities
 {
     public partial class Student : IEntity
     {

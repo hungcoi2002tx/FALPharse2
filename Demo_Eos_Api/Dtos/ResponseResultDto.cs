@@ -1,8 +1,8 @@
 ﻿using System.Net;
 
-namespace AuthenExamReceiveData.DTOs
+namespace AuthenExamReceiveData.Dtos
 {
-    public class ResponseResult
+    public class ResponseResultDto
     {
         public bool? Success { get; set; }
         /// <summary>

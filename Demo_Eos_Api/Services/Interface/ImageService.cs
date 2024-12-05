@@ -1,6 +1,6 @@
-﻿using AuthenExamReceiveData.DTOs;
+﻿using AuthenExamReceiveData.Dtos;
 using AuthenExamReceiveData.Service.Implement;
-using AuthenExamReceiveData.Utilities;
+using AuthenExamReceiveData.Utils;
 using Microsoft.Extensions.Options;
 using System.Drawing.Imaging;
 using System.Net;
@@ -26,11 +26,11 @@ namespace AuthenExamReceiveData.Service.Interface
             _fileConfig = fileConfig.Value;
         }
 
-        public async Task<ResponseResult> SaveImageToFile(SaveImageDTO request)
+        public async Task<ResponseResultDto> SaveImageToFile(SaveImageDTO request)
         {
             if (request == null || string.IsNullOrEmpty(request.ImageBase))
             {
-                return new ResponseResult
+                return new ResponseResultDto
                 {
                     Success = false,
                     StatusCode = HttpStatusCode.BadRequest,
@@ -79,11 +79,11 @@ namespace AuthenExamReceiveData.Service.Interface
                         ContentType = contentType ?? "image/jpeg"
                     };
 
-                    Utility.CompressAndSaveImage(file, fullFilePath, _fileConfig.Quality, _fileConfig.Scale);
+                    ImageUtils.CompressAndSaveImage(file, fullFilePath, _fileConfig.Quality, _fileConfig.Scale);
                 }
 
                 // Return success response
-                return new ResponseResult
+                return new ResponseResultDto
                 {
                     Success = true,
                     StatusCode = HttpStatusCode.OK,
@@ -95,7 +95,7 @@ namespace AuthenExamReceiveData.Service.Interface
             catch (Exception ex)
             {
                 // Handle errors
-                return new ResponseResult
+                return new ResponseResultDto
                 {
                     Success = false,
                     StatusCode = HttpStatusCode.InternalServerError,
@@ -166,6 +166,5 @@ namespace AuthenExamReceiveData.Service.Interface
                 _ => ".jpg"
             };
         }
-
     }
 }
