@@ -669,10 +669,12 @@ public class Function
     {
         var request = new QueryRequest
         {
-            TableName = systemId,
-            KeyConditionExpression = "UserId = :userId",
+            TableName = Utils.SystemConstants.FACEID_TABLE_DYNAMODB,
+            IndexName = Utils.SystemConstants.FACEID_INDEX_ATTRIBUTE_DYNAMODB, // Sử dụng GSI với tên "SystemName-index"
+            KeyConditionExpression = "SystemName = :systemName AND UserId = :userId",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
         {
+            { ":systemName", new AttributeValue { S = systemId } },
             { ":userId", new AttributeValue { S = userId } }
         }
         };
