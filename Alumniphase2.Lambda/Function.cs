@@ -95,33 +95,35 @@ public class Function
 
     private async Task<string> SendResult(FaceDetectionResult result, CloudWatchLogger logger, string webhookSecretkey, string webhookUrl)
     {
-        string jsonPayload = ConvertToJson(result);
-        await logger.LogMessageAsync(jsonPayload);
-
-        // Tính chữ ký HMAC cho payload
-        string signature = GenerateHMAC(jsonPayload, webhookSecretkey);
-        // Tạo HttpContent để gửi yêu cầu POST
-        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
-        // Thêm header "X-Signature" với chữ ký HMAC
-        content.Headers.Add("X-Signature", signature);
-
-        var resultJson = ConvertToJson(result);
+        
         try
         {
+            string jsonPayload = ConvertToJson(result);
+            await logger.LogMessageAsync(jsonPayload);
+
+            // Tính chữ ký HMAC cho payload
+            string signature = GenerateHMAC(jsonPayload, webhookSecretkey);
+            // Tạo HttpContent để gửi yêu cầu POST
+            var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+            // Thêm header "X-Signature" với chữ ký HMAC
+            content.Headers.Add("X-Signature", signature);
+
+            var resultJson = ConvertToJson(result);
             var response = await _httpClient.PostAsync(webhookUrl, content);
             await logger.LogMessageAsync(webhookUrl);
             response.EnsureSuccessStatusCode();
             var responseContent = await response.Content.ReadAsStringAsync();
             await logger.LogMessageAsync("Response from API: " + responseContent);
+            return resultJson;
         }
         catch(Exception e)
         {
             await logger.LogMessageAsync(e.Message);
         }
-       
-       
 
-        return resultJson;
+
+        return "";
+       
     }
 
     private static string GenerateHMAC(string payload, string secret)
@@ -294,6 +296,7 @@ public class Function
                     var responseObj = CreateResponseObj(fileName, null, boundingBox, faceId, userId);
                     resultRegisteredUsers.Add(responseObj);
                 };
+                
             }
 
             return new FaceDetectionResult
