@@ -27,6 +27,7 @@ namespace Alumniphase2.Lambda.Utils
         public const string SYSTEM_NAME_ATTRIBUTE_DYNAMODB = "SystemName";
         public const string FACEID_TABLE_DYNAMODB = "FaceInfo";
         public const string RESULT_INFO_TABLE_DYNAMODB = "ResultInfo";
+        public const string FACEID_INDEX_ATTRIBUTE_DYNAMODB = "SystemNameIndex";
 
         public const string DATE_FORMAT = "MM/dd/yyyy h:mm:ss tt";
         public const string TIME_ZONE_VIET_NAM = "SE Asia Standard Time";

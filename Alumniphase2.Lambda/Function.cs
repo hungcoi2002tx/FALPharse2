@@ -255,61 +255,68 @@ public class Function
     private async Task<FaceDetectionResult> DetectImageProcess(string bucket, string key, string fileName)
     {
         var logger = new CloudWatchLogger();
-
-        var resultRegisteredUsers = new List<FaceRecognitionResponse>();
-        var resultUnregisteredUsers = new List<FaceRecognitionResponse>();
-
-        var collectionName = bucket;
-        var dynamoDbName = bucket;
-
-        var indexFacesResponse = await IndexFaces(bucket, key, collectionName);
-        var faceRecords = indexFacesResponse.FaceRecords;
-        await logger.LogMessageAsync($"facerecord:{faceRecords.Count}");
-
-
-        if (faceRecords != null && faceRecords.Count > 0)
+        try
         {
-            var responseUserFaceId = await FindUserIdByFaceId(faceRecords, collectionName);
+            
 
-            var unregisteredUsers = responseUserFaceId.Item2;
-            var registeredUsers = responseUserFaceId.Item1;
+            var resultRegisteredUsers = new List<FaceRecognitionResponse>();
+            var resultUnregisteredUsers = new List<FaceRecognitionResponse>();
 
-            if (unregisteredUsers != null && unregisteredUsers.Count > 0)
+            var collectionName = bucket;
+            var dynamoDbName = bucket;
+
+            var indexFacesResponse = await IndexFaces(bucket, key, collectionName);
+            var faceRecords = indexFacesResponse.FaceRecords;
+            await logger.LogMessageAsync($"facerecord:{faceRecords.Count}");
+
+
+            if (faceRecords != null && faceRecords.Count > 0)
             {
-                //await DeleteFaceId(unregisteredUsers, collectionName);
+                var responseUserFaceId = await FindUserIdByFaceId(faceRecords, collectionName);
 
-                foreach (var (faceId, boundingBox) in unregisteredUsers)
+                var unregisteredUsers = responseUserFaceId.Item2;
+                var registeredUsers = responseUserFaceId.Item1;
+
+                if (unregisteredUsers != null && unregisteredUsers.Count > 0)
                 {
-                    var responseObj = CreateResponseObj(fileName, null, boundingBox, faceId, null);
-                    resultUnregisteredUsers.Add(responseObj);
+                    //await DeleteFaceId(unregisteredUsers, collectionName);
+
+                    foreach (var (faceId, boundingBox) in unregisteredUsers)
+                    {
+                        var responseObj = CreateResponseObj(fileName, null, boundingBox, faceId, null);
+                        resultUnregisteredUsers.Add(responseObj);
+                    }
                 }
-            }
 
-            if (registeredUsers != null && registeredUsers.Count > 0)
-            {
-                foreach (var (userId, faceId, boundingBox) in registeredUsers)
+                if (registeredUsers != null && registeredUsers.Count > 0)
                 {
-                    await AssociateUser(userId, faceId, collectionName);
-                    var dictionary = CreateDictionaryFualumni(userId, faceId, collectionName);
-                    await CreateNewRecord(Utils.SystemConstants.FACEID_TABLE_DYNAMODB, dictionary);
+                    foreach (var (userId, faceId, boundingBox) in registeredUsers)
+                    {
+                        await AssociateUser(userId, faceId, collectionName);
+                        var dictionary = CreateDictionaryFualumni(userId, faceId, collectionName);
+                        await CreateNewRecord(Utils.SystemConstants.FACEID_TABLE_DYNAMODB, dictionary);
 
-                    var responseObj = CreateResponseObj(fileName, null, boundingBox, faceId, userId);
-                    resultRegisteredUsers.Add(responseObj);
+                        var responseObj = CreateResponseObj(fileName, null, boundingBox, faceId, userId);
+                        resultRegisteredUsers.Add(responseObj);
+                    };
+
+                }
+
+                return new FaceDetectionResult
+                {
+                    FileName = fileName,
+                    RegisteredFaces = resultRegisteredUsers,
+                    UnregisteredFaces = resultUnregisteredUsers
                 };
-                
             }
-
-            return new FaceDetectionResult
+            else
             {
-                FileName = fileName,
-                RegisteredFaces = resultRegisteredUsers,
-                UnregisteredFaces = resultUnregisteredUsers
-            };
+                throw new Exception("Index face: Cannot detect anyone");
+            }
+        }catch(Exception ex) {
+            await logger.LogMessageAsync($"image process:{ex.Message}");
         }
-        else
-        {
-            throw new Exception("Index face: Cannot detect anyone");
-        }
+        return null;
     }
     private Dictionary<string, AttributeValue> CreateDictionaryFualumni(string userId, string faceId, string systemName)
     {
@@ -559,23 +566,33 @@ public class Function
         return response;
     }
 
-    private async Task<string> GetFaceIdForUserAndFaceAsync(string userId, string faceId, string tableName)
+    private async Task<string> GetFaceIdForUserAndFaceAsync(string userId, string faceid, string systemName)
     {
-        var queryRequest = new QueryRequest
+        try
         {
-            TableName = tableName,
-            KeyConditionExpression = "UserId = :userId and FaceId = :faceId",
-            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-        {
-            { ":userId", new AttributeValue { S = userId } },
-            { ":faceId", new AttributeValue { S = faceId } }
+            var queryRequest = new QueryRequest
+            {
+                TableName = Utils.SystemConstants.FACEID_TABLE_DYNAMODB,
+                KeyConditionExpression = "UserId = :userId AND FaceId = :faceId",
+                FilterExpression = $"{Utils.SystemConstants.SYSTEM_NAME_ATTRIBUTE_DYNAMODB} = :systemName",
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        { ":userId", new AttributeValue { S = userId } },
+                        { ":faceId", new AttributeValue { S = faceid } },
+                        { ":systemName", new AttributeValue { S = systemName } }
+                    }
+            };
+
+            var queryResponse = await _dynamoDbClient.QueryAsync(queryRequest);
+
+            // If a record exists, return the FaceId, otherwise return null
+            return queryResponse.Items.Count > 0 ? queryResponse.Items.First()["FaceId"].S : null;
         }
-        };
-
-        var queryResponse = await _dynamoDbClient.QueryAsync(queryRequest);
-
-        // If the faceId exists, return the FaceId, otherwise return null
-        return queryResponse.Items.Count > 0 ? queryResponse.Items.First()["FaceId"].S : null;
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetFaceIdForUserAndFaceAsync: {ex.Message}");
+            throw;
+        }
     }
     private async Task AssociateUser(List<(string, string, string)> userFaceIds, string collectionName)
     {
@@ -605,83 +622,104 @@ public class Function
             UserId = userId
         });
 
-        // Delete the oldest face record from DynamoDB
-        await _dynamoDbClient.DeleteItemAsync(new DeleteItemRequest
+        var key = new Dictionary<string, AttributeValue>
         {
-            TableName = collectionName,
-            Key = new Dictionary<string, AttributeValue>
-        {
-            { "UserId", new AttributeValue { S = userId } },
-            { "FaceId", new AttributeValue { S = faceId } }
-        }
-        });
-    }
-
-    private async Task<string> GetOldestFaceIdForUserAsync(string userId, string tableName)
-    {
-        var logger = new CloudWatchLogger(); // Initialize your custom CloudWatchLogger
-        await logger.LogMessageAsync($"Starting GetOldestFaceIdForUserAsync for UserId: {userId} in Table: {tableName}");
-
-        var queryRequest = new QueryRequest
-        {
-            TableName = tableName,
-            KeyConditionExpression = "UserId = :userId",
-            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-        {
-            { ":userId", new AttributeValue { S = userId } }
-        }
+            {
+                Utils.SystemConstants.USER_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
+                {
+                    S = userId
+                }
+            },
+            {
+                Utils.SystemConstants.FACE_ID_ATTRIBUTE_DYNAMODB, new AttributeValue
+                {
+                    S = faceId
+                }
+            }
         };
 
-        try
+        var request = new DeleteItemRequest
         {
-            // Log the query request before executing
-            await logger.LogMessageAsync($"Querying DynamoDB for UserId: {userId}");
+            TableName = Utils.SystemConstants.FACEID_TABLE_DYNAMODB, // Sử dụng bảng từ GlobalVarians
+            Key = key
+        };
 
-            var queryResponse = await _dynamoDbClient.QueryAsync(queryRequest);
+        var response = await _dynamoDbClient.DeleteItemAsync(request);
+    }
 
-            // Log the query result
-            await logger.LogMessageAsync($"Query successful. Retrieved {queryResponse.Items.Count} items for UserId: {userId}");
+    private async Task<string> GetOldestFaceIdForUserAsync(string userId, string collectionName)
+    {
+        var queryRequest = new QueryRequest
+        {
+            TableName = Utils.SystemConstants.FACEID_TABLE_DYNAMODB,
+            IndexName = Utils.SystemConstants.FACEID_INDEX_ATTRIBUTE_DYNAMODB,
+            KeyConditionExpression = "UserId = :userId AND SystemName = :systemName", // Sử dụng cả UserId và SystemName
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                {
+                    { ":userId", new AttributeValue { S = userId } },
+                    { ":systemName", new AttributeValue { S = collectionName } }
+                }
+        };
 
-            // Check if no items were found
-            if (queryResponse.Items.Count == 0)
-            {
-                await logger.LogMessageAsync($"No items found for UserId: {userId}");
-                return null;
-            }
+        var queryResponse = await _dynamoDbClient.QueryAsync(queryRequest);
 
-            // Sort items by CreatedDate in ascending order and get the oldest one
-            var oldestItem = queryResponse.Items
-            .OrderBy(item => DateTime.Parse(item["CreateDate"].S)) // Sort by CreatedDate
+        // Kiểm tra nếu không có dữ liệu
+        if (queryResponse.Items.Count == 0)
+        {
+            return null;
+        }
+
+        // Lọc và tìm mục cũ nhất dựa trên CreateDate
+        var oldestItem = queryResponse.Items
+            .Where(item => item.ContainsKey("CreateDate") && DateTime.TryParse(item["CreateDate"].S, out _))
+            .OrderBy(item => DateTime.Parse(item["CreateDate"].S))
             .FirstOrDefault();
 
-            // Log the oldest FaceId found
-            var oldestFaceId = oldestItem?["FaceId"].S;
-            await logger.LogMessageAsync($"Oldest FaceId found: {oldestFaceId}");
+        return oldestItem?["FaceId"].S;
+    }
 
-            return oldestFaceId;
+    public async Task<List<string>> GetFaceIdsByUserIdAsync(string userId, string systemId)
+    {
+        try
+        {
+            var request = new QueryRequest
+            {
+                TableName = Utils.SystemConstants.FACEID_TABLE_DYNAMODB,
+                IndexName = Utils.SystemConstants.FACEID_INDEX_ATTRIBUTE_DYNAMODB,
+                KeyConditionExpression = "#sysName = :v_systemName and #userId = :v_userId",
+                ExpressionAttributeNames = new Dictionary<string, string>
+            {
+                { "#sysName", "SystemName" },
+                { "#userId", "UserId" }
+            },
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                { ":v_systemName", new AttributeValue { S = systemId } },
+                { ":v_userId", new AttributeValue { S = userId } }
+            },
+                ProjectionExpression = "FaceId"
+            };
+
+            // Gửi query request tới DynamoDB
+            var response = await _dynamoDbClient.QueryAsync(request);
+
+            // Kiểm tra kết quả và trả về danh sách FaceId
+            if (response != null && response.Items.Count > 0)
+            {
+                // Chuyển đổi kết quả từ AttributeValue sang List<string>
+                return response.Items
+                    .Select(item => item["FaceId"].S) // Lấy giá trị của thuộc tính FaceId
+                    .ToList();
+            }
+
+            // Trả về danh sách rỗng nếu không có bản ghi nào
+            return new List<string>();
         }
         catch (Exception ex)
         {
-            // Log any exceptions that occur
-            await logger.LogMessageAsync($"Error occurred while retrieving the oldest face ID: {ex.Message}");
-            throw; // Re-throw the exception after logging it
+            Console.WriteLine($"Error in GetFaceIdsByUserIdAsync: {ex.Message}");
+            throw;
         }
-    }
-
-    private async Task<List<string>> GetFaceIdsByUserIdAsync(string userId, string systemId)
-    {
-        var request = new QueryRequest
-        {
-            TableName = systemId,
-            KeyConditionExpression = "UserId = :userId",
-            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-        {
-            { ":userId", new AttributeValue { S = userId } }
-        }
-        };
-
-        var response = await _dynamoDbClient.QueryAsync(request);
-        return response.Items.Select(item => item["FaceId"].S).ToList();
     }
     private async Task<IndexFacesResponse> IndexFaces(string bucket, string key, string collectionName)
     {
