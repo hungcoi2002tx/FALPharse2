@@ -47,7 +47,7 @@ namespace AuthenExamCompareFace
                     var authService = provider.GetRequiredService<AuthService>();
                     return new FaceCompareService(
                         authService,
-                        "https://dev.demorecognition.click/api/Compare/compare/result" 
+                        "https://dev.demorecognition.click/api/compare/result" 
                     );
                 });
 

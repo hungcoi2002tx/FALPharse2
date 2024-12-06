@@ -75,15 +75,28 @@ namespace AuthenExamCompareFace
 
         private void btnSaveImage_Click(object sender, EventArgs e)
         {
-            var selectedResult = (ImageSourceDto)dataGridViewSourceImage.SelectedRows[0].DataBoundItem;
-
-            var addImageSourceForm = new AddImageSourceForm
+            try
             {
-                ImageSourceData = selectedResult // Gán dữ liệu qua thuộc tính
-            };
+                if (dataGridViewSourceImage.CurrentCell != null)
+                {
+                    int rowIndex = dataGridViewSourceImage.CurrentCell.RowIndex; // Lấy dòng hiện tại
+                    var selectedRow = dataGridViewSourceImage.Rows[rowIndex];   // Dòng tương ứng
 
-            addImageSourceForm.Owner = this; // Thiết lập form cha
-            addImageSourceForm.ShowDialog(); // Hiển thị form con dưới dạng modal
+                    if (selectedRow.DataBoundItem is ImageSourceDto selectedResult)
+                    {
+                        var addImageSourceForm = new AddImageSourceForm
+                        {
+                            ImageSourceData = selectedResult // Gán dữ liệu qua thuộc tính
+                        };
+                        addImageSourceForm.Owner = this; // Thiết lập form cha
+                        addImageSourceForm.ShowDialog(); // Hiển thị form con dưới dạng modal
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi add lưu ảnh, liên hệ admin", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
 
