@@ -70,21 +70,25 @@ namespace FAL.Services
         {
             try
             {
-                var request = new QueryRequest
+                // Tạo QueryRequest
+                var queryRequest = new QueryRequest
                 {
                     TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
-                    IndexName = GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB,
-                    KeyConditionExpression = "SystemName = :systemName AND FaceId = :faceId",
+                    IndexName = GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB, // Tên của GSI
+                    KeyConditionExpression = "SystemName = :systemName", // Điều kiện bắt buộc với Partition Key
+                    FilterExpression = "FaceId = :faceId", // Lọc thêm với FaceId
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-                    {
-                        { ":systemName", new AttributeValue { S = systemName } },
-                        { ":faceId", new AttributeValue { S = faceId } }
-                    }
+                {
+                    { ":systemName", new AttributeValue { S = systemName } },
+                    { ":faceId", new AttributeValue { S = faceId } }
+                },
+                    Limit = 1 // Giới hạn số lượng kết quả trả về
                 };
+                // Thực thi truy vấn
+                var queryResponse = await _dynamoDBService.QueryAsync(queryRequest);
 
-                var response = await _dynamoDBService.QueryAsync(request);
-                // Check if any items exist
-                return response != null && response.Count > 0;
+                // Kiểm tra nếu có ít nhất một kết quả
+                return queryResponse.Count > 0;
             }
             catch (Exception ex)
             {

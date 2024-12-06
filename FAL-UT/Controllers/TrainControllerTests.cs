@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Share.Constant;
-using Share.Data;
 using Share.DTO;
 using Share.Model;
 using Share.Utils;
