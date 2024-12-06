@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Share.Constant;
 using Share.DTO;
 using Share.Model;
+using Share.Utils;
 using System.Collections;
 using System.Text.Json;
 
@@ -51,7 +52,7 @@ namespace FAL.Services
                         {
                             nameof(FaceInformation.CreateDate), new AttributeValue
                             {
-                                S = DateTime.Now.ToString()
+                                S = DateTimeUtils.GetDateTimeVietNamNow()
                             }
                         }
                     }
