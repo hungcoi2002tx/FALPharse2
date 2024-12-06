@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Share.Constant;
 using Share.DTO;
 using Share.Model;
+using Share.Utils;
 using System.Collections;
 using System.Text.Json;
 
@@ -51,7 +52,7 @@ namespace FAL.Services
                         {
                             nameof(FaceInformation.CreateDate), new AttributeValue
                             {
-                                S = DateTime.Now.ToString()
+                                S = DateTimeUtils.GetDateTimeVietNamNow()
                             }
                         }
                     }
@@ -70,25 +71,32 @@ namespace FAL.Services
         {
             try
             {
-                // Tạo QueryRequest
+                // Tạo QueryRequest sử dụng GSI "SystemName-index"
                 var queryRequest = new QueryRequest
                 {
                     TableName = GlobalVarians.FACEID_TABLE_DYNAMODB,
-                    IndexName = GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB, // Tên của GSI
-                    KeyConditionExpression = "SystemName = :systemName", // Điều kiện bắt buộc với Partition Key
-                    FilterExpression = "FaceId = :faceId", // Lọc thêm với FaceId
+                    IndexName = GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB, // Tên của GSI, cần đảm bảo khớp với tên bạn đã tạo
+                    KeyConditionExpression = "SystemName = :systemName",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
                 {
-                    { ":systemName", new AttributeValue { S = systemName } },
-                    { ":faceId", new AttributeValue { S = faceId } }
-                },
-                    Limit = 1 // Giới hạn số lượng kết quả trả về
+                    { ":systemName", new AttributeValue { S = systemName } }
+                }
                 };
-                // Thực thi truy vấn
+
+                // Thực thi truy vấn để tìm kiếm tất cả các UserId có SystemName trùng khớp
                 var queryResponse = await _dynamoDBService.QueryAsync(queryRequest);
 
-                // Kiểm tra nếu có ít nhất một kết quả
-                return queryResponse.Count > 0;
+                // Kiểm tra xem có FaceId trùng khớp trong kết quả truy vấn không
+                foreach (var item in queryResponse.Items)
+                {
+                    if (item.ContainsKey("FaceId") && item["FaceId"].S == faceId)
+                    {
+                        return true;
+                    }
+                }
+
+                // Nếu không tìm thấy kết quả phù hợp
+                return false;
             }
             catch (Exception ex)
             {
