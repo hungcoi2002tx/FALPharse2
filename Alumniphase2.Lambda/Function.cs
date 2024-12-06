@@ -106,11 +106,20 @@ public class Function
         content.Headers.Add("X-Signature", signature);
 
         var resultJson = ConvertToJson(result);
-        var response = await _httpClient.PostAsync(webhookUrl, content);
-
-        response.EnsureSuccessStatusCode();
-        var responseContent = await response.Content.ReadAsStringAsync();
-        await logger.LogMessageAsync("Response from API: " + responseContent);
+        try
+        {
+            var response = await _httpClient.PostAsync(webhookUrl, content);
+            await logger.LogMessageAsync(webhookUrl);
+            response.EnsureSuccessStatusCode();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            await logger.LogMessageAsync("Response from API: " + responseContent);
+        }
+        catch(Exception e)
+        {
+            await logger.LogMessageAsync(e.Message);
+        }
+       
+       
 
         return resultJson;
     }
