@@ -26,6 +26,7 @@ namespace Alumniphase2.Lambda.Utils
         public const string FILE_NAME_ATTRIBUTE_DYNAMODB = "FileName";
         public const string SYSTEM_NAME_ATTRIBUTE_DYNAMODB = "SystemName";
         public const string FACEID_TABLE_DYNAMODB = "FaceInfo";
+        public const string FACEID_INDEX_ATTRIBUTE_DYNAMODB = "SystemNameIndex";
         public const string RESULT_INFO_TABLE_DYNAMODB = "ResultInfo";
         public const string FACEID_INDEX_ATTRIBUTE_DYNAMODB = "SystemNameIndex";
 
