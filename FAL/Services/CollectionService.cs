@@ -3,6 +3,7 @@ using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 using Amazon.Runtime.Internal.Util;
 using FAL.Services.IServices;
+using Share.DTO;
 using Share.Utils;
 using System.Reflection;
 
@@ -391,7 +392,7 @@ namespace FAL.Services
                     ListFacesRequest listFacesRequest = new ListFacesRequest()
                     {
                         CollectionId = systermId,
-                        MaxResults = 1,
+                        MaxResults = 1000,
                         NextToken = paginationToken
                     };
 
@@ -571,5 +572,71 @@ namespace FAL.Services
                 throw;
             }
         }
+
+        public async Task<CollectionChartStats> GetCollectionChartStats(string systemId, string year)
+        {
+            try
+            {
+                // Step 1: Initialize the AWS Rekognition client
+                var rekognitionClient = new AmazonRekognitionClient();
+
+                // Step 2: List all faces in the collection
+                var listFacesRequest = new ListFacesRequest
+                {
+                    CollectionId = systemId,
+                    MaxResults = 1000 // Retrieve up to 1000 faces at a time
+                };
+
+                var faceIds = new HashSet<string>();
+                var userIds = new HashSet<string>();
+                string paginationToken = null;
+
+                do
+                {
+                    // Set the pagination token for subsequent requests
+                    listFacesRequest.NextToken = paginationToken;
+
+                    // Call Rekognition to list faces
+                    var listFacesResponse = await rekognitionClient.ListFacesAsync(listFacesRequest);
+
+                    // Process the response
+                    foreach (var face in listFacesResponse.Faces)
+                    {
+                        faceIds.Add(face.FaceId);
+
+                        // Add UserId if it exists
+                        if (!string.IsNullOrEmpty(face.ExternalImageId))
+                        {
+                            userIds.Add(face.ExternalImageId);
+                        }
+                    }
+
+                    // Update the pagination token
+                    paginationToken = listFacesResponse.NextToken;
+                }
+                while (!string.IsNullOrEmpty(paginationToken));
+
+                // Step 3: Count users and face IDs
+                int userCount = userIds.Count;
+                int faceCount = faceIds.Count;
+
+                // Assuming _dynamoDBService.GetDetectStats returns a result with a TotalMediaDetected property
+                var mediaCount = await _dynamoDBService.GetDetectStatsByYear(systemId,year);
+
+                // Step 4: Return the result as a strongly typed object
+                return new CollectionChartStats
+                {
+                    UserCount = userCount,
+                    FaceCount = faceCount,
+                    MediaCount = mediaCount
+                };
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions and log them if necessary
+                throw new Exception("Error occurred while fetching collection chart stats", ex);
+            }
+        }
+
     }
 }

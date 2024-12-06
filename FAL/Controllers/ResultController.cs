@@ -15,13 +15,15 @@ namespace FAL.Controllers
     public class ResultController : ControllerBase
     {
         private readonly IDynamoDBService _dynamoService;
+        private readonly ICollectionService _collectionService;
         private readonly CustomLog _logger;
 
 
-        public ResultController(IDynamoDBService dynamoService, CustomLog logger)
+        public ResultController(IDynamoDBService dynamoService, CustomLog logger, ICollectionService collectionService)
         {
             _dynamoService = dynamoService;
             _logger = logger;
+            _collectionService = collectionService;
         }
 
         [Authorize]
@@ -66,6 +68,130 @@ namespace FAL.Controllers
         }
 
         [Authorize]
+        [HttpGet("Detect/Chart")]
+        public async Task<IActionResult> GetDetectChart([FromQuery] string year)
+        {
+            try
+            {
+                // Retrieve the system ID from user claims
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId)?.Value;
+
+                if (string.IsNullOrEmpty(systermId))
+                {
+                    return BadRequest("System ID is missing in user claims.");
+                }
+
+                // Pass the year as a parameter to the service
+                var result = await _dynamoService.GetDetectChartStats(systermId, year);
+
+                if (result != null)
+                {
+                    return Ok(result);
+                }
+
+                return StatusCode(500, "Something is wrong with the server.");
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (add logging mechanism if necessary)
+                return StatusCode(500, "Something is wrong with the server.");
+            }
+        }
+
+        [Authorize]
+        [HttpGet("Train/Chart")]
+        public async Task<IActionResult> GetTrainChart([FromQuery] string year)
+        {
+            try
+            {
+                // Retrieve the system ID from user claims
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId)?.Value;
+
+                if (string.IsNullOrEmpty(systermId))
+                {
+                    return BadRequest("System ID is missing in user claims.");
+                }
+
+                // Pass the year as a parameter to the service
+                var result = await _dynamoService.GetTrainChartStats(systermId, year);
+
+                if (result != null)
+                {
+                    return Ok(result);
+                }
+
+                return StatusCode(500, "Something is wrong with the server.");
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (add logging mechanism if necessary)
+                return StatusCode(500, "Something is wrong with the server.");
+            }
+        }
+
+        [Authorize]
+        [HttpGet("Request/Chart")]
+        public async Task<IActionResult> GetRequestChart([FromQuery] string year)
+        {
+            try
+            {
+                // Retrieve the system ID from user claims
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId)?.Value;
+
+                if (string.IsNullOrEmpty(systermId))
+                {
+                    return BadRequest("System ID is missing in user claims.");
+                }
+
+                // Pass the year as a parameter to the service
+                var result = await _dynamoService.GetRequestChartStats(systermId, year);
+
+                if (result != null)
+                {
+                    return Ok(result);
+                }
+
+                return StatusCode(500, "Something is wrong with the server.");
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (add logging mechanism if necessary)
+                return StatusCode(500, "Something is wrong with the server.");
+            }
+        }
+
+        [Authorize]
+        [HttpGet("Collection/Chart")]
+        public async Task<IActionResult> GetCollectionChart([FromQuery] string year)
+        {
+            try
+            {
+                // Retrieve the system ID from user claims
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId)?.Value;
+
+                if (string.IsNullOrEmpty(systermId))
+                {
+                    return BadRequest("System ID is missing in user claims.");
+                }
+
+                // Pass the year as a parameter to the service
+                var result = await _collectionService.GetCollectionChartStats(systermId, year);
+
+                if (result != null)
+                {
+                    return Ok(result);
+                }
+
+                return StatusCode(500, "Something is wrong with the server.");
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (add logging mechanism if necessary)
+                return StatusCode(500, "Something is wrong with the server.");
+            }
+        }
+
+        [Authorize]
         [HttpGet("RequestStats")]
         public async Task<IActionResult> GetRequestStats()
         {
@@ -100,7 +226,7 @@ namespace FAL.Controllers
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
 
-                var result = await _dynamoService.GetRequestStatsDetail(systermId,requestType,startDate,endDate,page,pageSize);
+                var result = await _dynamoService.GetRequestStatsDetail(systermId, requestType, startDate, endDate, page, pageSize);
 
                 if (result != null)
                 {
@@ -122,7 +248,7 @@ namespace FAL.Controllers
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
 
-                var result = await _dynamoService.GetTrainStats(systermId, page, pageSize,searchUserId);
+                var result = await _dynamoService.GetTrainStats(systermId, page, pageSize, searchUserId);
 
                 if (result != null)
                 {
@@ -144,7 +270,7 @@ namespace FAL.Controllers
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
 
-                var result = await _dynamoService.GetTrainStatsDetail(systermId,userId,page,pageSize);
+                var result = await _dynamoService.GetTrainStatsDetail(systermId, userId, page, pageSize);
 
                 if (result != null)
                 {
@@ -160,13 +286,13 @@ namespace FAL.Controllers
 
         [Authorize]
         [HttpDelete("TrainStats/{userId}/{faceId}")]
-        public async Task<IActionResult> DeleteTrainStats(string userId,string faceId)
+        public async Task<IActionResult> DeleteTrainStats(string userId, string faceId)
         {
             try
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
 
-                var result = await _dynamoService.DeleteTrainStat(systermId, userId,faceId);
+                var result = await _dynamoService.DeleteTrainStat(systermId, userId, faceId);
 
                 if (result != null)
                 {
