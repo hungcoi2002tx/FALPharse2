@@ -57,6 +57,14 @@ namespace FAL.FrontEnd.Pages.Auth
                         HttpContext.Session.SetInt32("RoleId", userInfo.RoleId);
                         if (userInfo != null)
                         {
+                            // Lưu token trong cookie
+                            Response.Cookies.Append("AccessToken", token, new CookieOptions
+                            {
+                                HttpOnly = false,          // FE có thể truy cập
+                                Secure = true,             // Chỉ gửi qua HTTPS
+                                SameSite = SameSiteMode.Strict,
+                                Expires = DateTime.UtcNow.AddMinutes(30) // JWT hết hạn sau 30 phút
+                            });
                             if (userInfo.RoleId == 1)
                             {
                                 return Redirect("/Admin/Add");

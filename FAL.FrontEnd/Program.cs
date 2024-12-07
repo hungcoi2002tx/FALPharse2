@@ -1,4 +1,5 @@
-﻿using FAL.FrontEnd.Middleware;
+﻿using FAL.FrontEnd.Helper;
+using FAL.FrontEnd.Middleware;
 using FAL.FrontEnd.Service;
 using FAL.FrontEnd.Service.IService;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -21,9 +22,9 @@ builder.Services.AddHttpClient("FaceDetectionAPI", client =>
 
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddDistributedMemoryCache();
-
+builder.Services.AddSingleton<TokenExtentions>();
 builder.Services.AddHttpContextAccessor();
-
+builder.Services.AddScoped<IBaseApiService, BaseApiService>();
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(60); // Thời gian hết hạn session
