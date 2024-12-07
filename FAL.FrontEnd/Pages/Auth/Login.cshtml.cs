@@ -55,27 +55,6 @@ namespace FAL.FrontEnd.Pages.Auth
                         // Lưu thông tin người dùng vào session
                         HttpContext.Session.SetString("Username", userInfo.Username ?? string.Empty);
                         HttpContext.Session.SetInt32("RoleId", userInfo.RoleId);
-
-                    //    var claims = new List<Claim>
-                    //{
-                    //    new Claim(ClaimTypes.Name, userInfo.Username ?? string.Empty),
-                    //    new Claim(ClaimTypes.Role, userInfo.RoleId.ToString()),
-                    //    new Claim("JwtToken", token) // Custom claim to store JWT token
-                    //};
-
-                    //    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                    //    var authProperties = new AuthenticationProperties
-                    //    {
-                    //        IsPersistent = true,// Persistent login,
-                    //        ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(60)
-                    //    };
-
-                    //    await HttpContext.SignInAsync(
-                    //        CookieAuthenticationDefaults.AuthenticationScheme,
-                    //        new ClaimsPrincipal(claimsIdentity),
-                    //        authProperties);
-
-                        // redirect if admin or system
                         if (userInfo != null)
                         {
                             if (userInfo.RoleId == 1)
@@ -107,18 +86,10 @@ namespace FAL.FrontEnd.Pages.Auth
 
             if (!string.IsNullOrEmpty(username) && roleId.HasValue)
             {
-                // Người dùng đã đăng nhập
                 return RedirectToPage("/Dashboard/Main");
             }
 
-            // Người dùng chưa đăng nhập
             return Page();
-        }
-
-        public IActionResult OnGetLogout()
-        {
-            HttpContext.Session.Clear(); // Xóa toàn bộ dữ liệu trong session
-            return RedirectToPage("/Login");
         }
     }
 }

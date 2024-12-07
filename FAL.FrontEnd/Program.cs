@@ -22,27 +22,8 @@ builder.Services.AddHttpClient("FaceDetectionAPI", client =>
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddDistributedMemoryCache();
 
-builder.Services.AddHttpContextAccessor(); // Đăng ký IHttpContextAccessor
+builder.Services.AddHttpContextAccessor();
 
-// Required for session handling
-//// Thêm Authentication và Cookie Authentication
-//builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-//    .AddCookie(options =>
-//    {
-//        options.LoginPath = "/Login"; // Trang đăng nhập
-//        options.AccessDeniedPath = "/AccessDenied"; // Trang không đủ quyền truy cập
-//        options.ExpireTimeSpan = TimeSpan.FromMinutes(60); // Thời gian hết hạn cookie
-//        options.SlidingExpiration = true; // Gia hạn thời gian nếu người dùng hoạt động
-//    });
-//builder.Services.AddHttpContextAccessor(); // Ensure HttpContext is accessible
-//builder.Services.AddAuthorization(options =>
-//{
-//    options.AddPolicy("Admin", policy => policy.RequireClaim(ClaimTypes.Role, "1"));
-//});
-//builder.Services.AddAuthorization(options =>
-//{
-//    options.AddPolicy("System", policy => policy.RequireClaim(ClaimTypes.Role, "2"));
-//});
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(60); // Thời gian hết hạn session
@@ -58,7 +39,6 @@ FAL.FrontEnd.Helper.SessionExtensions.Configure(httpContextAccessor);
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 app.UseHttpsRedirection();
