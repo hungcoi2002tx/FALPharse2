@@ -20,8 +20,7 @@ namespace AuthenExamCompareFace.Utils
         {
             if (data == null || data.Count == 0)
             {
-                MessageBox.Show("Danh sách dữ liệu rỗng!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return; // Thoát khỏi hàm để tránh lỗi tiếp theo
+                throw new Exception("Danh sách dữ liệu rỗng!");
             }
              
             using (var package = new ExcelPackage())

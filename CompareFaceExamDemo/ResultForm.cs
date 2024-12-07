@@ -438,6 +438,11 @@ namespace AuthenExamCompareFace
 
         private void btnExport_Click(object sender, EventArgs e)
         {
+            if (!results.Any())
+            {
+                MessageBox.Show($"Danh sách dữ liệu rỗng, không thể xuất file excel!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             // Tạo SaveFileDialog để cho người dùng chọn file lưu
             using (var saveFileDialog = new SaveFileDialog())
             {
@@ -460,7 +465,7 @@ namespace AuthenExamCompareFace
                         ExcelExporter.ExportListToExcel(results, filePath);
 
                         // Thông báo thành công
-                        MessageBox.Show("Dữ liệu đã được xuất thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show($"Dữ liệu đã được xuất thành công, vui lòng check kết quả ở \n\n{filePath}!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
                     {
