@@ -479,6 +479,36 @@ namespace FAL.Services
             }
         }
 
+        public async Task<int> GetDetectStatsByYear(string tableName, string year)
+        {
+            try
+            {
+                // Create the scan request
+                var request = new ScanRequest
+                {
+                    TableName = GlobalVarians.RESULT_INFO_TABLE_DYNAMODB, // DynamoDB table name
+                    FilterExpression = "SystemName = :systemName AND contains(CreateDate, :year)",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                { ":systemName", new AttributeValue { S = tableName } }, // Filter by SystemName
+                { ":year", new AttributeValue { S = year } }             // Filter by year in CreateDate
+            },
+                    Select = "COUNT" // Only return the count of matching records
+                };
+
+                // Execute the scan
+                var response = await _dynamoDBService.ScanAsync(request);
+
+                // Return the response
+                return response.Count;
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions appropriately (e.g., logging)
+                throw new Exception("Error occurred while fetching detect stats by year", ex);
+            }
+        }
+
 
         //public async Task<TrainStatsResponse> GetTrainStats(string systemId, int page, int pageSize, string searchUserId)
         //{
@@ -565,7 +595,7 @@ namespace FAL.Services
                         {
                             { "#SystemName", "SystemName" }
                         },
-                                ExpressionAttributeValues = new Dictionary<string, DynamoDBEntry>
+                        ExpressionAttributeValues = new Dictionary<string, DynamoDBEntry>
                         {
                             { ":v_systemId", systemId }
                         }
@@ -927,6 +957,231 @@ namespace FAL.Services
                 return false;
             }
         }
-    }
 
+        public async Task<DetectChartStats> GetDetectChartStats(string systermId, string year)
+        {
+            try
+            {
+                // Step 1: Scan the table for the specified SystemName
+                var request = new ScanRequest
+                {
+                    TableName = GlobalVarians.RESULT_INFO_TABLE_DYNAMODB,
+                    FilterExpression = "SystemName = :systemName",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                { ":systemName", new AttributeValue { S = systermId } }
+            }
+                };
+
+                var response = await _dynamoDBService.ScanAsync(request);
+
+                // Step 2: Process the data
+                var items = response.Items;
+
+                // Parse the items into a list of objects
+                var rows = items.Select(item => new DetectChartRow
+                {
+                    FileName = item["FileName"].S,
+                    SystemName = item["SystemName"].S,
+                    CreateDate = DateTime.Parse(item["CreateDate"].S), // Assuming CreateDate is in string format
+                    Data = item["Data"].S
+                }).ToList();
+
+                // Step 3: Filter rows based on the year
+                var filteredRows = rows.Where(row => row.CreateDate.Year.ToString() == year).ToList();
+
+                // Step 4: Group by month and count the rows for each month
+                var monthCounts = Enumerable.Range(1, 12).ToDictionary(month => month, month => 0);
+
+                // Count rows for each month and update the dictionary
+                var groupedMonthCounts = filteredRows
+                    .GroupBy(row => row.CreateDate.Month)
+                    .ToDictionary(
+                        group => group.Key, // Month (as an integer)
+                        group => group.Count() // Count of rows for the month
+                    );
+
+                // Merge the grouped counts into the initialized dictionary
+                foreach (var month in groupedMonthCounts)
+                {
+                    monthCounts[month.Key] = month.Value; // Update the counts for months with data
+                }
+
+                // Step 5: Get the 5 latest rows sorted by CreateDate
+                var latestRows = rows.OrderByDescending(row => row.CreateDate).Take(5).ToList();
+
+                // Step 6: Return the result as a strongly typed object
+                return new DetectChartStats
+                {
+                    MonthCounts = monthCounts,
+                    LatestRows = latestRows
+                };
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions and log them if necessary
+                throw new Exception("Error occurred while fetching data", ex);
+            }
+        }
+
+        public async Task<TrainChartStats> GetTrainChartStats(string systemId, string year)
+        {
+            try
+            {
+                // Step 1: Load the DynamoDB table
+                var table = Table.LoadTable(_dynamoDBService, GlobalVarians.FACEID_TABLE_DYNAMODB);
+
+                // Step 2: Query the table using the GSI for the specific systemId
+                var queryConfig = new QueryOperationConfig
+                {
+                    IndexName = GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB,
+                    KeyExpression = new Expression
+                    {
+                        ExpressionStatement = "#SystemName = :v_systemId",
+                        ExpressionAttributeNames = new Dictionary<string, string>
+                {
+                    { "#SystemName", "SystemName" }
+                },
+                        ExpressionAttributeValues = new Dictionary<string, DynamoDBEntry>
+                {
+                    { ":v_systemId", systemId }
+                }
+                    }
+                };
+
+                var search = table.Query(queryConfig);
+
+                // Step 3: Retrieve all results
+                var results = new List<Document>();
+                do
+                {
+                    results.AddRange(await search.GetNextSetAsync());
+                } while (!search.IsDone);
+
+                // Step 4: Parse the results into a list of objects
+                var rows = results.Select(doc => new TrainChartRow
+                {
+                    UserId = doc["UserId"].AsString(),
+                    FaceId = doc["FaceId"].AsString(),
+                    SystemName = doc["SystemName"].AsString(),
+                    CreateDate = DateTime.Parse(doc["CreateDate"].AsString())
+                }).ToList();
+
+                // Step 5: Filter rows for the specified year
+                var filteredRows = rows.Where(row => row.CreateDate.Year.ToString() == year).ToList();
+
+                // Step 6: Count rows for each month
+                var monthCounts = Enumerable.Range(1, 12).ToDictionary(month => month, month => 0);
+
+                // Count rows for each month and update the dictionary
+                var groupedMonthCounts = filteredRows
+                    .GroupBy(row => row.CreateDate.Month)
+                    .ToDictionary(
+                        group => group.Key, // Month (as an integer)
+                        group => group.Count() // Count of rows for the month
+                    );
+
+                // Merge the grouped counts into the initialized dictionary
+                foreach (var month in groupedMonthCounts)
+                {
+                    monthCounts[month.Key] = month.Value; // Update the counts for months with data
+                }
+
+                // Step 7: Get the 5 latest rows sorted by CreateDate
+                var latestRows = rows.OrderByDescending(row => row.CreateDate).Take(5).ToList();
+
+                // Step 8: Return the result as a strongly typed object
+                return new TrainChartStats
+                {
+                    MonthCounts = monthCounts,
+                    LatestRows = latestRows
+                };
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions and log them if necessary
+                throw new Exception("Error occurred while fetching train chart stats", ex);
+            }
+        }
+
+        public async Task<Dictionary<string, int>> GetRequestChartStats(string systemId, string year)
+        {
+            try
+            {
+                // Step 1: Load the DynamoDB table
+                var table = Table.LoadTable(_dynamoDBService, GlobalVarians.CLIENT_REQUESTS_TABLE_DYNAMODB);
+
+                // Step 2: Query the table using the partition key
+                var queryConfig = new QueryOperationConfig
+                {
+                    KeyExpression = new Expression
+                    {
+                        ExpressionStatement = "#SystemName = :v_systemId",
+                        ExpressionAttributeNames = new Dictionary<string, string>
+                {
+                    { "#SystemName", "SystemName" }
+                },
+                        ExpressionAttributeValues = new Dictionary<string, DynamoDBEntry>
+                {
+                    { ":v_systemId", systemId }
+                }
+                    }
+                };
+
+                // Execute the query
+                var search = table.Query(queryConfig);
+
+                // Step 3: Retrieve all results
+                var results = new List<Document>();
+                do
+                {
+                    results.AddRange(await search.GetNextSetAsync());
+                } while (!search.IsDone);
+
+                // Step 4: Parse the results into a list of objects
+                var rows = results.Select(doc => new
+                {
+                    CreateDate = DateTime.Parse(doc["CreateDate"].AsString()),
+                    RequestType = Enum.Parse<RequestTypeEnum>(doc["RequestType"].AsString())
+                }).ToList();
+
+                // Step 5: Filter rows for the specified year
+                var filteredRows = rows.Where(row => row.CreateDate.Year.ToString() == year).ToList();
+
+                // Step 6: Categorize request types and count them
+                var requestCounts = new Dictionary<string, int>
+        {
+            { "Train", 0 },
+            { "Detect", 0 },
+            { "Compare", 0 }
+        };
+
+                foreach (var row in filteredRows)
+                {
+                    if (row.RequestType is RequestTypeEnum.TrainByImage or RequestTypeEnum.TrainByUrl or
+                        RequestTypeEnum.TrainByZip or RequestTypeEnum.TrainByFaceId or
+                        RequestTypeEnum.DisassociateFace or RequestTypeEnum.ResetUser or
+                        RequestTypeEnum.CheckIsTrained or RequestTypeEnum.GetWebhookResult)
+                    {
+                        requestCounts["Train"]++;
+                    }
+                    else if (row.RequestType is RequestTypeEnum.Detect or RequestTypeEnum.DetectImage or RequestTypeEnum.DetectVideo)
+                    {
+                        requestCounts["Detect"]++;
+                    }
+                    else if (row.RequestType == RequestTypeEnum.CompareFace)
+                    {
+                        requestCounts["Compare"]++;
+                    }
+                }
+
+                return requestCounts;
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions and log them if necessary
+                throw new Exception("Error occurred while fetching request chart stats", ex);
+            }
+        }
+    }
 }
