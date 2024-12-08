@@ -34,7 +34,7 @@ namespace FAL.Controllers
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == GlobalVarians.SystermId).Value;
 
-                var result = await _dynamoService.GetWebhookResult(GetDBResultBySystemName(systermId), mediaId);
+                var result = await _dynamoService.GetWebhookResult(systermId, mediaId);
 
                 await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.GetWebhookResult, RequestResultEnum.Success, JsonSerializer.Serialize(mediaId));
                 return Ok(result);
