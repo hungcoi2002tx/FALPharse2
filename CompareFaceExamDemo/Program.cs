@@ -34,7 +34,7 @@ namespace AuthenExamCompareFace
                 services.AddSingleton<ResultForm>();
                 services.AddSingleton<SourceImageForm>();
                 services.AddSingleton<MainContainer>();
-                services.AddSingleton<ImageCaptureForm>();
+                services.AddSingleton<CompareImageForm>();
                 services.AddSingleton<SettingForm>();
                 services.AddSingleton<AuthService>(provider =>
                     new AuthService(

@@ -21,7 +21,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolBar;
 
 namespace AuthenExamCompareFace
 {
-    public partial class ImageCaptureForm : Form
+    public partial class CompareImageForm : Form
     {
         private CancellationTokenSource _cancellationTokenSource;
         private CompareFaceAdapterRecognitionService _compareFaceService;
@@ -32,7 +32,7 @@ namespace AuthenExamCompareFace
         private bool _isPaused = false;
         private ManualResetEventSlim _pauseEvent = new ManualResetEventSlim(true);
 
-        public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
+        public CompareImageForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
             InitializeComponent();
             _compareFaceService = compareFaceService;

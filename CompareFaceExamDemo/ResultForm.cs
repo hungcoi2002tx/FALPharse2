@@ -438,6 +438,14 @@ namespace AuthenExamCompareFace
 
         private void btnExport_Click(object sender, EventArgs e)
         {
+            var selectedFile = cmbFileList.SelectedItem as string;
+
+            if (string.IsNullOrEmpty(selectedFile))
+            {
+                MessageBox.Show("Please select a file from the list.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             if (!results.Any())
             {
                 MessageBox.Show($"Danh sách dữ liệu rỗng, không thể xuất file excel!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
