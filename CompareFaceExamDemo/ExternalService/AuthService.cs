@@ -53,7 +53,7 @@ namespace AuthenExamCompareFaceExam.ExternalService
             return token ?? throw new Exception("Token retrieval failed.");
         }
 
-        public async Task<string> GetTokenAsync()
+        public virtual async Task<string> GetTokenAsync()
         {
             if (token == null || DateTime.UtcNow >= tokenExpiry)
             {
