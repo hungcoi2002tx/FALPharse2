@@ -81,31 +81,43 @@ namespace FAL.Controllers
         // PUT: api/accounts/{username}
         [Authorize]
         [HttpPut("{username}")]
-        public async Task<IActionResult> UpdateUser(string username, [FromBody] Account updatedUser)
+        public async Task<IActionResult> UpdateUser(string username, [FromBody] UpdateAccountDto updatedUser)
         {
+            // Tìm user hiện tại trong database
             var existingUser = await _dbContext.LoadAsync<Account>(username);
             if (existingUser == null)
                 return NotFound("User không tìm thấy để update!");
 
-            // Cập nhật thông tin user
-            existingUser.Username = updatedUser.Username;
-
-            // Kiểm tra nếu mật khẩu mới khác với mật khẩu cũ, thì mã hóa mật khẩu
-            if (!BCrypt.Net.BCrypt.Verify(updatedUser.Password, existingUser.Password))
+            // Cập nhật thông tin user chỉ khi parameter có giá trị
+            if (!string.IsNullOrEmpty(updatedUser.Password) &&
+                !BCrypt.Net.BCrypt.Verify(updatedUser.Password, existingUser.Password))
             {
-                existingUser.Password = BCrypt.Net.BCrypt.HashPassword(updatedUser.Password);  // Mã hóa mật khẩu
+                existingUser.Password = BCrypt.Net.BCrypt.HashPassword(updatedUser.Password);
             }
 
-            existingUser.Email = updatedUser.Email;
-            existingUser.RoleId = updatedUser.RoleId; // Cập nhật RoleId duy nhất, kiểu int
-            existingUser.SystemName = updatedUser.SystemName;
-            existingUser.WebhookUrl = updatedUser.WebhookUrl;
-            existingUser.WebhookSecretKey = updatedUser.WebhookSecretKey;
-            existingUser.Status = updatedUser.Status;
+            if (!string.IsNullOrEmpty(updatedUser.Email))
+                existingUser.Email = updatedUser.Email;
 
+            if (updatedUser.RoleId.HasValue) // Kiểm tra nếu RoleId khác null
+                existingUser.RoleId = updatedUser.RoleId.Value;
+
+            if (!string.IsNullOrEmpty(updatedUser.SystemName))
+                existingUser.SystemName = updatedUser.SystemName;
+
+            if (!string.IsNullOrEmpty(updatedUser.WebhookUrl))
+                existingUser.WebhookUrl = updatedUser.WebhookUrl;
+
+            if (!string.IsNullOrEmpty(updatedUser.WebhookSecretKey))
+                existingUser.WebhookSecretKey = updatedUser.WebhookSecretKey;
+
+            if (!string.IsNullOrEmpty(updatedUser.Status))
+                existingUser.Status = updatedUser.Status;
+
+            // Lưu user đã được cập nhật
             await _dbContext.SaveAsync(existingUser);
             return Ok(existingUser);
         }
+
 
 
         // DELETE: api/accounts/{username}

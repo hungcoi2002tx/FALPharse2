@@ -67,7 +67,7 @@ namespace FAL.FrontEnd.Pages.Auth
                             });
                             if (userInfo.RoleId == 1)
                             {
-                                return Redirect("/Admin/Add");
+                                return Redirect("/Admin/Index");
                             }
                             else if (userInfo.RoleId == 2)
                             {
