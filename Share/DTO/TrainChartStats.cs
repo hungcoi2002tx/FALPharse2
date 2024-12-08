@@ -9,6 +9,6 @@ namespace Share.DTO
     public class TrainChartStats
     {
         public Dictionary<int, int> MonthCounts { get; set; } // Key: Month, Value: Row Count
-        public List<TrainChartRow> LatestRows { get; set; }  // List of the 5 latest rows
+        public List<TrainChartRow> LatestRows { get; set; } 
     }
 }

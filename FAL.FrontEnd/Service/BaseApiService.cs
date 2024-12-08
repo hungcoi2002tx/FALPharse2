@@ -32,7 +32,7 @@ namespace FAL.FrontEnd.Service
                 if (string.IsNullOrEmpty(token) || !_tokenExtentions.IsTokenValid(token))
                 {
                     // Token không hợp lệ -> Chuyển hướng login
-                    _httpContextAccessor.HttpContext?.Response.Redirect("/login");
+                    _httpContextAccessor.HttpContext?.Response.Redirect("/Auth/login");
                     return new RestResponse
                     {
                         StatusCode = HttpStatusCode.Unauthorized,
@@ -69,7 +69,7 @@ namespace FAL.FrontEnd.Service
                 // Kiểm tra nếu Token hết hạn (HTTP 401)
                 if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    _httpContextAccessor.HttpContext?.Response.Redirect("/login");
+                    _httpContextAccessor.HttpContext?.Response.Redirect("/Auth/login");
                 }
 
                 return response;

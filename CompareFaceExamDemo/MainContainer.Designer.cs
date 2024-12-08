@@ -60,21 +60,21 @@
             // imageSourceToolStripMenuItem
             // 
             imageSourceToolStripMenuItem.Name = "imageSourceToolStripMenuItem";
-            imageSourceToolStripMenuItem.Size = new Size(186, 26);
+            imageSourceToolStripMenuItem.Size = new Size(224, 26);
             imageSourceToolStripMenuItem.Text = "ImageSource";
             imageSourceToolStripMenuItem.Click += ImageSourceButtonClick;
             // 
             // imageCaptureToolStripMenuItem
             // 
             imageCaptureToolStripMenuItem.Name = "imageCaptureToolStripMenuItem";
-            imageCaptureToolStripMenuItem.Size = new Size(186, 26);
-            imageCaptureToolStripMenuItem.Text = "ImageCapture";
+            imageCaptureToolStripMenuItem.Size = new Size(224, 26);
+            imageCaptureToolStripMenuItem.Text = "Compage Image";
             imageCaptureToolStripMenuItem.Click += ImageCaptureButtonClick;
             // 
             // resultToolStripMenuItem
             // 
             resultToolStripMenuItem.Name = "resultToolStripMenuItem";
-            resultToolStripMenuItem.Size = new Size(186, 26);
+            resultToolStripMenuItem.Size = new Size(224, 26);
             resultToolStripMenuItem.Text = "Result";
             resultToolStripMenuItem.Click += ViewResultButtonClick;
             // 
