@@ -32,11 +32,11 @@
                                 if (Helper.SessionExtensions.IsInRole(1))
                                 {
                                     <li class="nav-item">
-                                        <a class="nav-link text-white" asp-area="Admin" asp-page="/Index">Accounts</a>
+                                        <a class="nav-link text-white" asp-page="/Admin/Index">Accounts</a>
                                     </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link text-white" asp-area="Admin" asp-page="/Roles">Roles</a>
-                                    </li>
+                                    // <li class="nav-item">
+                                    //     <a class="nav-link text-white" asp-page="Admin/Roles">Roles</a>
+                                    // </li>
                                 }
                                 else if (Helper.SessionExtensions.IsInRole(2))
                                 {
