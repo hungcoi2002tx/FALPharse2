@@ -24,6 +24,17 @@
             var role = context?.Session.GetInt32("RoleId");
             return role.HasValue && role.Value == roleId;
         }
+
+        /// <summary>
+        /// Cách dùng: Context.Session.GetUsername()
+        /// Để tạm bên này vì cùng chung mục đích 
+        /// </summary>
+        /// <param name="session"></param>
+        /// <returns></returns>
+        public static string GetUsername(this ISession session)
+        {
+            return session.GetString("Username") ?? "Guest";
+        }
     }
 
 }
