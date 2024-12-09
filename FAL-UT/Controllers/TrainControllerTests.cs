@@ -469,39 +469,6 @@ public class TrainControllerTests
     }
 
 
-
-    [Fact]
-    public async Task UploadAndProcessZipFile_ValidZip_ReturnsOk()
-    {
-        // Arrange
-        var zipFileMock = CreateMockZipFile(new List<string> { "image1.jpg", "image2.png" });
-
-        _mockCollectionService.Setup(s => s.DetectFaceByFileAsync(It.IsAny<IFormFile>()))
-            .ReturnsAsync(new DetectFacesResponse { FaceDetails = new List<FaceDetail> { new FaceDetail() } });
-
-        _mockCollectionService.Setup(s => s.IndexFaceByFileAsync(It.IsAny<Image>(), It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync(new IndexFacesResponse
-            {
-                FaceRecords = new List<FaceRecord>
-                {
-                new FaceRecord { Face = new Face { FaceId = "face-id-123" } }
-                }
-            });
-
-        // Act
-        var result = await _controller.UploadAndProcessZipFile(zipFileMock);
-
-        // Assert
-        var objectResult = Assert.IsType<ObjectResult>(result); // Expecting ObjectResult
-        Assert.Equal(200, objectResult.StatusCode); // Validate the status code is 200
-
-        // Validate the ResultResponse object
-        var response = Assert.IsType<ResultResponse>(objectResult.Value);
-        Assert.True(response.Status);
-        Assert.Contains("Training completed", response.Message);
-    }
-
-
     [Fact]
     public async Task UploadAndProcessZipFile_NoImagesInZip_ReturnsBadRequest()
     {

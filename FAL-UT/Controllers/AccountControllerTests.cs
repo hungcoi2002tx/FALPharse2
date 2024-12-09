@@ -146,10 +146,10 @@ public class AccountsControllerTests
     public async Task UpdateUser_ReturnsOkWhenUpdated()
     {
         // Arrange
-        var existingUser = new Account { Username = "user1", Password = BCrypt.Net.BCrypt.HashPassword("oldpass") };
-        var updatedUser = new Account { Username = "user1", Password = "newpass", Email = "user1@example.com" };
+        var existingUser = new UpdateAccountDto { Password = BCrypt.Net.BCrypt.HashPassword("oldpass") };
+        var updatedUser = new UpdateAccountDto { Password = "newpass", Email = "user1@example.com" };
 
-        _mockDbContext.Setup(db => db.LoadAsync<Account>("user1", default)).ReturnsAsync(existingUser);
+        _mockDbContext.Setup(db => db.LoadAsync<UpdateAccountDto>("user1", default)).ReturnsAsync(existingUser);
 
         // Act
         var result = await _controller.UpdateUser("user1", updatedUser);
@@ -170,7 +170,7 @@ public class AccountsControllerTests
         _mockDbContext.Setup(db => db.LoadAsync<Account>("nonexistent", default)).ReturnsAsync((Account)null);
 
         // Act
-        var result = await _controller.UpdateUser("nonexistent", new Account());
+        var result = await _controller.UpdateUser("nonexistent", new UpdateAccountDto());
 
         // Assert
         Assert.IsType<NotFoundObjectResult>(result);

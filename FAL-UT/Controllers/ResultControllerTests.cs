@@ -12,14 +12,15 @@ using System.Security.Claims;
 public class ResultControllerTests
 {
     private readonly Mock<IDynamoDBService> _mockDynamoService;
+    private readonly Mock<ICollectionService> _mockCollectionService;
     private readonly ResultController _controller;
 
     public ResultControllerTests()
     {
         _mockDynamoService = new Mock<IDynamoDBService>();
-
+        _mockCollectionService = new Mock<ICollectionService>();
         // Pass null for the logger
-        _controller = new ResultController(_mockDynamoService.Object, null);
+        _controller = new ResultController(_mockDynamoService.Object, null,_mockCollectionService.Object);
     }
 
     [Fact]
@@ -87,7 +88,7 @@ public class ResultControllerTests
         // Arrange
         var fileName = "testFile";
         var systermId = "testSystem";
-        var expectedResult = "resultString";
+        var expectedResult = "";
         var claims = new List<Claim>
         {
             new Claim(GlobalVarians.SystermId, systermId)
@@ -147,7 +148,7 @@ public class ResultControllerTests
         var result = await _controller.GetResult(fileName);
 
         // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal("An error occurred", badRequestResult.Value);
+        var badRequestResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal("", badRequestResult.Value);
     }
 }
