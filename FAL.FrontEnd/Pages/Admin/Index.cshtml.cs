@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
@@ -58,6 +59,21 @@ namespace FAL.FrontEnd.Pages.Admin
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
 
+            // Lấy thông tin người dùng hiện tại từ JWT
+            var currentUsername = HttpContext.Session.GetString("Username");
+            if (string.IsNullOrEmpty(currentUsername))
+            {
+                TempData["ErrorMessage"] = "Unable to identify the current user!";
+                return RedirectToPage();
+            }
+
+            // Kiểm tra nếu người dùng đang cố gắng deactive chính mình
+            if (string.Equals(username, currentUsername, StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "You cannot deactivate your own account!";
+                return RedirectToPage();
+            }
+
             // Retrieve account information to check the current status
             var response = await client.GetAsync($"https://dev.demorecognition.click/api/accounts/{username}");
             if (!response.IsSuccessStatusCode)
@@ -91,5 +107,6 @@ namespace FAL.FrontEnd.Pages.Admin
             TempData["SuccessMessage"] = "Status updated successfully!";
             return RedirectToPage();
         }
+
     }
 }

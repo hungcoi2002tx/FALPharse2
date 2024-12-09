@@ -105,7 +105,8 @@ namespace FAL.FrontEnd.Pages.Admin
                 if (response.IsSuccessStatusCode)
                 {
                     Message = "Update successful!";
-                    return RedirectToPage("/Admin/Index");
+                    return Page();
+                    //return RedirectToPage("/Admin/Index");
                 }
 
                 Message = "Update failed.";
