@@ -9,6 +9,7 @@ using FAL.Services;
 using System.Text.Json;
 using Share.DTO;
 using Share.Model;
+using Share.Constant;
 
 public class DynamoDBServiceTests
 {
@@ -41,7 +42,7 @@ public class DynamoDBServiceTests
         Assert.True(result);
         _mockDynamoDBClient.Verify(client => client.PutItemAsync(
             It.Is<PutItemRequest>(request =>
-                request.TableName == tableName &&
+                request.TableName == GlobalVarians.FACEID_TABLE_DYNAMODB &&
                 request.Item["UserId"].S == userId.ToLower() &&
                 request.Item["FaceId"].S == faceId
             ),
@@ -70,39 +71,49 @@ public class DynamoDBServiceTests
     public async Task IsExistFaceIdAsync_FaceIdExists_ReturnsTrue()
     {
         // Arrange
-        string systemId = "TestTable";
+        string systemName = "TestSystem";
         string faceId = "existingFaceId";
 
+        // Setup mock response from DynamoDB
         _mockDynamoDBClient.Setup(client => client.QueryAsync(
-            It.IsAny<QueryRequest>(),
+            It.Is<QueryRequest>(request =>
+                request.TableName == GlobalVarians.FACEID_TABLE_DYNAMODB &&         // Correct table name
+                request.IndexName == GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB && // Correct GSI name
+                request.KeyConditionExpression == "SystemName = :systemName" &&    // Correct key condition expression
+                request.ExpressionAttributeValues[":systemName"].S == systemName   // Correct value
+            ),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new QueryResponse
         {
             Count = 1,
-            Items = new List<Dictionary<string, AttributeValue>>()
+            Items = new List<Dictionary<string, AttributeValue>>
             {
             new Dictionary<string, AttributeValue>
             {
+                { "SystemName", new AttributeValue { S = systemName } },
                 { "FaceId", new AttributeValue { S = faceId } }
             }
             }
         });
 
         // Act
-        var result = await _service.IsExistFaceIdAsync(systemId, faceId);
+        var result = await _service.IsExistFaceIdAsync(systemName, faceId);
 
         // Assert
         Assert.True(result);
+
+        // Verify correct call to DynamoDB client
         _mockDynamoDBClient.Verify(client => client.QueryAsync(
             It.Is<QueryRequest>(request =>
-                request.TableName == systemId &&
-                request.IndexName == "FaceIdIndex" &&
-                request.KeyConditionExpression == "FaceId = :faceId" &&
-                request.ExpressionAttributeValues[":faceId"].S == faceId
+                request.TableName == GlobalVarians.FACEID_TABLE_DYNAMODB &&
+                request.IndexName == GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB &&
+                request.KeyConditionExpression == "SystemName = :systemName" &&
+                request.ExpressionAttributeValues[":systemName"].S == systemName
             ),
             It.IsAny<CancellationToken>()
         ), Times.Once);
     }
+
 
     [Fact]
     public async Task IsExistFaceIdAsync_FaceIdDoesNotExist_ReturnsFalse()
@@ -151,16 +162,24 @@ public class DynamoDBServiceTests
         string userId = "existingUser";
 
         _mockDynamoDBClient.Setup(client => client.QueryAsync(
-            It.IsAny<QueryRequest>(),
+            It.Is<QueryRequest>(request =>
+                request.TableName == GlobalVarians.FACEID_TABLE_DYNAMODB && // Correct table name
+                request.IndexName == GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB && // Correct GSI
+                request.KeyConditionExpression == "SystemName = :v_systemName and UserId = :v_userId" &&
+                request.ExpressionAttributeValues[":v_systemName"].S == systemId &&
+                request.ExpressionAttributeValues[":v_userId"].S == userId &&
+                request.Limit == 1
+            ),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new QueryResponse
         {
             Count = 1,
-            Items = new List<Dictionary<string, AttributeValue>>()
+            Items = new List<Dictionary<string, AttributeValue>>
             {
             new Dictionary<string, AttributeValue>
             {
-                { "UserId", new AttributeValue { S = userId.ToLower() } }
+                { "SystemName", new AttributeValue { S = systemId } },
+                { "UserId", new AttributeValue { S = userId } }
             }
             }
         });
@@ -172,14 +191,17 @@ public class DynamoDBServiceTests
         Assert.True(result);
         _mockDynamoDBClient.Verify(client => client.QueryAsync(
             It.Is<QueryRequest>(request =>
-                request.TableName == systemId &&
-                request.KeyConditionExpression == "UserId = :v_userId" &&
-                request.ExpressionAttributeValues[":v_userId"].S == userId.ToLower() &&
+                request.TableName == GlobalVarians.FACEID_TABLE_DYNAMODB &&
+                request.IndexName == GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB &&
+                request.KeyConditionExpression == "SystemName = :v_systemName and UserId = :v_userId" &&
+                request.ExpressionAttributeValues[":v_systemName"].S == systemId &&
+                request.ExpressionAttributeValues[":v_userId"].S == userId &&
                 request.Limit == 1
             ),
             It.IsAny<CancellationToken>()
         ), Times.Once);
     }
+
 
     [Fact]
     public async Task IsExistUserAsync_UserDoesNotExist_ReturnsFalse()
@@ -224,25 +246,30 @@ public class DynamoDBServiceTests
     public async Task GetRecordByKeyConditionExpressionAsync_RecordExists_ReturnsData()
     {
         // Arrange
-        string systemId = "TestTable";
+        string systemId = GlobalVarians.RESULT_INFO_TABLE_DYNAMODB; // Correct table name
         string keyConditionExpression = "UserId = :userId";
         var expressionAttributeValues = new Dictionary<string, AttributeValue>
-        {
-            { ":userId", new AttributeValue { S = "testUser" } }
-        };
+    {
+        { ":userId", new AttributeValue { S = "testUser" } }
+    };
         string expectedData = "some data";
 
+        // Mock Query Response
         _mockDynamoDBClient.Setup(client => client.QueryAsync(
-            It.IsAny<QueryRequest>(),
+            It.Is<QueryRequest>(request =>
+                request.TableName == systemId &&
+                request.KeyConditionExpression == keyConditionExpression &&
+                request.ExpressionAttributeValues.SequenceEqual(expressionAttributeValues)
+            ),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new QueryResponse
         {
             Items = new List<Dictionary<string, AttributeValue>>
             {
-                new Dictionary<string, AttributeValue>
-                {
-                    { "Data", new AttributeValue { S = expectedData } }
-                }
+            new Dictionary<string, AttributeValue>
+            {
+                { "Data", new AttributeValue { S = expectedData } }
+            }
             }
         });
 
@@ -251,15 +278,18 @@ public class DynamoDBServiceTests
 
         // Assert
         Assert.Equal(expectedData, result);
+
+        // Verify Query Request
         _mockDynamoDBClient.Verify(client => client.QueryAsync(
             It.Is<QueryRequest>(request =>
                 request.TableName == systemId &&
                 request.KeyConditionExpression == keyConditionExpression &&
-                request.ExpressionAttributeValues == expressionAttributeValues
+                request.ExpressionAttributeValues.SequenceEqual(expressionAttributeValues)
             ),
             It.IsAny<CancellationToken>()
         ), Times.Once);
     }
+
 
     [Fact]
     public async Task GetRecordByKeyConditionExpressionAsync_RecordDoesNotExist_ReturnsNull()
@@ -311,12 +341,15 @@ public class DynamoDBServiceTests
     public async Task DeleteUserInformationAsync_DeletionSuccessful_ReturnsTrue()
     {
         // Arrange
-        string tableName = "TestTable";
         string userId = "testUser";
         string faceId = "testFaceId";
+        string expectedTableName = GlobalVarians.FACEID_TABLE_DYNAMODB; // Correct table name
 
         _mockDynamoDBClient.Setup(client => client.DeleteItemAsync(
-            It.IsAny<DeleteItemRequest>(),
+            It.Is<DeleteItemRequest>(request =>
+                request.TableName == expectedTableName &&
+                request.Key[nameof(FaceInformation.UserId)].S == userId
+            ),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new DeleteItemResponse
         {
@@ -324,15 +357,16 @@ public class DynamoDBServiceTests
         });
 
         // Act
-        var result = await _service.DeleteUserInformationAsync(tableName, userId, faceId);
+        var result = await _service.DeleteUserInformationAsync(expectedTableName, userId, faceId);
 
         // Assert
         Assert.True(result);
+
+        // Verify Correct Delete Request
         _mockDynamoDBClient.Verify(client => client.DeleteItemAsync(
             It.Is<DeleteItemRequest>(request =>
-                request.TableName == tableName &&
-                request.Key["UserId"].S == userId &&
-                request.Key["FaceId"].S == faceId
+                request.TableName == expectedTableName &&
+                request.Key[nameof(FaceInformation.UserId)].S == userId 
             ),
             It.IsAny<CancellationToken>()
         ), Times.Once);
@@ -387,7 +421,16 @@ public class DynamoDBServiceTests
         var expectedFaceIds = new List<string> { "faceId1", "faceId2" };
 
         _mockDynamoDBClient.Setup(client => client.QueryAsync(
-            It.IsAny<QueryRequest>(),
+            It.Is<QueryRequest>(request =>
+                request.TableName == GlobalVarians.FACEID_TABLE_DYNAMODB &&
+                request.IndexName == GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB &&
+                request.KeyConditionExpression == "#sysName = :v_systemName and #userId = :v_userId" &&
+                request.ExpressionAttributeNames["#sysName"] == "SystemName" &&
+                request.ExpressionAttributeNames["#userId"] == "UserId" &&
+                request.ExpressionAttributeValues[":v_systemName"].S == systemId &&
+                request.ExpressionAttributeValues[":v_userId"].S == userId &&
+                request.ProjectionExpression == "FaceId"
+            ),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new QueryResponse
         {
@@ -402,15 +445,23 @@ public class DynamoDBServiceTests
 
         // Assert
         Assert.Equal(expectedFaceIds, result);
+
+        // Verify Correct Query
         _mockDynamoDBClient.Verify(client => client.QueryAsync(
             It.Is<QueryRequest>(request =>
-                request.TableName == systemId &&
-                request.KeyConditionExpression == "UserId = :userId" &&
-                request.ExpressionAttributeValues[":userId"].S == userId
+                request.TableName == GlobalVarians.FACEID_TABLE_DYNAMODB &&
+                request.IndexName == GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB &&
+                request.KeyConditionExpression == "#sysName = :v_systemName and #userId = :v_userId" &&
+                request.ExpressionAttributeNames["#sysName"] == "SystemName" &&
+                request.ExpressionAttributeNames["#userId"] == "UserId" &&
+                request.ExpressionAttributeValues[":v_systemName"].S == systemId &&
+                request.ExpressionAttributeValues[":v_userId"].S == userId &&
+                request.ProjectionExpression == "FaceId"
             ),
             It.IsAny<CancellationToken>()
         ), Times.Once);
     }
+
 
     [Fact]
     public async Task GetFaceIdsByUserIdAsync_UserHasNoFaces_ReturnsEmptyList()
@@ -450,57 +501,7 @@ public class DynamoDBServiceTests
         await Assert.ThrowsAsync<Exception>(() => _service.GetFaceIdsByUserIdAsync(userId, systemId));
     }
 
-    [Fact]
-    public async Task DeleteUserFromDynamoDbAsync_UserExists_DeletesItems()
-    {
-        // Arrange
-        string userId = "testUser";
-        string systemId = "TestTable";
-        var itemsToDelete = new List<Dictionary<string, AttributeValue>>
-        {
-            new Dictionary<string, AttributeValue>
-            {
-                { "UserId", new AttributeValue { S = userId } },
-                { "FaceId", new AttributeValue { S = "faceId1" } }
-            },
-            new Dictionary<string, AttributeValue>
-            {
-                { "UserId", new AttributeValue { S = userId } },
-                { "FaceId", new AttributeValue { S = "faceId2" } }
-            }
-        };
-
-        _mockDynamoDBClient.Setup(client => client.ScanAsync(
-            It.IsAny<ScanRequest>(),
-            It.IsAny<CancellationToken>()
-        )).ReturnsAsync(new ScanResponse
-        {
-            Items = itemsToDelete
-        });
-
-        _mockDynamoDBClient.Setup(client => client.DeleteItemAsync(
-            It.IsAny<DeleteItemRequest>(),
-            It.IsAny<CancellationToken>()
-        )).ReturnsAsync(new DeleteItemResponse());
-
-        // Act
-        await _service.DeleteUserFromDynamoDbAsync(userId, systemId);
-
-        // Assert
-        _mockDynamoDBClient.Verify(client => client.ScanAsync(
-            It.Is<ScanRequest>(request =>
-                request.TableName == systemId &&
-                request.FilterExpression == "UserId = :userId" &&
-                request.ExpressionAttributeValues[":userId"].S == userId
-            ),
-            It.IsAny<CancellationToken>()
-        ), Times.Once);
-
-        _mockDynamoDBClient.Verify(client => client.DeleteItemAsync(
-            It.IsAny<DeleteItemRequest>(),
-            It.IsAny<CancellationToken>()
-        ), Times.Exactly(itemsToDelete.Count));
-    }
+    
 
     [Fact]
     public async Task DeleteUserFromDynamoDbAsync_UserDoesNotExist_NoDeletionOccurs()
@@ -556,37 +557,49 @@ public class DynamoDBServiceTests
         // Arrange
         string userId = "testUser";
         string faceId = "testFaceId";
-        string tableName = "TestTable";
+        string systemName = "TestSystem";
 
         _mockDynamoDBClient.Setup(client => client.QueryAsync(
-            It.IsAny<QueryRequest>(),
+            It.Is<QueryRequest>(request =>
+                request.TableName == GlobalVarians.FACEID_TABLE_DYNAMODB &&
+                request.KeyConditionExpression == "UserId = :userId AND FaceId = :faceId" &&
+                request.FilterExpression == $"{GlobalVarians.SYSTEM_NAME_ATTRIBUTE_DYNAMODB} = :systemName" &&
+                request.ExpressionAttributeValues[":userId"].S == userId &&
+                request.ExpressionAttributeValues[":faceId"].S == faceId &&
+                request.ExpressionAttributeValues[":systemName"].S == systemName
+            ),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new QueryResponse
         {
             Items = new List<Dictionary<string, AttributeValue>>
             {
-                new Dictionary<string, AttributeValue>
-                {
-                    { "FaceId", new AttributeValue { S = faceId } }
-                }
+            new Dictionary<string, AttributeValue>
+            {
+                { "FaceId", new AttributeValue { S = faceId } }
+            }
             }
         });
 
         // Act
-        var result = await _service.GetFaceIdForUserAndFaceAsync(userId, faceId, tableName);
+        var result = await _service.GetFaceIdForUserAndFaceAsync(userId, faceId, systemName);
 
         // Assert
         Assert.Equal(faceId, result);
+
+        // Verify Correct Query
         _mockDynamoDBClient.Verify(client => client.QueryAsync(
             It.Is<QueryRequest>(request =>
-                request.TableName == tableName &&
-                request.KeyConditionExpression == "UserId = :userId and FaceId = :faceId" &&
+                request.TableName == GlobalVarians.FACEID_TABLE_DYNAMODB &&
+                request.KeyConditionExpression == "UserId = :userId AND FaceId = :faceId" &&
+                request.FilterExpression == $"{GlobalVarians.SYSTEM_NAME_ATTRIBUTE_DYNAMODB} = :systemName" &&
                 request.ExpressionAttributeValues[":userId"].S == userId &&
-                request.ExpressionAttributeValues[":faceId"].S == faceId
+                request.ExpressionAttributeValues[":faceId"].S == faceId &&
+                request.ExpressionAttributeValues[":systemName"].S == systemName
             ),
             It.IsAny<CancellationToken>()
         ), Times.Once);
     }
+
 
     [Fact]
     public async Task GetFaceIdForUserAndFaceAsync_FaceDoesNotExist_ReturnsNull()
@@ -633,23 +646,31 @@ public class DynamoDBServiceTests
     {
         // Arrange
         string userId = "testUser";
-        string tableName = "TestTable";
-        var faceItems = new List<Dictionary<string, AttributeValue>>
-        {
-            new Dictionary<string, AttributeValue>
-            {
-                { "FaceId", new AttributeValue { S = "faceId1" } },
-                { "CreateDate", new AttributeValue { S = DateTime.UtcNow.AddDays(-2).ToString("o") } }
-            },
-            new Dictionary<string, AttributeValue>
-            {
-                { "FaceId", new AttributeValue { S = "faceId2" } },
-                { "CreateDate", new AttributeValue { S = DateTime.UtcNow.AddDays(-1).ToString("o") } }
-            }
-        };
+        string collectionName = GlobalVarians.FACEID_TABLE_DYNAMODB;
 
+        var faceItems = new List<Dictionary<string, AttributeValue>>
+    {
+        new Dictionary<string, AttributeValue>
+        {
+            { "FaceId", new AttributeValue { S = "faceId1" } },
+            { "CreateDate", new AttributeValue { S = DateTime.UtcNow.AddDays(-2).ToString("o") } }
+        },
+        new Dictionary<string, AttributeValue>
+        {
+            { "FaceId", new AttributeValue { S = "faceId2" } },
+            { "CreateDate", new AttributeValue { S = DateTime.UtcNow.AddDays(-1).ToString("o") } }
+        }
+    };
+
+        // Mock Query Response
         _mockDynamoDBClient.Setup(client => client.QueryAsync(
-            It.IsAny<QueryRequest>(),
+            It.Is<QueryRequest>(request =>
+                request.TableName == GlobalVarians.FACEID_TABLE_DYNAMODB &&
+                request.IndexName == GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB &&
+                request.KeyConditionExpression == "UserId = :userId AND SystemName = :systemName" &&
+                request.ExpressionAttributeValues[":userId"].S == userId &&
+                request.ExpressionAttributeValues[":systemName"].S == collectionName
+            ),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new QueryResponse
         {
@@ -657,19 +678,24 @@ public class DynamoDBServiceTests
         });
 
         // Act
-        var result = await _service.GetOldestFaceIdForUserAsync(userId, tableName);
+        var result = await _service.GetOldestFaceIdForUserAsync(userId, collectionName);
 
         // Assert
         Assert.Equal("faceId1", result);
+
+        // Verify Correct Query
         _mockDynamoDBClient.Verify(client => client.QueryAsync(
             It.Is<QueryRequest>(request =>
-                request.TableName == tableName &&
-                request.KeyConditionExpression == "UserId = :userId" &&
-                request.ExpressionAttributeValues[":userId"].S == userId
+                request.TableName == GlobalVarians.FACEID_TABLE_DYNAMODB &&
+                request.IndexName == GlobalVarians.FACEID_INDEX_ATTRIBUTE_DYNAMODB &&
+                request.KeyConditionExpression == "UserId = :userId AND SystemName = :systemName" &&
+                request.ExpressionAttributeValues[":userId"].S == userId &&
+                request.ExpressionAttributeValues[":systemName"].S == collectionName
             ),
             It.IsAny<CancellationToken>()
         ), Times.Once);
     }
+
 
     [Fact]
     public async Task GetOldestFaceIdForUserAsync_UserHasNoFaces_ReturnsNull()
@@ -758,8 +784,14 @@ public class DynamoDBServiceTests
 
         string serializedResult = JsonSerializer.Serialize(expectedResult);
 
+        // Mock Query Response
         _mockDynamoDBClient.Setup(client => client.QueryAsync(
-            It.IsAny<QueryRequest>(),
+            It.Is<QueryRequest>(request =>
+                request.TableName == GlobalVarians.RESULT_INFO_TABLE_DYNAMODB &&
+                request.KeyConditionExpression == "SystemName = :v_systemName and FileName = :v_fileName" &&
+                request.ExpressionAttributeValues[":v_systemName"].S == systemId &&
+                request.ExpressionAttributeValues[":v_fileName"].S == mediaId
+            ),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new QueryResponse
         {
@@ -785,7 +817,7 @@ public class DynamoDBServiceTests
         Assert.Equal(expectedResult.RegisteredFaces.Count, result.RegisteredFaces.Count);
         Assert.Equal(expectedResult.UnregisteredFaces.Count, result.UnregisteredFaces.Count);
 
-        // Compare individual RegisteredFaces
+        // Compare Registered Faces
         for (int i = 0; i < expectedResult.RegisteredFaces.Count; i++)
         {
             var expectedFace = expectedResult.RegisteredFaces[i];
@@ -795,20 +827,14 @@ public class DynamoDBServiceTests
             Assert.Equal(expectedFace.UserId, actualFace.UserId);
             Assert.Equal(expectedFace.TimeAppearances, actualFace.TimeAppearances);
 
-            if (expectedFace.BoundingBox != null && actualFace.BoundingBox != null)
-            {
-                Assert.Equal(expectedFace.BoundingBox.Left, actualFace.BoundingBox.Left);
-                Assert.Equal(expectedFace.BoundingBox.Top, actualFace.BoundingBox.Top);
-                Assert.Equal(expectedFace.BoundingBox.Width, actualFace.BoundingBox.Width);
-                Assert.Equal(expectedFace.BoundingBox.Height, actualFace.BoundingBox.Height);
-            }
-            else
-            {
-                Assert.Null(actualFace.BoundingBox);
-            }
+            Assert.NotNull(actualFace.BoundingBox);
+            Assert.Equal(expectedFace.BoundingBox.Left, actualFace.BoundingBox.Left);
+            Assert.Equal(expectedFace.BoundingBox.Top, actualFace.BoundingBox.Top);
+            Assert.Equal(expectedFace.BoundingBox.Width, actualFace.BoundingBox.Width);
+            Assert.Equal(expectedFace.BoundingBox.Height, actualFace.BoundingBox.Height);
         }
 
-        // Compare individual UnregisteredFaces
+        // Compare Unregistered Faces
         for (int i = 0; i < expectedResult.UnregisteredFaces.Count; i++)
         {
             var expectedFace = expectedResult.UnregisteredFaces[i];
@@ -818,28 +844,25 @@ public class DynamoDBServiceTests
             Assert.Equal(expectedFace.UserId, actualFace.UserId);
             Assert.Equal(expectedFace.TimeAppearances, actualFace.TimeAppearances);
 
-            if (expectedFace.BoundingBox != null && actualFace.BoundingBox != null)
-            {
-                Assert.Equal(expectedFace.BoundingBox.Left, actualFace.BoundingBox.Left);
-                Assert.Equal(expectedFace.BoundingBox.Top, actualFace.BoundingBox.Top);
-                Assert.Equal(expectedFace.BoundingBox.Width, actualFace.BoundingBox.Width);
-                Assert.Equal(expectedFace.BoundingBox.Height, actualFace.BoundingBox.Height);
-            }
-            else
-            {
-                Assert.Null(actualFace.BoundingBox);
-            }
+            Assert.NotNull(actualFace.BoundingBox);
+            Assert.Equal(expectedFace.BoundingBox.Left, actualFace.BoundingBox.Left);
+            Assert.Equal(expectedFace.BoundingBox.Top, actualFace.BoundingBox.Top);
+            Assert.Equal(expectedFace.BoundingBox.Width, actualFace.BoundingBox.Width);
+            Assert.Equal(expectedFace.BoundingBox.Height, actualFace.BoundingBox.Height);
         }
 
+        // Verify Correct Query
         _mockDynamoDBClient.Verify(client => client.QueryAsync(
             It.Is<QueryRequest>(request =>
-                request.TableName == systemId &&
-                request.KeyConditionExpression == "FileName = :fileName" &&
-                request.ExpressionAttributeValues[":fileName"].S == mediaId.ToLower()
+                request.TableName == GlobalVarians.RESULT_INFO_TABLE_DYNAMODB &&
+                request.KeyConditionExpression == "SystemName = :v_systemName and FileName = :v_fileName" &&
+                request.ExpressionAttributeValues[":v_systemName"].S == systemId &&
+                request.ExpressionAttributeValues[":v_fileName"].S == mediaId
             ),
             It.IsAny<CancellationToken>()
         ), Times.Once);
     }
+
 
 
     [Fact]

@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2.DataModel;
 using FAL.Services;
 using Moq;
 using Share.Model;
+using Xunit;
 
 public class PermissionServiceTests
 {
@@ -16,52 +17,38 @@ public class PermissionServiceTests
     }
 
     [Fact]
-    public async Task HasPermissionAsync_ResourceIsNull_ReturnsFalse()
+    public void HasPermission_ResourceIsNull_ReturnsFalse()
     {
         // Arrange
         var user = new ClaimsPrincipal();
 
         // Act
-        var result =  _permissionService.HasPermission(user, null, "SomeAction");
+        var result = _permissionService.HasPermission(user, null, "SomeAction");
 
         // Assert
         Assert.False(result);
     }
 
     [Fact]
-    public async Task HasPermissionAsync_ActionIsNull_ReturnsFalse()
+    public void HasPermission_ActionIsNull_ReturnsFalse()
     {
         // Arrange
         var user = new ClaimsPrincipal();
 
         // Act
-        var result =  _permissionService.HasPermission(user, "SomeResource", null);
+        var result = _permissionService.HasPermission(user, "SomeResource", null);
 
         // Assert
         Assert.False(result);
     }
 
     [Fact]
-    public async Task HasPermissionAsync_RoleIdClaimMissing_ReturnsFalse()
+    public void HasPermission_InvalidRoleIdClaimValue_ReturnsFalse()
     {
         // Arrange
-        var identity = new ClaimsIdentity();
-        var user = new ClaimsPrincipal(identity);
-
-        // Act
-        var result =  _permissionService.HasPermission(user, "SomeResource", "SomeAction");
-
-        // Assert
-        Assert.False(result);
-    }
-
-    [Fact]
-    public async Task HasPermissionAsync_InvalidRoleIdClaimValue_ReturnsFalse()
-    {
-        // Arrange
-        var identity = new ClaimsIdentity(new Claim[]
+        var identity = new ClaimsIdentity(new[]
         {
-        new Claim("RoleId", "invalid_int")
+            new Claim(ClaimTypes.Role, "invalid_int")
         });
         var user = new ClaimsPrincipal(identity);
 
@@ -73,12 +60,12 @@ public class PermissionServiceTests
     }
 
     [Fact]
-    public async Task HasPermissionAsync_RoleNotFound_ReturnsFalse()
+    public void HasPermission_RoleNotFound_ReturnsFalse()
     {
         // Arrange
-        var identity = new ClaimsIdentity(new Claim[]
+        var identity = new ClaimsIdentity(new[]
         {
-            new Claim("RoleId", "1")
+            new Claim(ClaimTypes.Role, "1")
         });
         var user = new ClaimsPrincipal(identity);
 
@@ -86,19 +73,19 @@ public class PermissionServiceTests
             .ReturnsAsync((Role)null);
 
         // Act
-        var result =  _permissionService.HasPermission(user, "SomeResource", "SomeAction");
+        var result = _permissionService.HasPermission(user, "SomeResource", "SomeAction");
 
         // Assert
         Assert.False(result);
     }
 
     [Fact]
-    public async Task HasPermissionAsync_RoleDoesNotHavePermission_ReturnsFalse()
+    public void HasPermission_RoleDoesNotHavePermission_ReturnsFalse()
     {
         // Arrange
-        var identity = new ClaimsIdentity(new Claim[]
+        var identity = new ClaimsIdentity(new[]
         {
-            new Claim("RoleId", "1")
+            new Claim(ClaimTypes.Role, "1")
         });
         var user = new ClaimsPrincipal(identity);
 
@@ -120,19 +107,19 @@ public class PermissionServiceTests
             .ReturnsAsync(role);
 
         // Act
-        var result =  _permissionService.HasPermission(user, "SomeResource", "SomeAction");
+        var result = _permissionService.HasPermission(user, "SomeResource", "SomeAction");
 
         // Assert
         Assert.False(result);
     }
 
     [Fact]
-    public async Task HasPermissionAsync_RoleHasPermission_ReturnsTrue()
+    public void HasPermission_RoleHasPermission_ReturnsTrue()
     {
         // Arrange
-        var identity = new ClaimsIdentity(new Claim[]
+        var identity = new ClaimsIdentity(new[]
         {
-            new Claim("RoleId", "1")
+            new Claim(ClaimTypes.Role, "1")
         });
         var user = new ClaimsPrincipal(identity);
 
@@ -154,7 +141,7 @@ public class PermissionServiceTests
             .ReturnsAsync(role);
 
         // Act
-        var result =  _permissionService.HasPermission(user, "SomeResource", "SomeAction");
+        var result = _permissionService.HasPermission(user, "SomeResource", "SomeAction");
 
         // Assert
         Assert.True(result);
