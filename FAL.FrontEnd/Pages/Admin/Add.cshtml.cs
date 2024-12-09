@@ -50,7 +50,7 @@ namespace FAL.FrontEnd.Pages.Admin
             if (response.IsSuccessStatusCode)
             {
                 TempData["SuccessMessage"] = "Tạo tài khoản thành công!";
-                return RedirectToPage("/admin/accounts");
+                return RedirectToPage("/admin/index");
             }
             else
             {

@@ -40,8 +40,8 @@ namespace AuthenExamCompareFaceExam
                 services.AddSingleton<AuthService>(provider =>
                     new AuthService(
                         "https://dev.demorecognition.click/api/Auth/login", 
-                        "string",                  
-                        "123456"                   
+                        "eos",
+                        "x'7<VeWvT*368Y2LFX%$dn"
                     ));
                 services.AddSingleton<FaceCompareService>(provider =>
                 {
