@@ -52,9 +52,9 @@ app.MapRazorPages();
 app.UseMiddleware<SessionAuthMiddleware>();
 app.UseMiddleware<RoleAuthorizationMiddleware>();
 
-app.MapGet("/", context =>
-{
-    context.Response.Redirect("/Dashboard/Main");
-    return Task.CompletedTask;
-});
+//app.MapGet("/", context =>
+//{
+//    context.Response.Redirect("/Dashboard/Main");
+//    return Task.CompletedTask;
+//});
 app.Run();

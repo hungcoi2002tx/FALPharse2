@@ -33,7 +33,7 @@ namespace FAL.FrontEnd.Pages.Admin
 
             if (string.IsNullOrEmpty(jwtToken))
             {
-                throw new UnauthorizedAccessException("Token không tồn tại. Vui lòng đăng nhập lại.");
+                throw new UnauthorizedAccessException("Token does not exist. Please log in again.");
             }
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
@@ -44,7 +44,7 @@ namespace FAL.FrontEnd.Pages.Admin
         {
             if (string.IsNullOrEmpty(username))
             {
-                Message = "Username không hợp lệ.";
+                Message = "Invalid username.";
                 return RedirectToPage("/Admin/Index");
             }
 
@@ -55,13 +55,13 @@ namespace FAL.FrontEnd.Pages.Admin
 
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    Message = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                    Message = "Session expired. Please log in again.";
                     return RedirectToPage("/Auth/Login");
                 }
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    Message = "Không tìm thấy user.";
+                    Message = "User not found.";
                     return RedirectToPage("/Admin/Index");
                 }
 
@@ -84,7 +84,7 @@ namespace FAL.FrontEnd.Pages.Admin
         {
             if (!ModelState.IsValid)
             {
-                Message = "Dữ liệu không hợp lệ.";
+                Message = "Invalid data.";
                 return Page();
             }
 
@@ -98,17 +98,17 @@ namespace FAL.FrontEnd.Pages.Admin
 
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    Message = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                    Message = "Session expired. Please log in again.";
                     return RedirectToPage("/Auth/Login");
                 }
 
                 if (response.IsSuccessStatusCode)
                 {
-                    Message = "Cập nhật thành công!";
+                    Message = "Update successful!";
                     return RedirectToPage("/Admin/Index");
                 }
 
-                Message = "Cập nhật thất bại.";
+                Message = "Update failed.";
             }
             catch (UnauthorizedAccessException ex)
             {

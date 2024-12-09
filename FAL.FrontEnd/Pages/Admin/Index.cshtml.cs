@@ -37,13 +37,13 @@ namespace FAL.FrontEnd.Pages.Admin
             {
                 var json = await response.Content.ReadAsStringAsync();
                 Accounts = JsonSerializer.Deserialize<List<AccountViewDto>>(json);
-                // Debug log kết quả Deserialize
+                // Debug log the result of Deserialize
                 Console.WriteLine("Accounts Count: " + Accounts.Count);
             }
             else
             {
                 Console.WriteLine("Error fetching accounts: " + response.StatusCode);
-                ModelState.AddModelError(string.Empty, "Không thể tải danh sách tài khoản!");
+                ModelState.AddModelError(string.Empty, "Unable to load the account list!");
             }
         }
         public async Task<IActionResult> OnPostAsync(string username)
@@ -58,11 +58,11 @@ namespace FAL.FrontEnd.Pages.Admin
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
 
-            // Lấy thông tin tài khoản để kiểm tra trạng thái hiện tại
+            // Retrieve account information to check the current status
             var response = await client.GetAsync($"https://dev.demorecognition.click/api/accounts/{username}");
             if (!response.IsSuccessStatusCode)
             {
-                TempData["ErrorMessage"] = "Không thể lấy thông tin tài khoản!";
+                TempData["ErrorMessage"] = "Unable to fetch account information!";
                 return RedirectToPage();
             }
 
@@ -71,27 +71,25 @@ namespace FAL.FrontEnd.Pages.Admin
 
             if (account == null)
             {
-                TempData["ErrorMessage"] = "Không tìm thấy tài khoản!";
+                TempData["ErrorMessage"] = "Account not found!";
                 return RedirectToPage();
             }
 
-            // Cập nhật trạng thái
+            // Update the status
             account.Status = account.Status == "Active" ? "Deactive" : "Active";
             var jsonContent = JsonSerializer.Serialize(account);
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-            // Gửi yêu cầu cập nhật
+            // Send the update request
             var updateResponse = await client.PutAsync($"https://dev.demorecognition.click/api/accounts/{username}", content);
             if (!updateResponse.IsSuccessStatusCode)
             {
-                TempData["ErrorMessage"] = "Lỗi khi cập nhật trạng thái!";
+                TempData["ErrorMessage"] = "Error updating the status!";
                 return RedirectToPage();
             }
 
-            TempData["SuccessMessage"] = "Cập nhật trạng thái thành công!";
+            TempData["SuccessMessage"] = "Status updated successfully!";
             return RedirectToPage();
         }
-
-
     }
 }

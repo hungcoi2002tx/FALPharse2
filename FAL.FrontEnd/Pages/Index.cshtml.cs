@@ -12,9 +12,16 @@ namespace FAL.FrontEnd.Pages
             _logger = logger;
         }
 
-        public void OnGet()
+        public IActionResult OnGet()
         {
-
+            if (Helper.SessionExtensions.IsInRole(1))
+            {
+                return RedirectToPage("/Admin/Index");
+            }
+            else
+            {
+                return RedirectToPage("/Dashboard/Main");
+            }
         }
     }
 }

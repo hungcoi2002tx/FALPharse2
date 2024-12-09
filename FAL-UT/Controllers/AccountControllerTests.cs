@@ -43,7 +43,7 @@ public class AccountsControllerTests
             SystemName = "SystemB",
             WebhookUrl = "https://webhook2.example.com",
             WebhookSecretKey = "secret2",
-            Status = "Inactive"
+            Status = "Deactive"
         }
     };
 

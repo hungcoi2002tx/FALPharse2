@@ -1,11 +1,11 @@
 ﻿@page
 @model FAL.FrontEnd.Pages.Admin.IndexModel
 @{
-    ViewData["Title"] = "Quản lý tài khoản";
+    ViewData["Title"] = "Account Management";
 }
-<h1>Quản lý tài khoản</h1>
+<h1>Account Management</h1>
 
-<!-- Hiển thị thông báo thành công -->
+<!-- Display success message -->
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success">
@@ -13,7 +13,7 @@
     </div>
 }
 
-<!-- Hiển thị thông báo lỗi -->
+<!-- Display error message -->
 @if (TempData["ErrorMessage"] != null)
 {
     <div class="alert alert-danger">
@@ -50,12 +50,12 @@
                 <td>@account.WebhookSecretKey</td>
                 <td>@account.Status</td>
                 <td>
-                    <!-- Nút sửa -->
-                    <a class="btn btn-warning btn-sm" href="/admin/update/?username=@account.Username">Sửa</a>
+                    <!-- Edit button -->
+                    <a class="btn btn-warning btn-sm" href="/admin/update/?username=@account.Username">Edit</a>
                 </td>
                 <td>
 
-                    <!-- Nút kích hoạt/khóa -->
+                    <!-- Activate/Deactivate button -->
                     <form method="post" style="display:inline;">
                         <input type="hidden" name="username" value="@account.Username" />
                         <button type="submit" class="btn btn-secondary btn-sm">
@@ -68,4 +68,4 @@
     </tbody>
 </table>
 
-<a href="/Admin/Add" class="btn btn-primary">Thêm tài khoản</a>
+<a href="/Admin/Add" class="btn btn-primary">Add Account</a>
