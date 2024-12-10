@@ -131,5 +131,42 @@ namespace FAL.Controllers
                 existingUser.WebhookUrl
             });
         }
+
+        /// <summary>
+        /// API for users to change their password
+        /// </summary>
+        /// <param name="changePasswordRequest"></param>
+        /// <returns></returns>
+        // PUT: api/users/change-password
+        [Authorize]
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest changePasswordRequest)
+        {
+            // Identify the current user from the token
+            var currentUsername = User.Identity?.Name;
+
+            if (currentUsername == null)
+                return Unauthorized("Unable to identify the current user!");
+
+            // Load user information from DynamoDB
+            var existingUser = await _dbContext.LoadAsync<Account>(currentUsername);
+            if (existingUser == null)
+                return NotFound("User does not exist!");
+
+            // Verify current password
+            if (existingUser.Password != changePasswordRequest.CurrentPassword)
+                return BadRequest("Current password is incorrect!");
+
+            // Update password
+            existingUser.Password = changePasswordRequest.NewPassword;
+
+            // Save changes
+            await _dbContext.SaveAsync(existingUser);
+
+            return Ok(new
+            {
+                Message = "Password has been changed successfully!"
+            });
+        }
     }
 }
