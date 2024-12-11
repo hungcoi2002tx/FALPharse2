@@ -1,0 +1,38 @@
+﻿@page
+@model Dashboard.IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+<div class="container">
+    <h1 class="mb-4">Dashboard</h1>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Detect Stats</h5>
+                    <p class="card-text">View stats related to media detection.</p>
+                    <a asp-page="./Detect" class="btn btn-primary">View Detect Stats</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Train Stats</h5>
+                    <p class="card-text">View stats related to user training.</p>
+                    <a asp-page="./Train" class="btn btn-primary">View Train Stats</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Request Stats</h5>
+                    <p class="card-text">View stats related to all system requests.</p>
+                    <a asp-page="./Request" class="btn btn-primary">View Request Stats</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

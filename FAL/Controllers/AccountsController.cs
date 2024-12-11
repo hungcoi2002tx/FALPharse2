@@ -1,8 +1,11 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2;
 using Microsoft.AspNetCore.Mvc;
-using FAL.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Net.WebSockets;
+using FAL.Dtos;
+using Share.Model;
+using Share.DTO;
 
 namespace FAL.Controllers
 {
@@ -10,90 +13,121 @@ namespace FAL.Controllers
     [ApiController]
     public class AccountsController : ControllerBase
     {
-        private readonly IAmazonDynamoDB _dynamoDbClient;
-        private readonly DynamoDBContext _dbContext;
+        private readonly IDynamoDBContext _dbContext;
 
-        public AccountsController(IAmazonDynamoDB dynamoDbClient)
+        public AccountsController(IDynamoDBContext dbContext)
         {
-            _dynamoDbClient = dynamoDbClient;
-            _dbContext = new DynamoDBContext(dynamoDbClient);
+            _dbContext = dbContext;
         }
 
-        // GET: api/users
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
-            var users = await _dbContext.ScanAsync<Account>(new List<ScanCondition>()).GetRemainingAsync();
-            return Ok(users);
+            var accounts = await _dbContext.ScanAsync<Account>(new List<ScanCondition>()).GetRemainingAsync();
+            var accountDtos = accounts.Select(account => new AccountViewDto
+            {
+                Username = account.Username,
+                Password = account.Password,
+                Email = account.Email,
+                RoleId = account.RoleId,
+                SystemName = account.SystemName,
+                WebhookUrl = account.WebhookUrl,
+                WebhookSecretKey = account.WebhookSecretKey,
+                Status = account.Status
+            }).ToList();
+
+            return Ok(accountDtos);
         }
 
-        // GET: api/users/{username}
+        // GET: api/accounts/{username}
         [Authorize]
         [HttpGet("{username}")]
         public async Task<IActionResult> GetUserById(string username)
         {
-            var user = await _dbContext.LoadAsync<Account>(username);
-            if (user == null)
-                return NotFound("User không tìm thấy!");
+            var account = await _dbContext.LoadAsync<Account>(username);
+            if (account == null)
+                return NotFound("User not found!");
 
-            return Ok(user);
+            var accountDto = new AccountViewDto
+            {
+                Username = account.Username,
+                Password = account.Password,
+                Email = account.Email,
+                RoleId = account.RoleId,
+                SystemName = account.SystemName,
+                WebhookUrl = account.WebhookUrl,
+                WebhookSecretKey = account.WebhookSecretKey,
+                Status = account.Status
+            };
+
+            return Ok(accountDto);
         }
 
-        // POST: api/users
+        // POST: api/accounts
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] Account user)
         {
             var existingUser = await _dbContext.LoadAsync<Account>(user.Username);
             if (existingUser != null)
-                return BadRequest("User đã tồn tại!");
+                return BadRequest("User already exists!");
 
             await _dbContext.SaveAsync(user);
-            return Ok(user); // Tạo mới một user
+            return Ok(user); // Create a new user
         }
 
-        // PUT: api/users/{username}
+        // PUT: api/accounts/{username}
         [Authorize]
         [HttpPut("{username}")]
-        public async Task<IActionResult> UpdateUser(string username, [FromBody] Account updatedUser)
+        public async Task<IActionResult> UpdateUser(string username, [FromBody] UpdateAccountDto updatedUser)
         {
+            // Find the current user in the database
             var existingUser = await _dbContext.LoadAsync<Account>(username);
             if (existingUser == null)
-                return NotFound("User không tìm thấy để update!");
+                return NotFound("User not found for update!");
 
-            // Cập nhật thông tin user
-            existingUser.Username = updatedUser.Username;
-
-            // Kiểm tra nếu mật khẩu mới khác với mật khẩu cũ, thì mã hóa mật khẩu
-            if (!BCrypt.Net.BCrypt.Verify(updatedUser.Password, existingUser.Password))
+            // Update user information only if the parameter has a value
+            if (!string.IsNullOrEmpty(updatedUser.Password) &&
+                !BCrypt.Net.BCrypt.Verify(updatedUser.Password, existingUser.Password))
             {
-                existingUser.Password = BCrypt.Net.BCrypt.HashPassword(updatedUser.Password);  // Mã hóa mật khẩu
+                existingUser.Password = BCrypt.Net.BCrypt.HashPassword(updatedUser.Password);
             }
 
-            existingUser.Email = updatedUser.Email;
-            existingUser.RoleId = updatedUser.RoleId; // Cập nhật RoleId duy nhất, kiểu int
-            existingUser.SystemName = updatedUser.SystemName;
-            existingUser.WebhookUrl = updatedUser.WebhookUrl;
-            existingUser.WebhookSecretKey = updatedUser.WebhookSecretKey;
-            existingUser.Status = updatedUser.Status;
+            if (!string.IsNullOrEmpty(updatedUser.Email))
+                existingUser.Email = updatedUser.Email;
 
+            if (updatedUser.RoleId.HasValue) // Check if RoleId is not null
+                existingUser.RoleId = updatedUser.RoleId.Value;
+
+            if (!string.IsNullOrEmpty(updatedUser.SystemName))
+                existingUser.SystemName = updatedUser.SystemName;
+
+            if (!string.IsNullOrEmpty(updatedUser.WebhookUrl))
+                existingUser.WebhookUrl = updatedUser.WebhookUrl;
+
+            if (!string.IsNullOrEmpty(updatedUser.WebhookSecretKey))
+                existingUser.WebhookSecretKey = updatedUser.WebhookSecretKey;
+
+            if (!string.IsNullOrEmpty(updatedUser.Status))
+                existingUser.Status = updatedUser.Status;
+
+            // Save the updated user
             await _dbContext.SaveAsync(existingUser);
             return Ok(existingUser);
         }
 
-
-        // DELETE: api/users/{username}
+        // DELETE: api/accounts/{username}
         [Authorize]
         [HttpDelete("{username}")]
         public async Task<IActionResult> DeleteUser(string username)
         {
             var user = await _dbContext.LoadAsync<Account>(username);
             if (user == null)
-                return NotFound("User không tìm thấy để xóa!");
+                return NotFound("User not found for deletion!");
 
             await _dbContext.DeleteAsync(user);
-            return Ok("Đã xóa user!");
+            return Ok("User deleted!");
         }
     }
 }

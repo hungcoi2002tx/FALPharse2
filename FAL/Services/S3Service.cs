@@ -1,12 +1,12 @@
 ﻿using Amazon.S3.Transfer;
 using Amazon.S3;
 using FAL.Services.IServices;
-using Share.SystemModel;
-using Share.Data;
 using FAL.Utils;
 using System.Drawing;
 using System.IO;
 using SixLabors.ImageSharp;
+using Share.Constant;
+using Share.Model;
 namespace FAL.Services
 {
     public class S3Service : IS3Service
@@ -22,7 +22,7 @@ namespace FAL.Services
             _service = service;
         }
 
-        public async Task<bool> AddFileToS3Async(IFormFile file, string fileName, string bucketName, TypeOfRequest type, string userId = null)
+        public async Task<bool> AddFileToS3Async(IFormFile file, string fileName, string bucketName, TypeOfRequest type,string mediaId, string userId = null)
         {
             try
             {
@@ -50,7 +50,7 @@ namespace FAL.Services
                         };
 
                         // Thêm metadata nếu có
-                        uploadRequest = GetMetaData(uploadRequest, type, userId, file, width, height);
+                        uploadRequest = GetMetaData(uploadRequest, type, userId, file, width, height,mediaId);
                         await fileTransferUtility.UploadAsync(uploadRequest);
                     }
                     else
@@ -65,7 +65,7 @@ namespace FAL.Services
                             StorageClass = S3StorageClass.Standard, // Có thể điều chỉnh storage class
                         };
                         // Thêm metadata nếu có
-                        uploadRequest = GetMetaData(uploadRequest, type, userId, file, width, height);
+                        uploadRequest = GetMetaData(uploadRequest, type, userId, file, width, height, mediaId);
                         await fileTransferUtility.UploadAsync(uploadRequest);
                     }
                 }
@@ -87,11 +87,11 @@ namespace FAL.Services
             }
         }
 
-        private TransferUtilityUploadRequest GetMetaData(TransferUtilityUploadRequest request, TypeOfRequest type, string userId, IFormFile file, int width, int height)
+        private TransferUtilityUploadRequest GetMetaData(TransferUtilityUploadRequest request, TypeOfRequest type, string userId, IFormFile file, int width, int height,string mediaId)
         {
             try
             {
-                request.Metadata.Add("OriginalFileName", file.FileName);
+                request.Metadata.Add("OriginalFileName", mediaId);
                 request.Metadata.Add(nameof(FaceInformation.UserId), userId);
                 request.Metadata.Add("ImageWidth", width.ToString());
                 request.Metadata.Add("ImageHeight", height.ToString());
@@ -159,7 +159,7 @@ namespace FAL.Services
             }
         }
 
-        public async Task<bool> AddBudgetAsync(string budgetName)
+        public async Task<bool> IsAddBudgetAsync(string budgetName)
         {
             try
             {

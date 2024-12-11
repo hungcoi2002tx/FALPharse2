@@ -1,0 +1,62 @@
+﻿@page "{userId}"
+@model Dashboard.TrainDetailsModel
+@{
+    ViewData["Title"] = "Train Details";
+}
+<div class="container">
+    <h1 class="mb-4">User Details</h1>
+    @if (Model.UserDetails != null && Model.UserDetails.Count > 0)
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Details for User</h5>
+                <p class="card-text"><strong>Total Faces Trained:</strong> @Model.TotalRecords</p>
+            </div>
+        </div>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Face ID</th>
+                    <th>Create Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var detail in Model.UserDetails)
+                {
+                    <tr>
+                        <td>@detail.FaceId</td>
+                        <td>@detail.CreateDate.ToString("yyyy-MM-dd")</td>
+@*                         <td>
+                            <a asp-page="./DeleteTrain"
+                               asp-route-userId="@detail.UserId"
+                               asp-route-faceId="@detail.FaceId"
+                               class="btn btn-danger btn-sm">Delete</a>
+                        </td> *@
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                @for (int i = 1; i <= Math.Ceiling((double)Model.TotalRecords / Model.PageSize); i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <a href="?page=@i" class="page-link">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+
+
+
+        <a asp-page="./Main" class="btn btn-secondary">Back to Dashboard</a>
+    }
+    else
+    {
+        <div class="alert alert-danger">No details found for this user.</div>
+        <a asp-page="./Main" class="btn btn-secondary">Back to Dashboard</a>
+    }
+</div>

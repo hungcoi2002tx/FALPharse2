@@ -1,0 +1,106 @@
+﻿@page "/accessdenied"
+@model FAL.FrontEnd.Pages.Shared._AcccessDeniedModel
+
+@{
+    ViewData["Title"] = "Access Denied";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            border: 1px solid #ddd;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        .error-icon {
+            font-size: 72px;
+            color: red;
+            margin-bottom: 20px;
+        }
+        .error-title {
+            font-size: 32px;
+            color: #dc3545;
+            margin-bottom: 10px;
+        }
+        .error-message {
+            font-size: 18px;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+        .error-code {
+            font-weight: bold;
+            font-size: 18px;
+            color: #343a40;
+            margin-bottom: 20px;
+        }
+        .countdown {
+            font-size: 20px;
+            color: #007bff;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script>
+    let countdown = 3; // 3 seconds
+    function updateCountdown() {
+        const countdownElement = document.getElementById('countdown');
+        if (countdown > 0) {
+            countdownElement.textContent = `Redirecting to home page in ${countdown--} second(s)...`;
+        } else {
+            // Kiểm tra nếu đã redirect trước đó
+            if (!sessionStorage.getItem('redirected')) {
+                sessionStorage.setItem('redirected', 'true');
+                window.location.href = '/'; // Redirect to the home page
+            }
+        }
+    }
+    window.onload = function () {
+        updateCountdown();
+        setInterval(updateCountdown, 1000); // Update every second
+    };
+</script>
+
+</head>
+<body>
+    <div class="container">
+        <div class="error-icon">❌</div>
+        <h1 class="error-title">Access Denied</h1>
+        <p class="error-message">You do not have permission to view this page.</p>
+        <p class="error-message">Please check your credentials and try again.</p>
+        <p class="error-code">Error Code: 403</p>
+        <p id="countdown" class="countdown"></p>
+    </div>
+</body>
+</html>

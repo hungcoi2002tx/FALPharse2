@@ -1,0 +1,23 @@
+﻿@page
+@model FAL.FrontEnd.Pages.Auth.LoginModel
+@{
+    Layout = "_Layout";
+}
+
+<h2>Login</h2>
+<form method="post">
+    <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" asp-for="Username" class="form-control" required />
+    </div>
+    <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" asp-for="Password" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+</form>
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}

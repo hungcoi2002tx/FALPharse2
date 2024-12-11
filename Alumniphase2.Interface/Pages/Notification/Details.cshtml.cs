@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
-using Share.Data;
+using Share.DTO;
 
 namespace Alumniphase2.Interface.Pages.Notification
 {

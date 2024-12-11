@@ -1,0 +1,6 @@
+@Demo_Eos_Api_HostAddress = http://localhost:5206
+
+GET {{Demo_Eos_Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

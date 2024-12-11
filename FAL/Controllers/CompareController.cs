@@ -1,17 +1,17 @@
-﻿using Amazon.Rekognition.Model;
-using Amazon.Rekognition;
+﻿using Amazon.Rekognition;
 using Amazon.S3;
 using FAL.Services.IServices;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Share.SystemModel;
-using System.IO.Compression;
 using Amazon.SQS.Model;
 using Amazon.SQS;
-using Newtonsoft.Json;
 using Amazon.S3.Model;
-
+using System.Net;
+using Newtonsoft.Json;
+using Share.Constant;
+using Share.Utils;
+using Share.DTO;
+using Share.Model;
+using FAL.Utils;
 namespace FAL.Controllers
 {
 
@@ -28,17 +28,19 @@ namespace FAL.Controllers
         private readonly IAmazonRekognition _rekognitionClient;
         private readonly IAmazonS3 _s3Client;
         private readonly CustomLog _logger;
+        private readonly IDynamoDBService _dynamoDbService; 
         private readonly string SystermId = GlobalVarians.SystermId;
         private readonly IAmazonSQS _sqsClient;
 
-        public CompareController(CustomLog logger, IAmazonRekognition rekognitionClient, IAmazonSQS sqsClient, IAmazonS3 s3Service)
+        public CompareController(CustomLog logger, IAmazonRekognition rekognitionClient, IAmazonSQS sqsClient, IAmazonS3 s3Service, IDynamoDBService dynamoDbService)
         {
             _logger = logger;
             _rekognitionClient = rekognitionClient;
             _sqsClient = sqsClient;
             _s3Client = s3Service;
+            _dynamoDbService = dynamoDbService;
         }
-        [HttpPost("compare")]
+        [HttpPost("")]
         public async Task<IActionResult> CompareFaces([FromForm] CompareFaceRequest request)
         {
             if (request.SourceImage == null || request.TargetImage == null)
@@ -101,6 +103,94 @@ namespace FAL.Controllers
             }
         }
 
+        [HttpPost("result")]
+        public async Task<IActionResult> CompareFacesReturnResult([FromForm] CompareFaceRequest request)
+        {
+            var response = new CompareResponseResult();
+
+            try
+            {
+                var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
+                // Validate input
+                if (!IsValidRequest(request, out var validationMessage))
+                {
+                    return CreateResponse(null, validationMessage, HttpStatusCode.BadRequest);
+                }
+
+                // Read image data
+                byte[] sourceImageBytes = await request.SourceImage.ToByteArrayAsync();
+                byte[] targetImageBytes = await request.TargetImage.ToByteArrayAsync();
+
+                // Create and send CompareFacesRequest
+                var rekognitionResponse = await _rekognitionClient.CompareFacesAsync(new Amazon.Rekognition.Model.CompareFacesRequest
+                {
+                    SourceImage = new Amazon.Rekognition.Model.Image { Bytes = new MemoryStream(sourceImageBytes) },
+                    TargetImage = new Amazon.Rekognition.Model.Image { Bytes = new MemoryStream(targetImageBytes) },
+                    SimilarityThreshold = 0
+                });
+
+                // Process response
+                var maxSimilarity = rekognitionResponse.FaceMatches.Any()
+                    ? rekognitionResponse.FaceMatches.Max(match => match.Similarity)
+                    : (float?)null;
+
+                var message = maxSimilarity.HasValue && maxSimilarity >= 0
+                    ? "Faces matched successfully."
+                    : "No matching faces found.";
+                await _dynamoDbService.LogRequestAsync(systermId, RequestTypeEnum.CompareFace, RequestResultEnum.Success, System.Text.Json.JsonSerializer.Serialize(request));
+                return CreateResponse(maxSimilarity, message, HttpStatusCode.OK);
+                
+            }
+            catch (AmazonRekognitionException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests || ex.Message.Contains("Limit Exceeded"))
+            {
+                return CreateResponse(null, "Rate limit exceeded or request limit exceeded. Please try again later.", HttpStatusCode.TooManyRequests);
+            }
+            catch (AmazonRekognitionException ex)
+            {
+                var statusCode = ex.StatusCode != 0 ? ex.StatusCode : HttpStatusCode.InternalServerError;
+
+                return CreateResponse(
+                    null,
+                    $"AWS Rekognition error: {ex.Message}",
+                    statusCode
+                );
+            }
+            catch (Exception ex)
+            {
+                return CreateResponse(null, $"An error occurred: {ex.Message}", HttpStatusCode.InternalServerError);
+            }
+        }
+
+        private bool IsValidRequest(CompareFaceRequest request, out string message)
+        {
+            if (request.SourceImage == null || request.TargetImage == null)
+            {
+                message = "Both images must be provided.";
+                return false;
+            }
+
+            if (!IsImageFile(request.SourceImage) || !IsImageFile(request.TargetImage))
+            {
+                message = "Both files must be valid images.";
+                return false;
+            }
+
+            message = string.Empty;
+            return true;
+        }
+
+        private IActionResult CreateResponse(float? percentage, string message, HttpStatusCode statusCode)
+        {
+            var response = new CompareResponseResult
+            {
+                Percentage = percentage,
+                Message = message,
+            };
+
+            return StatusCode((int)statusCode, response);
+        }
+
+
         private bool IsImageFile(IFormFile file)
         {
             return file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
@@ -126,62 +216,6 @@ namespace FAL.Controllers
 
             // Construct and return the S3 URL
             return $"https://{putRequest.BucketName}.s3.amazonaws.com/{uniqueFileName}";
-        }
-
-
-
-        [HttpPost("upload-zip")]
-        public async Task<IActionResult> UploadAndProcessZipFile(IFormFile zipFile)
-        {
-            if (zipFile == null || zipFile.Length == 0)
-            {
-                return BadRequest("No ZIP file uploaded.");
-            }
-
-            if (!Path.GetExtension(zipFile.FileName).Equals(".zip", StringComparison.OrdinalIgnoreCase))
-            {
-                return BadRequest("Only ZIP files are supported.");
-            }
-
-            try
-            {
-                var tempZipFilePath = Path.GetTempFileName();
-                using (var stream = new FileStream(tempZipFilePath, FileMode.Create))
-                {
-                    await zipFile.CopyToAsync(stream);
-                }
-
-                var extractPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                Directory.CreateDirectory(extractPath);
-                ZipFile.ExtractToDirectory(tempZipFilePath, extractPath);
-
-                var userTrainList = new List<UserTrainDTO>();
-                var imageFiles = Directory.GetFiles(extractPath)
-                    .Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
-                                f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
-                                f.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase));
-
-                foreach (var imageFile in imageFiles)
-                {
-                    var fileName = Path.GetFileNameWithoutExtension(imageFile);
-                    var imageName = Path.GetFileName(imageFile);
-
-                    userTrainList.Add(new UserTrainDTO
-                    {
-                        UserId = fileName,
-                        ImageName = imageName
-                    });
-                }
-
-                System.IO.File.Delete(tempZipFilePath);
-                Directory.Delete(extractPath, true);
-
-                return Ok(userTrainList);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error processing the ZIP file: {ex.Message}");
-            }
         }
 
         private async Task<byte[]> ConvertToBytes(IFormFile file)

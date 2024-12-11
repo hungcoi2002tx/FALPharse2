@@ -1,7 +1,9 @@
-﻿using EOSServerDemo.Models;
+﻿using AuthenExamCompareFaceExam.DAO;
+using AuthenExamCompareFaceExam.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace EOSServerDemo.Controllers
 {
@@ -9,33 +11,28 @@ namespace EOSServerDemo.Controllers
     [ApiController]
     public class CompareFaceController : ControllerBase
     {
-        private readonly CompareFaceContext _faceCompare;
+        private readonly string _sourceImageDirectory;
+        private readonly string _dataDirectory;  // Đường dẫn lưu ảnh mục tiêu
+        private readonly ExamDAO<EOSComparisonResult> _examDao;
 
-        public CompareFaceController(CompareFaceContext faceCompare)
+        public CompareFaceController(IConfiguration configuration)
         {
-            _faceCompare = faceCompare;
+            _sourceImageDirectory = configuration["FilePaths:SourceImageDirectory"] ?? throw new Exception("Chưa config SourceImageDirectory");
+            _dataDirectory = configuration["FilePaths:DataDirectory"] ?? throw new Exception("Chưa config DataDirectory");  // Lấy cấu hình cho target image directory
+            _examDao = new ExamDAO<EOSComparisonResult>(_dataDirectory);
         }
 
         [HttpPost("register-compare")]
         public async Task<IActionResult> RegisterCompare(string studentCode, [FromForm] IFormFile targetImage)
         {
-            // Lấy đường dẫn ảnh thẻ từ cơ sở dữ liệu
-            var result = await GetSourceImagePathAsync(studentCode);
+            // Lấy đường dẫn ảnh thẻ dựa vào mã sinh viên
+            string sourceImagePath = GetSourceImagePath(studentCode);
 
-            if (result == null)
-            {
-                return BadRequest("Khong co anh source.");
-            }
-            string? sourceImagePath = result.ImagePath;
-
-            // Kiểm tra nếu ảnh thẻ không tồn tại
+            // Kiểm tra nếu ảnh thẻ hoặc ảnh mục tiêu không tồn tại
             if (string.IsNullOrEmpty(sourceImagePath) || !System.IO.File.Exists(sourceImagePath) || targetImage == null)
             {
                 return BadRequest("Both source and target images are required.");
             }
-
-            // Chuyển ảnh từ đường dẫn thành IFormFile
-            IFormFile sourceImage = ConvertToIFormFile(sourceImagePath);
 
             // Tạo file tạm cho ảnh thẻ và ảnh mục tiêu
             var tempSourceImagePath = Path.GetTempFileName();
@@ -43,19 +40,31 @@ namespace EOSServerDemo.Controllers
 
             try
             {
-                // Lưu file ảnh tạm thời
-                using (var sourceStream = new FileStream(tempSourceImagePath, FileMode.Create))
+                // Lưu file ảnh thẻ tạm thời
+                System.IO.File.Copy(sourceImagePath, tempSourceImagePath, overwrite: true);
+
+                string examDate = DateTime.Now.ToString("yyyy-MM-dd");
+                int shift = 1; // TODO: thêm logic xử lý số ca thi (theo thời gian)
+
+                // Lưu file ảnh mục tiêu vào thư mục đã cấu hình
+                string targetImagePath = Path.Combine(_dataDirectory, examDate, $"shift{shift}", "Images", $"{studentCode}.jpg");
+
+                // Tạo thư mục nếu chưa tồn tại
+                string directoryPath = Path.GetDirectoryName(targetImagePath);
+                if (!Directory.Exists(directoryPath))
                 {
-                    await sourceImage.CopyToAsync(sourceStream);
+                    Directory.CreateDirectory(directoryPath);
                 }
-                using (var targetStream = new FileStream(tempTargetImagePath, FileMode.Create))
+
+                using (var targetStream = new FileStream(targetImagePath, FileMode.Create))
                 {
                     await targetImage.CopyToAsync(targetStream);
                 }
 
-                var resultId = await AddResultAsync(result.SourceId, "Chưa hoàn thành", 0.0f, "Đang so sánh ảnh, đợi trong giây lát");
-                // Gọi hàm CompareFaces để so sánh ảnh
-                await FaceCompare.CompareFaces(tempSourceImagePath, tempTargetImagePath, resultId);
+
+                // Giả lập hàm để thêm kết quả vào danh sách chờ và gọi hàm CompareFaces để so sánh ảnh
+                var resultId = await AddResultAsync(studentCode, "Chưa hoàn thành", 0.0f, "Đang so sánh ảnh, đợi trong giây lát");
+                await FaceCompare.CompareFaces(tempSourceImagePath, targetImagePath, resultId);
 
                 return Ok();
             }
@@ -70,40 +79,43 @@ namespace EOSServerDemo.Controllers
                 {
                     System.IO.File.Delete(tempSourceImagePath);
                 }
-                if (System.IO.File.Exists(tempTargetImagePath))
-                {
-                    System.IO.File.Delete(tempTargetImagePath);
-                }
             }
         }
 
-
-        private async Task<int> AddResultAsync(int sourceId, string status, float confidence, string message)
+        private async Task<int> AddResultAsync(string studentCode, string status, float confidence, string message)
         {
-            var result = new Result
+            var result = new EOSComparisonResult
             {
-                SourceId = sourceId,
+                Id = GenerateUniqueId(), // Tạo ID duy nhất cho đối tượng
+                StudentCode = studentCode,
                 Time = DateTime.Now,
-                Status = status,
+                Status = ResultStatus.PROCESSING, // Đặt trạng thái ban đầu là đang xử lý
                 Confidence = confidence,
+                Note = "Đang xử lý so sánh",
                 Message = message
             };
-            await _faceCompare.Results.AddAsync(result);
-            await _faceCompare.SaveChangesAsync();
 
-            return result.ResultId;
+            // Ghi đối tượng vào file với ngày thi và ca thi xác định
+            string examDate = DateTime.Now.ToString("yyyy-MM-dd");
+            int shift = 1; // TODO: thêm logic xử lý số ca thi (theo thời gian)
+            _examDao.Add(examDate, shift, result);
+
+            return result.Id;
         }
 
-        private async Task<Source?> GetSourceImagePathAsync(string studentCode)
+        // Hàm phụ để tạo ID duy nhất
+        private int GenerateUniqueId()
         {
-            var result = await _faceCompare.Sources.FirstOrDefaultAsync(s => s.StudentCode == studentCode);
-            return result;
+            var ticksPart = (int)(DateTime.Now.Ticks % 100000000); // Lấy 8 chữ số cuối của Ticks
+            var randomPart = new Random().Next(1000, 9999); // Tạo số ngẫu nhiên từ 1000 đến 9999
+            return ticksPart + randomPart; // Kết hợp ticksPart và randomPart
         }
 
-        private IFormFile ConvertToIFormFile(string filePath)
+        private string GetSourceImagePath(string studentCode)
         {
-            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            return new FormFile(fileStream, 0, fileStream.Length, "sourceImage", Path.GetFileName(filePath));
+            // Trả về đường dẫn file dựa trên mã sinh viên
+            string filePath = Path.Combine(_sourceImageDirectory, $"{studentCode}.jpg");
+            return System.IO.File.Exists(filePath) ? filePath : null;
         }
     }
 }

@@ -30,13 +30,13 @@ namespace FAL.Utils
             // Thêm các claims cho token, bao gồm cả systemName
             var claims = new[]
             {
-        new Claim(JwtRegisteredClaimNames.Sub, username),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique token ID
-        new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64), // Thời điểm phát hành token
-        new Claim("roleId", roleId), // Thêm RoleId vào claims
-        new Claim("systemName", systemName), // Thêm SystemName vào claims
-        new Claim(ClaimTypes.Name, username) // Đặt username như tên người dùng
-    };
+            new Claim(JwtRegisteredClaimNames.Sub, username),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique token ID
+            new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64), // Thời điểm phát hành token
+            new Claim(ClaimTypes.Role, roleId), // Thêm RoleId vào claims
+            new Claim("systemName", systemName), // Thêm SystemName vào claims
+            new Claim(ClaimTypes.Name, username) // Đặt username như tên người dùng
+            };
 
             // Lấy thời gian hết hạn từ cấu hình (nếu có)
             var tokenExpiryMinutes = int.TryParse(_configuration["Jwt:ExpiryMinutes"], out int expiry) ? expiry : 30;

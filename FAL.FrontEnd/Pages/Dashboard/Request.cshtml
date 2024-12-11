@@ -1,0 +1,48 @@
+﻿@page
+@model Dashboard.RequestModel
+@{
+    ViewData["Title"] = "Request Stats";
+}
+<div class="container">
+    <h1 class="mb-4">Request Stats</h1>
+    @if (Model.RequestStats != null)
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Overall Statistics</h5>
+                <p class="card-text"><strong>Total Success Requests:</strong> @Model.RequestStats.TotalSuccess</p>
+                <p class="card-text"><strong>Total Failed Requests:</strong> @Model.RequestStats.TotalFailed</p>
+            </div>
+        </div>
+
+        <!-- Request Types Table -->
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Request Type</th>
+                    <th>Total Requests</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var requestType in Model.AllRequestTypes)
+                {
+                    var requests = Model.RequestStats.RequestData.FirstOrDefault(r => r.RequestType == requestType);
+                    <tr>
+                        <td>
+                            <a asp-page="./RequestDetails" asp-route-requestType="@requestType">
+                                @requestType
+                            </a>
+                        </td>
+                        <td>@(requests?.Requests?.Count ?? 0) requests total</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <a asp-page="./Main" class="btn btn-secondary">Back to Dashboard</a>
+    }
+    else
+    {
+        <div class="alert alert-danger">Failed to load Request Stats.</div>
+        <a asp-page="./Main" class="btn btn-secondary">Back to Dashboard</a>
+    }
+</div>

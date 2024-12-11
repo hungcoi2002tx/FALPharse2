@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Newtonsoft.Json.Linq;
-using Share.SystemModel;
+using Share.Constant;
 using System.Reflection.Metadata.Ecma335;
 
 namespace FAL.Utils
@@ -25,7 +25,7 @@ namespace FAL.Utils
         {
             try
             {
-               return $"{systemId}-result";
+               return GlobalVarians.RESULT_INFO_TABLE_DYNAMODB;
             }
             catch (Exception)
             {

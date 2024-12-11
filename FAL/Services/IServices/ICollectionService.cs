@@ -1,4 +1,5 @@
 ﻿using Amazon.Rekognition.Model;
+using Share.DTO;
 
 namespace FAL.Services.IServices
 {
@@ -8,6 +9,7 @@ namespace FAL.Services.IServices
         Task<bool> IsCollectionExistAsync(string systermId);
         Task<bool> DeleteByFaceIdAsync(string faceId, string systermId);
         Task<bool> DisassociatedFaceAsync(string systermId, string faceId, string userId);
+        Task DeleteUserFromRekognitionCollectionAsync(string systemId, string userId);
         Task<bool> CreateCollectionAsync(string systermId);
         Task<IndexFacesResponse> IndexFaceAsync(string systermId, string bucketName, string imageName, string key = null);
         Task<IndexFacesResponse> IndexFaceByFileAsync(Image file, string systermId, string key = null);
@@ -20,5 +22,7 @@ namespace FAL.Services.IServices
         Task<List<Face>> GetFacesAsync(string systermId);
         Task<List<string>> GetCollectionAsync(string systermId);
         Task<bool> CreateCollectionByIdAsync(string collectionId);
+        Task<bool> DeleteFromCollectionAsync(string userId, string systermId);
+        Task<CollectionChartStats> GetCollectionChartStats(string systermId, string year);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Amazon.Rekognition.Model;
+using Microsoft.AspNetCore.Http;
 
 namespace FAL.Utils
 {
@@ -165,6 +166,72 @@ namespace FAL.Utils
 
                 throw;
             }
+        }
+
+        public static async Task<string> SaveZipToTemporaryLocation(IFormFile zipFile)
+        {
+            var tempZipFilePath = Path.GetTempFileName();
+            using (var stream = new FileStream(tempZipFilePath, FileMode.Create))
+            {
+                await zipFile.CopyToAsync(stream);
+            }
+            return tempZipFilePath;
+        }
+
+        public static bool IsValidZipFile(IFormFile zipFile, out string errorMessage)
+        {
+            if (zipFile == null || zipFile.Length == 0)
+            {
+                errorMessage = "No ZIP file uploaded.";
+                return false;
+            }
+
+            if (!Path.GetExtension(zipFile.FileName).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                errorMessage = "Only ZIP files are supported.";
+                return false;
+            }
+
+            errorMessage = string.Empty;
+            return true;
+        }
+
+        public static List<string> GetImageFilesFromDirectory(string directoryPath)
+        {
+            return Directory.GetFiles(directoryPath)
+                .Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+                            f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                            f.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        public static void CleanupTemporaryFiles(string tempZipFilePath, string extractPath)
+        {
+            if (System.IO.File.Exists(tempZipFilePath))
+            {
+                System.IO.File.Delete(tempZipFilePath);
+            }
+
+            if (Directory.Exists(extractPath))
+            {
+                Directory.Delete(extractPath, true);
+            }
+        }
+
+        /// <summary>
+        /// Chuyển đổi IFormFile thành mảng byte.
+        /// </summary>
+        /// <param name="file">Tệp tin cần chuyển đổi.</param>
+        /// <returns>Một mảng byte từ nội dung của tệp tin.</returns>
+        public static async Task<byte[]> ToByteArrayAsync(this IFormFile file)
+        {
+            if (file == null)
+            {
+                return null;
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return stream.ToArray();
         }
     }
 }

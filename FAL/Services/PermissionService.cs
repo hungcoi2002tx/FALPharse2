@@ -1,6 +1,6 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
-using FAL.Models;
 using FAL.Services.IServices;
+using Share.Model;
 using System.Security.Claims;
 
 namespace FAL.Services
@@ -21,16 +21,13 @@ namespace FAL.Services
                 return false;
             }
             // Lấy roleId từ custom claim "RoleId"
-            var roleIdClaim = user.FindFirst("RoleId");
+            var roleIdClaim = user.FindFirst(ClaimTypes.Role);
 
-            if (roleIdClaim == null)
+            if (!int.TryParse(roleIdClaim.Value, out var roleId))
             {
-                // Không tìm thấy RoleId trong token
+                // Invalid RoleId value
                 return false;
             }
-
-            // Chuyển đổi RoleId từ claim thành int
-            var roleId = int.Parse(roleIdClaim.Value);
 
             // Tìm Role từ DynamoDB
             var role = _dbContext.LoadAsync<Role>(roleId).Result;

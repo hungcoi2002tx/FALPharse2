@@ -1,8 +1,8 @@
 ﻿using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
-using FAL.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Share.Model;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -12,11 +12,11 @@ namespace FAL.Controllers
     [ApiController]
     public class RolesController : ControllerBase
     {
-        private readonly DynamoDBContext _dbContext;
+        private readonly IDynamoDBContext _dbContext;
 
-        public RolesController(IAmazonDynamoDB dynamoDbClient)
+        public RolesController(IDynamoDBContext dbContext)
         {
-            _dbContext = new DynamoDBContext(dynamoDbClient);
+            _dbContext = dbContext;
         }
 
         // GET: api/roles
@@ -32,11 +32,11 @@ namespace FAL.Controllers
         // GET: api/roles/{id}
         [Authorize]
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetRoleById(int id) // Thay đổi thành int id
+        public async Task<IActionResult> GetRoleById(int id) // Changed to int id
         {
             var role = await _dbContext.LoadAsync<Role>(id);
             if (role == null)
-                return NotFound("Role không tìm thấy!");
+                return NotFound("Role not found!");
 
             return Ok(role);
         }
@@ -48,22 +48,22 @@ namespace FAL.Controllers
         {
             var existingRole = await _dbContext.LoadAsync<Role>(role.RoleId);
             if (existingRole != null)
-                return BadRequest("Role đã tồn tại!");
+                return BadRequest("Role already exists!");
 
             await _dbContext.SaveAsync(role);
-            return Ok(role); // Tạo mới một role
+            return Ok(role); // Create a new role
         }
 
         // PUT: api/roles/{id}
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateRole(int id, [FromBody] Role updatedRole) // Thay đổi thành int id
+        public async Task<IActionResult> UpdateRole(int id, [FromBody] Role updatedRole) // Changed to int id
         {
             var existingRole = await _dbContext.LoadAsync<Role>(id);
             if (existingRole == null)
-                return NotFound("Role không tìm thấy để update!");
+                return NotFound("Role not found for update!");
 
-            // Cập nhật role
+            // Update role
             existingRole.RoleName = updatedRole.RoleName;
             existingRole.Permissions = updatedRole.Permissions;
 
@@ -74,14 +74,14 @@ namespace FAL.Controllers
         // DELETE: api/roles/{id}
         [Authorize]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRole(int id) // Thay đổi thành int id
+        public async Task<IActionResult> DeleteRole(int id) // Changed to int id
         {
             var role = await _dbContext.LoadAsync<Role>(id);
             if (role == null)
-                return NotFound("Role không tìm thấy để xóa!");
+                return NotFound("Role not found for deletion!");
 
             await _dbContext.DeleteAsync(role);
-            return Ok("Đã xóa role!");
+            return Ok("Role deleted!");
         }
     }
 }

@@ -5,7 +5,10 @@ using FAL.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Share.SystemModel;
+using Share.Constant;
+using Share.DTO;
+using Share.Model;
+using Share.Utils;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
@@ -18,20 +21,22 @@ namespace FAL.Controllers
     {
         private readonly IS3Service _s3Service;
         private readonly ICollectionService _collectionService;
+        private readonly IDynamoDBService _dynamoDbService;
         private readonly CustomLog _logger;
         private readonly string SystermId = GlobalVarians.SystermId;
 
-        public DetectController(IAmazonS3 s3Client, CustomLog logger, ICollectionService collectionService, IS3Service s3Service)
+        public DetectController(CustomLog logger, ICollectionService collectionService, IS3Service s3Service, IDynamoDBService dynamoDbService)
         {
             _logger = logger;
             _collectionService = collectionService;
             _s3Service = s3Service;
+            _dynamoDbService = dynamoDbService;
         }
 
 
         [Authorize]
         [HttpPost("")]
-        public async Task<IActionResult> DetectAsync(IFormFile file)
+        public async Task<IActionResult> DetectAsync(IFormFile file,string mediaId)
         {
             try
             {
@@ -40,10 +45,15 @@ namespace FAL.Controllers
                 file.ValidFile();
                 #endregion
                 #region add to S3
-                var bucketExists = await _s3Service.AddBudgetAsync(systermId);
+                var bucketExists = await _s3Service.IsAddBudgetAsync(systermId);
                 if (!bucketExists) return NotFound($"Bucket {systermId} does not exist.");
                 var fileName = Guid.NewGuid().ToString();
-                var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging);
+                var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging,mediaId);
+                await _dynamoDbService.LogRequestAsync(systermId, RequestTypeEnum.Detect,RequestResultEnum.Success,JsonSerializer.Serialize(new
+                {
+                    file = file,
+                    mediaId = mediaId,
+                }));
                 #endregion
                 return Ok(new ResultResponse
                 {
@@ -82,7 +92,7 @@ namespace FAL.Controllers
                 {
                     return BadRequest("No files received from the upload.");
                 }
-                var bucketExists = await _s3Service.AddBudgetAsync(systermId);
+                var bucketExists = await _s3Service.IsAddBudgetAsync(systermId);
                 if (!bucketExists) return NotFound($"Bucket {systermId} does not exist.");
                 foreach (var item in files)
                 {
@@ -91,7 +101,7 @@ namespace FAL.Controllers
                 foreach (var file in files)
                 {
                     var fileName = Guid.NewGuid().ToString();
-                    var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging);
+                    var valueS3Return = await _s3Service.AddFileToS3Async(file, fileName, systermId, TypeOfRequest.Tagging,fileName);
                 }
                 return Ok("Files uploaded successfully.");
             }
