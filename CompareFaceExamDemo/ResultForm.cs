@@ -239,6 +239,9 @@ namespace AuthenExamCompareFace
                     "Time" => sortDescending
                         ? results.OrderByDescending(r => r.Time).ToList()
                         : results.OrderBy(r => r.Time).ToList(),
+                    "Status" => sortDescending
+                        ? results.OrderByDescending(r => r.Status).ToList()
+                        : results.OrderBy(r => r.Status).ToList(),
                     _ => results // Mặc định không sắp xếp nếu trường không hợp lệ
                 };
             }
