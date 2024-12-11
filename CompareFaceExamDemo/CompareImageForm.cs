@@ -1,8 +1,8 @@
-﻿using AuthenExamCompareFaceExam.Dtos;
-using AuthenExamCompareFaceExam.ExternalService;
-using AuthenExamCompareFaceExam.ExternalService.Recognition;
-using AuthenExamCompareFaceExam.Models;
-using AuthenExamCompareFaceExam.Utils;
+﻿using AuthenExamCompareFace.Dtos;
+using AuthenExamCompareFace.ExternalService;
+using AuthenExamCompareFace.ExternalService.Recognition;
+using AuthenExamCompareFace.Models;
+using AuthenExamCompareFace.Utils;
 using RestSharp;
 using System;
 using System.Collections.Concurrent;
@@ -19,9 +19,9 @@ using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolBar;
 
-namespace AuthenExamCompareFaceExam
+namespace AuthenExamCompareFace
 {
-    public partial class ImageCaptureForm : Form
+    public partial class CompareImageForm : Form
     {
         private CancellationTokenSource _cancellationTokenSource;
         private CompareFaceAdapterRecognitionService _compareFaceService;
@@ -32,7 +32,7 @@ namespace AuthenExamCompareFaceExam
         private bool _isPaused = false;
         private ManualResetEventSlim _pauseEvent = new ManualResetEventSlim(true);
 
-        public ImageCaptureForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
+        public CompareImageForm(CompareFaceAdapterRecognitionService compareFaceService, FaceCompareService faceCompareService)
         {
             InitializeComponent();
             _compareFaceService = compareFaceService;
@@ -103,7 +103,7 @@ namespace AuthenExamCompareFaceExam
                 var sourceFile = Config.GetSetting();
                 var urlSource = sourceFile.DirectoryImageSource;
                 string[] files = Directory.GetFiles(folderPath);
-                Regex regex = new Regex(@"^[a-zA-Z]{2}\d{6}\.(jpg|png)$");
+                Regex regex = new Regex(@"^[a-zA-Z]{2}\d*\.(jpg|png)$");
                 List<ResultCompareFaceDto> listDataCompareGetData = new List<ResultCompareFaceDto>();
 
 
@@ -141,7 +141,7 @@ namespace AuthenExamCompareFaceExam
 
                 if (listDataCompare.Count == 0)
                 {
-                    MessageBox.Show("Không tìm thấy file nào đáp ứng định dạng trong thư mục!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("No files matching the format were found in the directory!", "Notification", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
 
             }
@@ -212,10 +212,10 @@ namespace AuthenExamCompareFaceExam
                 // Xử lý xuất kết quả
                 string folderPath = txtFolderPath.Text;
                 string fileBaseName = DateTime.Now.ToString("ddMMyyyy_HHmmss_fff") + "-" + Path.GetFileName(folderPath);
-                string filePathExcel = Path.Combine(folderPath, fileBaseName + ".xlsx");
+                //string filePathExcel = Path.Combine(folderPath, fileBaseName + ".xlsx");
                 string filePathTxt = Path.Combine(folderPath, fileBaseName + ".txt");
 
-                ExcelExporter.ExportListToExcel(listDataCompare, filePathExcel);
+                //ExcelExporter.ExportListToExcel(listDataCompare, filePathExcel);
 
                 var resultCompareFaceTxtDtos = GetResultCompareFaceTxtDto(listDataCompare, maxDegreeOfParallelism, cancellationToken)
                     .OrderBy(r => r.Id)
@@ -224,12 +224,19 @@ namespace AuthenExamCompareFaceExam
                 dataGridViewImages.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.DisplayedCells);
 
                 // Hiển thị thông báo thành công
+                //MessageBox.Show(
+                //    $"Kết quả đã được lưu:\n\nExcel: {filePathExcel}\n\nTxt: {filePathTxt}",
+                //    "Thông báo",
+                //    MessageBoxButtons.OK,
+                //    MessageBoxIcon.Information
+                //);
+
                 MessageBox.Show(
-                    $"Kết quả đã được lưu:\n\nExcel: {filePathExcel}\n\nTxt: {filePathTxt}",
-                    "Thông báo",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information
-                );
+                  $"Kết quả đã được lưu:\n\nTxt: {filePathTxt}, Bạn có thể sử dụng kết quả txt ở tab result trong ứng dụng!",
+                  "Thông báo",
+                  MessageBoxButtons.OK,
+                  MessageBoxIcon.Information
+              );
             }
             catch (OperationCanceledException)
             {
@@ -414,6 +421,19 @@ namespace AuthenExamCompareFaceExam
                                             dataGridViewImages.Refresh();
                                         }));
                                         await Task.Delay(1000, cancellationToken); // Tôn trọng token khi trì hoãn
+                                    }
+                                    else if (response.Status == 413)
+                                    {
+                                        retryCount++;
+                                        itemCompare.Message = response.Status + " - " + response.Message;
+
+                                        int rowIndex = listDataCompare.IndexOf(itemCompare);
+                                        dataGridViewImages.Invoke(new Action(() =>
+                                        {
+                                            dataGridViewImages.Rows[rowIndex].DefaultCellStyle.BackColor = Color.LightYellow;
+                                            dataGridViewImages.Refresh();
+                                        }));
+                                        break;
                                     }
                                     else
                                     {

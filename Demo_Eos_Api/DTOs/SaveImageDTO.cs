@@ -1,4 +1,4 @@
-﻿namespace AuthenExamReceiveData.DTOs
+﻿namespace AuthenExamReceiveData.Dtos
 {
     public class SaveImageDTO
     {

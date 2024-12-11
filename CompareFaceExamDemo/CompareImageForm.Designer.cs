@@ -1,6 +1,6 @@
-﻿namespace AuthenExamCompareFaceExam
+﻿namespace AuthenExamCompareFace
 {
-    partial class ImageCaptureForm
+    partial class CompareImageForm
     {
         private System.ComponentModel.IContainer components = null;
         private System.Windows.Forms.Button btnSelectFolder;
@@ -128,7 +128,7 @@
             btnStop.UseVisualStyleBackColor = true;
             btnStop.Click += btnStop_Click;
             // 
-            // ImageCaptureForm
+            // CompareImageForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -143,7 +143,7 @@
             Controls.Add(btnSend);
             Controls.Add(btnSelectFolder);
             Margin = new Padding(4, 3, 4, 3);
-            Name = "ImageCaptureForm";
+            Name = "CompareImageForm";
             Text = "Image Viewer with Preview";
             Load += ImageCaptureForm_Load;
             ((System.ComponentModel.ISupportInitialize)dataGridViewImages).EndInit();

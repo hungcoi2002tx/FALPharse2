@@ -2,9 +2,9 @@
 using System.Drawing;
 
 
-namespace AuthenExamReceiveData.Utilities
+namespace AuthenExamReceiveData.Utils
 {
-    public static class Utility
+    public static class ImageUtils
     {
 
         /// <summary>

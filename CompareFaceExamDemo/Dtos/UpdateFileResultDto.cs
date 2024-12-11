@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AuthenExamCompareFaceExam.Dtos
+namespace AuthenExamCompareFace.Dtos
 {
-    public class UpdateFileResult
+    public class UpdateFileResultDto
     {
         public string? FilePath { get; set; }
         public string? Message { get; set; }

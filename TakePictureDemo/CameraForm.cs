@@ -10,7 +10,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Windows.Forms;
-using AuthenExamTakePicture.Models.DTOs;
 using Newtonsoft.Json;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 

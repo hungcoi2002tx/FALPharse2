@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AuthenExamCompareFaceExam.ExternalService.Recognition
+namespace AuthenExamCompareFace.ExternalService.Recognition
 {
     public class RecognitionRestClient : IRecognitionRestClient, IDisposable
     {

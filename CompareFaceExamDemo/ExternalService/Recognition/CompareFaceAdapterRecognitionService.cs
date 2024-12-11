@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using AuthenExamCompareFace.Models;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using RestSharp;
 using System;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AuthenExamCompareFaceExam.ExternalService.Recognition
+namespace AuthenExamCompareFace.ExternalService.Recognition
 {
     public class CompareFaceAdapterRecognitionService : BaseRecognitionServices<CompareFaceAdapterRecognitionService>
     {
