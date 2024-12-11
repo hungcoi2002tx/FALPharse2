@@ -69,6 +69,7 @@ namespace FAL.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] Account user)
         {
+            // TODO: kha sửa add password BCript
             var existingUser = await _dbContext.LoadAsync<Account>(user.Username);
             if (existingUser != null)
                 return BadRequest("User already exists!");
