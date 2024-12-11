@@ -11,6 +11,7 @@ using Amazon.DynamoDBv2;
 using System.ComponentModel.DataAnnotations;
 using FAL.Utils;
 using Share.Model;
+using System;
 
 namespace FAL.Controllers
 {
@@ -44,6 +45,10 @@ namespace FAL.Controllers
             if (user == null)
             {
                 return Unauthorized(new { status = false, message = "Username does not exist." });
+            }            
+            if (!IsActive(user))
+            {
+                return Unauthorized(new { status = false, message = $"Your account has not been approved. Status: {user.Status}." });
             }
 
             // Check the password
@@ -64,6 +69,11 @@ namespace FAL.Controllers
                 systemName = user.SystemName,
                 expiresIn
             });
+        }
+
+        private static bool IsActive(Account account)
+        {
+            return string.Equals(account.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase);
         }
 
         private bool IsValidLoginModel(LoginModel loginModel)
