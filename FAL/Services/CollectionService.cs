@@ -638,5 +638,39 @@ namespace FAL.Services
             }
         }
 
+        public async Task<bool> IsUserExistByCollection(string collectionId, string userId)
+        {
+            try
+            {
+                var request = new ListFacesRequest
+                {
+                    CollectionId = collectionId,
+                    MaxResults = 1000  // Adjust as needed
+                };
+
+                ListFacesResponse response;
+                do
+                {
+                    response = await _rekognitionClient.ListFacesAsync(request);
+
+                    // Check if userId exists in the collection
+                    if (response.Faces.Any(face => face.ExternalImageId == userId))
+                    {
+                        return true;
+                    }
+
+                    // Update pagination token
+                    request.NextToken = response.NextToken;
+                }
+                while (!string.IsNullOrEmpty(response.NextToken));
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

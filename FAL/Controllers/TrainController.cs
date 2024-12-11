@@ -618,8 +618,9 @@ namespace FAL.Controllers
             {
                 #region check exit UserId
                 var isExitUser = await _dynamoService.IsExistUserAsync(systermId, userId);
+                var isExistUserInCollection = await _collectionService.IsUserExistByCollection(systermId, userId);
                 #endregion
-                if (!isExitUser)
+                if (!isExitUser && !isExistUserInCollection)
                 {
                     await _collectionService.CreateNewUserAsync(systermId, userId);
                 }
