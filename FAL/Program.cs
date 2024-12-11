@@ -76,7 +76,6 @@ namespace FAL
             builder.Services.AddSingleton<CustomLog>(new CustomLog(pathFileLog));
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
             builder.Services.AddSingleton<IS3Service, S3Service>();
-            builder.Services.AddSingleton<IPermissionService, PermissionService>();
             builder.Services.AddSingleton<DefaultDataInitializer>();
             builder.Services.AddSingleton<CustomAuthorizationFilter>();
 

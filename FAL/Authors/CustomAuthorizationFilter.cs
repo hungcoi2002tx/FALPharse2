@@ -11,13 +11,11 @@ namespace FAL.Authors
 {
     public class CustomAuthorizationFilter : IAuthorizationFilter
     {
-        private const string DEACTIVE = "DEACTIVE";
-        private readonly IPermissionService _permissionService;
+        private const string ACTIVE = "ACTIVE";
         private readonly IDynamoDBContext _dbContext;
 
-        public CustomAuthorizationFilter(IPermissionService permissionService, IDynamoDBContext dbContext)
+        public CustomAuthorizationFilter(IDynamoDBContext dbContext)
         {
-            _permissionService = permissionService;
             _dbContext = dbContext;
         }
 
@@ -32,7 +30,7 @@ namespace FAL.Authors
             }
 
             // Check if the user is authenticated
-            if (!context.HttpContext.User.Identity.IsAuthenticated)
+            if (context.HttpContext.User.Identity == null || !context.HttpContext.User.Identity.IsAuthenticated)
             {
                 context.Result = new JsonResult(new { message = "Unauthorized: You must be logged in." })
                 {
@@ -60,9 +58,9 @@ namespace FAL.Authors
                 return;
             }
 
-            if (string.Equals(account.Status, DEACTIVE, StringComparison.OrdinalIgnoreCase))
+            if (!IsActive(account))
             {
-                context.Result = new JsonResult(new { message = "Your account has not been approved" })
+                context.Result = new JsonResult(new { message = $"Your account has not been approved. Status: {account.Status}." })
                 {
                     StatusCode = StatusCodes.Status403Forbidden
                 };
@@ -70,7 +68,7 @@ namespace FAL.Authors
             }
 
             // Check permissions
-            if (!_permissionService.HasPermission(user, resource, httpMethod))
+            if (!HasPermission(account, resource, httpMethod))
             {
                 context.Result = new JsonResult(new { message = "You do not have permission to access this feature." })
                 {
@@ -79,6 +77,31 @@ namespace FAL.Authors
                 return;
             }
 
+        }
+
+        private static bool IsActive(Account account)
+        {
+            return string.Equals(account.Status, ACTIVE, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool HasPermission(Account account, string? resource, string? action)
+        {
+            if (resource == null || action == null)
+            {
+                return false;
+            }
+            // Lấy roleId từ custom claim "RoleId"
+
+            // Tìm Role từ DynamoDB
+            var role = _dbContext.LoadAsync<Role>(account.RoleId).Result;
+
+            if (role == null) return false;
+
+            // Kiểm tra xem role có quyền trên resource và action cụ thể
+            var hasPermission = role.Permissions.Any(p =>
+                p.Resource == resource && p.Actions.Contains(action));
+
+            return hasPermission;
         }
     }
 }
