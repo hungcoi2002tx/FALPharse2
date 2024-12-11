@@ -12,6 +12,9 @@ using System.ComponentModel.DataAnnotations;
 using FAL.Utils;
 using Share.Model;
 using System;
+using System.Linq.Expressions;
+using Amazon.DynamoDBv2.DocumentModel;
+using FAL.Services.IServices;
 
 namespace FAL.Controllers
 {
@@ -22,12 +25,14 @@ namespace FAL.Controllers
         private readonly IConfiguration _configuration;
         private readonly IDynamoDBContext _dbContext;
         private readonly JwtTokenGenerator _jwtTokenGenerator;
+        private readonly ICollectionService _collectionService;
 
-        public AuthController(IConfiguration configuration, IDynamoDBContext dbContext)
+        public AuthController(IConfiguration configuration, IDynamoDBContext dbContext, ICollectionService collectionService)
         {
             _configuration = configuration;
             _dbContext = dbContext;
             _jwtTokenGenerator = new JwtTokenGenerator(configuration);
+            _collectionService = collectionService;
         }
 
         [AllowAnonymous]
@@ -45,7 +50,7 @@ namespace FAL.Controllers
             if (user == null)
             {
                 return Unauthorized(new { status = false, message = "Username does not exist." });
-            }            
+            }
             if (!IsActive(user))
             {
                 return Unauthorized(new { status = false, message = $"Your account has not been approved. Status: {user.Status}." });
@@ -113,34 +118,75 @@ namespace FAL.Controllers
                 return BadRequest(validationMessage);
             }
 
-            // Check if the user already exists
+            // Check if the user already exists by username
             var existingUser = await _dbContext.LoadAsync<Account>(userDto.Username);
             if (existingUser != null)
             {
                 return Conflict("Username already exists.");
             }
 
-            // Hash the password
-            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
+            // Check if the SystemName already exists (using ScanAsync)
+            var scanResult = await _dbContext.ScanAsync<Account>(
+                           [
+                               new("SystemName", ScanOperator.Equal, userDto.SystemName)
+                           ]).GetRemainingAsync();
 
-            // Create a new User object
-            var user = new Account
+            if (scanResult.Count != 0)
             {
-                Username = userDto.Username,
-                Password = hashedPassword,
-                Email = userDto.Email,
-                RoleId = 2, // Default RoleId is 2 for staff
-                SystemName = userDto.SystemName,
-                WebhookUrl = userDto.WebhookUrl,
-                WebhookSecretKey = userDto.WebhookSecretKey,
-                Status = "Deactive" // Default status
-            };
+                return Conflict("SystemName already exists.");
+            }
 
-            // Save the user to DynamoDB
-            await _dbContext.SaveAsync(user);
+            // Check if collection already exists with the same SystemName
+            var collectionExists = await _collectionService.IsCollectionExistAsync(userDto.SystemName);
+            if (collectionExists)
+            {
+                return Conflict("Collection already exists for this SystemName.");
+            }
 
-            return Ok("Registration successful!");
+            // Create a new collection for the user
+            bool collectionCreated = await _collectionService.CreateCollectionAsync(userDto.SystemName);
+            if (!collectionCreated)
+            {
+                return StatusCode(500, "Failed to create collection.");
+            }
+
+            try
+            {
+                // Hash the password
+                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
+
+                // Create a new User object
+                var user = new Account
+                {
+                    Username = userDto.Username,
+                    Password = hashedPassword,
+                    Email = userDto.Email,
+                    RoleId = 2, // Default RoleId is 2 for staff
+                    SystemName = userDto.SystemName,
+                    WebhookUrl = userDto.WebhookUrl,
+                    WebhookSecretKey = userDto.WebhookSecretKey,
+                    Status = "Deactive" // Default status
+                };
+
+                // Save the user to DynamoDB
+                await _dbContext.SaveAsync(user);
+
+                return Ok("Registration and collection creation successful!");
+            }
+            catch (Exception ex)
+            {
+                // Rollback the collection creation in case of user creation failure
+                bool collectionDeleted = await _collectionService.DeleteCollectionAsync(userDto.SystemName);
+                if (!collectionDeleted)
+                {
+                    return StatusCode(500, "Collection creation failed, and we could not rollback.");
+                }
+
+                return StatusCode(500, $"User registration failed: {ex.Message}");
+            }
         }
+
+
 
         // Validation method for UserRegisterDTO
         private bool ValidateRegisterDto(AccountRegisterDTO userDto, out string errorMessage)

@@ -672,5 +672,33 @@ namespace FAL.Services
                 return false;
             }
         }
+
+        public async Task<bool> DeleteCollectionAsync(string systemName)
+        {
+            try
+            {
+                // Create the DeleteCollectionRequest
+                var request = new DeleteCollectionRequest
+                {
+                    CollectionId = systemName
+                };
+
+                // Send the request to delete the collection
+                var response = await _rekognitionClient.DeleteCollectionAsync(request);
+
+                // Check if the delete operation was successful
+                if (response.StatusCode == (int)System.Net.HttpStatusCode.OK)
+                {
+                    return true;
+                }
+
+                throw new Exception($"Failed to delete collection '{systemName}'");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting collection {systemName}: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

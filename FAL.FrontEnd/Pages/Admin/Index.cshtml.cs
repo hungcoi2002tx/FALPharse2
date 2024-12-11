@@ -44,8 +44,6 @@ namespace FAL.FrontEnd.Pages.Admin
                     return;
 
                 }
-                // Debug log the result of Deserialize
-                Console.WriteLine("Accounts Count: " + Accounts.Count);
             }
             else
             {

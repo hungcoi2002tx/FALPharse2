@@ -6,7 +6,6 @@ using System.Text.Json;
 
 namespace FAL.FrontEnd.Pages.Auth
 {
-
     public class RegisterModel : PageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -53,21 +52,36 @@ namespace FAL.FrontEnd.Pages.Auth
             // Tạo nội dung yêu cầu đăng ký
             var content = new StringContent(JsonSerializer.Serialize(registerData), Encoding.UTF8, "application/json");
 
-            // Gửi yêu cầu đăng ký đến API
-            var response = await client.PostAsync(FEGlobalVarians.REGISTER_ENDPOINT, content);
+            try
+            {
+                // Gửi yêu cầu đăng ký đến API
+                var response = await client.PostAsync(FEGlobalVarians.REGISTER_ENDPOINT, content);
 
-            if (response.IsSuccessStatusCode)
-            {
-                // Đăng ký thành công, chuyển hướng đến trang đăng nhập
-                return RedirectToPage("/Auth/Login");
+                if (response.IsSuccessStatusCode)
+                {
+                    // Đăng ký thành công, chuyển hướng đến trang đăng nhập
+                    TempData["Message"] = "Registration successful, please wait admin approve to continue!";
+                    return RedirectToPage("/Auth/Login");
+                }
+                else
+                {
+                    // Đăng ký thất bại, đọc lỗi chi tiết từ API
+                    var errorResponse = await response.Content.ReadAsStringAsync();
+                    ErrorMessage = $"Registration failed: {errorResponse}";
+                }
             }
-            else
+            catch (HttpRequestException ex)
             {
-                // Đăng ký thất bại, hiển thị thông báo lỗi từ API
-                ErrorMessage = await response.Content.ReadAsStringAsync();
-                return Page();
+                // Lỗi kết nối hoặc lỗi HTTP
+                ErrorMessage = $"Request failed: {ex.Message}";
             }
+            catch (Exception ex)
+            {
+                // Các lỗi không xác định khác
+                ErrorMessage = $"An unexpected error occurred: {ex.Message}";
+            }
+
+            return Page();
         }
     }
-
 }

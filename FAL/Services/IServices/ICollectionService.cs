@@ -25,5 +25,6 @@ namespace FAL.Services.IServices
         Task<bool> DeleteFromCollectionAsync(string userId, string systermId);
         Task<CollectionChartStats> GetCollectionChartStats(string systermId, string year);
         Task<bool> IsUserExistByCollection(string systermId, string userId);
+        Task<bool> DeleteCollectionAsync(string systemName);
     }
 }
