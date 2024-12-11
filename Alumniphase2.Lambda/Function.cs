@@ -61,27 +61,27 @@ public class Function
             var fileName = metadataResponse.Metadata[Utils.SystemConstants.ORIGINAL_FILE_NAME];
             var imageWidth = metadataResponse.Metadata["ImageWidth"];
             var imageHeight = metadataResponse.Metadata["ImageHeight"];
-
+            var systemId = metadataResponse.Metadata["SystemId"];
             switch (contentType)
             {
                 case (false):
-                    result = await DetectImageProcess(bucket, key, fileName);
+                    result = await DetectImageProcess(systemId, key, fileName);
                     result.Width = int.Parse(imageWidth);
                     result.Height = int.Parse(imageHeight);
                     result.Key = key;
-                    var (webhookUrlImage, webhookSecretkeyImage) = await CreateResponseResult(bucket, result);
-                    await StoreResponseResult(result, fileName, bucket);
+                    var (webhookUrlImage, webhookSecretkeyImage) = await CreateResponseResult(systemId, result);
+                    await StoreResponseResult(result, fileName, systemId);
                     await SendResult(result, logger, webhookSecretkeyImage, webhookUrlImage);
                     break;
                 case (true):
-                    result = await DetectVideoProcess(bucket, key, fileName);   
+                    result = await DetectVideoProcess(bucket, key, fileName, systemId);   
                     result.Width = int.Parse(imageWidth);
                     result.Height = int.Parse(imageHeight);
                     result.Key = key;
-                    var (webhookUrlVideo, webhookSecretkeyVideo) = await CreateResponseResult(bucket, result);
+                    var (webhookUrlVideo, webhookSecretkeyVideo) = await CreateResponseResult(systemId, result);
                     await logger.LogMessageAsync($"Add vao db {webhookUrlVideo}");
                     await logger.LogMessageAsync($"Add vao db {webhookSecretkeyVideo}");
-                    await StoreResponseResult(result, fileName, bucket);
+                    await StoreResponseResult(result, fileName, systemId);
                     await SendResult(result, logger, webhookSecretkeyVideo, webhookUrlVideo);
                     await logger.LogMessageAsync($"Add vao db {result.RegisteredFaces.Count}");
                     break;
@@ -135,9 +135,9 @@ public class Function
         }
     }
 
-    private async Task<(string?, string?)> CreateResponseResult(string bucket, FaceDetectionResult result)
+    private async Task<(string?, string?)> CreateResponseResult(string systemId, FaceDetectionResult result)
     {
-        var systemName = bucket;
+        var systemName = systemId;
         string? webhookUrl = null;
         string? webhookSecretkey = null;
         var logger = new CloudWatchLogger();
@@ -245,14 +245,14 @@ public class Function
                    }
                };
     }
-    private async Task<FaceDetectionResult> DetectVideoProcess(string bucket, string key, string fileName)
+    private async Task<FaceDetectionResult> DetectVideoProcess(string bucket, string key, string fileName,string systemId)
     {
         var logger = new CloudWatchLogger();
-        string jobId = await StartFaceSearch(bucket, key);
+        string jobId = await StartFaceSearch(bucket, key, systemId);
         await logger.LogMessageAsync($"JobId la {jobId}");
-        return await GetFaceSearchResults(jobId, bucket, fileName);
+        return await GetFaceSearchResults(jobId, systemId, fileName);
     }
-    private async Task<FaceDetectionResult> DetectImageProcess(string bucket, string key, string fileName)
+    private async Task<FaceDetectionResult> DetectImageProcess(string systemId, string key, string fileName)
     {
         var logger = new CloudWatchLogger();
         try
@@ -262,10 +262,9 @@ public class Function
             var resultRegisteredUsers = new List<FaceRecognitionResponse>();
             var resultUnregisteredUsers = new List<FaceRecognitionResponse>();
 
-            var collectionName = bucket;
-            var dynamoDbName = bucket;
+            var collectionName = systemId;
 
-            var indexFacesResponse = await IndexFaces(bucket, key, collectionName);
+            var indexFacesResponse = await IndexFaces(systemId, key, collectionName);
             var faceRecords = indexFacesResponse.FaceRecords;
             await logger.LogMessageAsync($"facerecord:{faceRecords.Count}");
 
@@ -358,11 +357,11 @@ public class Function
             UserId = userId
         };
     }
-    private async Task<string> StartFaceSearch(string s3BucketName, string videoFileName)
+    private async Task<string> StartFaceSearch(string s3BucketName, string videoFileName, string systemId)
     {
         var startFaceSearchRequest = new StartFaceSearchRequest
         {
-            CollectionId = s3BucketName,
+            CollectionId = systemId,
             Video = new Video
             {
                 S3Object = new Amazon.Rekognition.Model.S3Object
