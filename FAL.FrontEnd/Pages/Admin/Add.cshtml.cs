@@ -20,7 +20,7 @@ namespace FAL.FrontEnd.Pages.Admin
 
         public void OnGet()
         {
-            // Logic khi trang được tải
+            // Logic when the page is loaded
         }
 
         public async Task<IActionResult> OnPostAsync()
@@ -36,26 +36,26 @@ namespace FAL.FrontEnd.Pages.Admin
                 return RedirectToPage("/auth/login");
             }
 
-            // Tạo client HTTP và thiết lập JWT
+            // Create HTTP client and set JWT
             var client = _httpClientFactory.CreateClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
 
-            // Chuyển đổi dữ liệu NewAccount thành JSON
+            // Convert NewAccount data to JSON
             var json = JsonSerializer.Serialize(NewAccount);
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-            // Gửi yêu cầu POST đến API
+            // Send POST request to the API
             var response = await client.PostAsync("https://dev.demorecognition.click/api/Accounts", content);
 
             if (response.IsSuccessStatusCode)
             {
-                TempData["SuccessMessage"] = "Tạo tài khoản thành công!";
+                TempData["SuccessMessage"] = "Account creation successful!";
                 return RedirectToPage("/admin/index");
             }
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                TempData["ErrorMessage"] = $"Không thể tạo tài khoản: {errorContent}";
+                TempData["ErrorMessage"] = $"Unable to create account: {errorContent}";
                 return Page();
             }
         }

@@ -25,13 +25,13 @@ namespace FAL.Authors
         {
             var endpoint = context.HttpContext.GetEndpoint();
 
-            // Bỏ qua kiểm tra ủy quyền nếu endpoint có [AllowAnonymous]
+            // Skip authorization check if the endpoint has [AllowAnonymous]
             if (endpoint?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
             {
                 return;
             }
 
-            // Kiểm tra xem người dùng đã được xác thực chưa
+            // Check if the user is authenticated
             if (!context.HttpContext.User.Identity.IsAuthenticated)
             {
                 context.Result = new JsonResult(new { message = "Unauthorized: You must be logged in." })
@@ -41,19 +41,19 @@ namespace FAL.Authors
                 return;
             }
 
-            // Lấy thông tin về phương thức HTTP (action) và endpoint (resource)
+            // Retrieve HTTP method (action) and endpoint (resource)
             var httpMethod = context.HttpContext.Request.Method;
             var resource = endpoint?.Metadata.GetMetadata<Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor>()?.ControllerName;
 
-            // Lấy thông tin người dùng
+            // Retrieve user information
             var user = context.HttpContext.User;
-            var username = user.Identity.Name; // Lấy tên người dùng từ token
+            var username = user.Identity.Name; // Extract username from the token
 
-            // Kiểm tra trạng thái tài khoản
-            var account = _dbContext.LoadAsync<Account>(username).Result; // Tìm tài khoản từ DynamoDB
+            // Check the account status
+            var account = _dbContext.LoadAsync<Account>(username).Result; // Find account in DynamoDB
             if (account == null)
             {
-                context.Result = new JsonResult(new { message = "Không tìm thấy tài khoản" })
+                context.Result = new JsonResult(new { message = "Account not found" })
                 {
                     StatusCode = StatusCodes.Status401Unauthorized
                 };
@@ -62,17 +62,17 @@ namespace FAL.Authors
 
             if (string.Equals(account.Status, DEACTIVE, StringComparison.OrdinalIgnoreCase))
             {
-                context.Result = new JsonResult(new { message = "Tài khoản của bạn chưa được phê duyệt" })
+                context.Result = new JsonResult(new { message = "Your account has not been approved" })
                 {
                     StatusCode = StatusCodes.Status403Forbidden
                 };
                 return;
             }
 
-            // Kiểm tra quyền truy cập
+            // Check permissions
             if (!_permissionService.HasPermission(user, resource, httpMethod))
             {
-                context.Result = new JsonResult(new { message = "Bạn không có quyền truy cập chức năng này." })
+                context.Result = new JsonResult(new { message = "You do not have permission to access this feature." })
                 {
                     StatusCode = StatusCodes.Status403Forbidden
                 };

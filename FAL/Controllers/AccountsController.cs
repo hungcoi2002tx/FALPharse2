@@ -47,7 +47,7 @@ namespace FAL.Controllers
         {
             var account = await _dbContext.LoadAsync<Account>(username);
             if (account == null)
-                return NotFound("User không tìm thấy!");
+                return NotFound("User not found!");
 
             var accountDto = new AccountViewDto
             {
@@ -64,7 +64,6 @@ namespace FAL.Controllers
             return Ok(accountDto);
         }
 
-
         // POST: api/accounts
         [Authorize]
         [HttpPost]
@@ -72,10 +71,10 @@ namespace FAL.Controllers
         {
             var existingUser = await _dbContext.LoadAsync<Account>(user.Username);
             if (existingUser != null)
-                return BadRequest("User đã tồn tại!");
+                return BadRequest("User already exists!");
 
             await _dbContext.SaveAsync(user);
-            return Ok(user); // Tạo mới một user
+            return Ok(user); // Create a new user
         }
 
         // PUT: api/accounts/{username}
@@ -83,12 +82,12 @@ namespace FAL.Controllers
         [HttpPut("{username}")]
         public async Task<IActionResult> UpdateUser(string username, [FromBody] UpdateAccountDto updatedUser)
         {
-            // Tìm user hiện tại trong database
+            // Find the current user in the database
             var existingUser = await _dbContext.LoadAsync<Account>(username);
             if (existingUser == null)
-                return NotFound("User không tìm thấy để update!");
+                return NotFound("User not found for update!");
 
-            // Cập nhật thông tin user chỉ khi parameter có giá trị
+            // Update user information only if the parameter has a value
             if (!string.IsNullOrEmpty(updatedUser.Password) &&
                 !BCrypt.Net.BCrypt.Verify(updatedUser.Password, existingUser.Password))
             {
@@ -98,7 +97,7 @@ namespace FAL.Controllers
             if (!string.IsNullOrEmpty(updatedUser.Email))
                 existingUser.Email = updatedUser.Email;
 
-            if (updatedUser.RoleId.HasValue) // Kiểm tra nếu RoleId khác null
+            if (updatedUser.RoleId.HasValue) // Check if RoleId is not null
                 existingUser.RoleId = updatedUser.RoleId.Value;
 
             if (!string.IsNullOrEmpty(updatedUser.SystemName))
@@ -113,12 +112,10 @@ namespace FAL.Controllers
             if (!string.IsNullOrEmpty(updatedUser.Status))
                 existingUser.Status = updatedUser.Status;
 
-            // Lưu user đã được cập nhật
+            // Save the updated user
             await _dbContext.SaveAsync(existingUser);
             return Ok(existingUser);
         }
-
-
 
         // DELETE: api/accounts/{username}
         [Authorize]
@@ -127,10 +124,10 @@ namespace FAL.Controllers
         {
             var user = await _dbContext.LoadAsync<Account>(username);
             if (user == null)
-                return NotFound("User không tìm thấy để xóa!");
+                return NotFound("User not found for deletion!");
 
             await _dbContext.DeleteAsync(user);
-            return Ok("Đã xóa user!");
+            return Ok("User deleted!");
         }
     }
 }

@@ -5,7 +5,7 @@
 }
 
 <div class="container mt-5">
-    <h2 class="text-center mb-4">Cập Nhật Thông Tin Người Dùng</h2>
+    <h2 class="text-center mb-4">Update user information</h2>
 
     @if (!string.IsNullOrEmpty(TempData["Message"] as string))
     {
@@ -54,11 +54,11 @@
             <label for="status">Status</label>
             <select class="form-control" id="status" name="User.Status">
                 <option value="Active" selected="@(Model.User.Status == "Active")">Active</option>
-                <option value="Inactive" selected="@(Model.User.Status == "Inactive")">Inactive</option>
+                <option value="Deactive" selected="@(Model.User.Status == "Deactive")">Deactive</option>
             </select>
         </div>
 
-        <button type="submit" class="btn btn-primary w-100">Cập Nhật</button>
+        <button type="submit" class="btn btn-primary w-100">Update</button>
         <a asp-page="/Admin/Index" class="btn btn-secondary w-100 mt-2">Quay Lại</a>
     </form>
 </div>
