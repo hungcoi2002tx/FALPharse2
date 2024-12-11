@@ -13,6 +13,8 @@ namespace Share.Model
         public string ImageId { get; set; }
         //Truong nay luu gia tri key cua anh trong s3 nhe
         public string ExternalImageId { get; set; }
+        public string SystemName { get; set; }
+
         public DateTime CreateDate { get; set; }
     }
 }

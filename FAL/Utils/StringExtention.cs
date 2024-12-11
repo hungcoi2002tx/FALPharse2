@@ -25,7 +25,7 @@ namespace FAL.Utils
         {
             try
             {
-               return $"{systemId}-result";
+               return GlobalVarians.RESULT_INFO_TABLE_DYNAMODB;
             }
             catch (Exception)
             {

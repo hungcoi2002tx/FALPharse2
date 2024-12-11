@@ -1,6 +1,13 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using FAL.FrontEnd.Helper;
+using FAL.FrontEnd.Middleware;
+using FAL.FrontEnd.Service;
+using FAL.FrontEnd.Service.IService;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,51 +19,53 @@ builder.Services.AddHttpClient("FaceDetectionAPI", client =>
     client.BaseAddress = new Uri("https://dev.demorecognition.click/"); // TODO: sửa theo domain đúng
     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = "your_issuer",
-            ValidAudience = "your_audience",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your_super_secret_key_which_is_very_secure_32chars"))
-        };
-    });
 
-builder.Services.AddDistributedMemoryCache(); // Required for session handling
+builder.Services.AddSingleton<IAuthService, AuthService>();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSingleton<TokenExtentions>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IBaseApiService, BaseApiService>();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromDays(1); // Session timeout duration
-    options.Cookie.HttpOnly = true; // Ensure session cookie is HTTP only
-    options.Cookie.IsEssential = true; // Makes the session cookie essential
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Thời gian hết hạn session
+    options.Cookie.HttpOnly = true; // Chỉ cho phép truy cập cookie qua HTTP
+    options.Cookie.IsEssential = true; // Bắt buộc cookie dù bật chế độ GDPR
 });
-
-builder.Services.AddHttpContextAccessor(); // Ensure HttpContext is accessible
+builder.Services.AddHttpContextAccessor(); // Đảm bảo HttpContext có thể truy cập được
 
 var app = builder.Build();
-
+var httpContextAccessor = app.Services.GetRequiredService<IHttpContextAccessor>();
+FAL.FrontEnd.Helper.SessionExtensions.Configure(httpContextAccessor);
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSession();
 app.MapRazorPages();
 
+app.UseStatusCodePages(context =>
+{
+    if (context.HttpContext.Response.StatusCode == 404)
+    {
+        context.HttpContext.Response.Redirect("/Shared/NotFound");
+    }
+
+    return Task.CompletedTask;
+});
+
+app.UseMiddleware<SessionAuthMiddleware>();
+app.UseMiddleware<RoleAuthorizationMiddleware>();
+
+//app.MapGet("/", context =>
+//{
+//    context.Response.Redirect("/Dashboard/Main");
+//    return Task.CompletedTask;
+//});
 app.Run();

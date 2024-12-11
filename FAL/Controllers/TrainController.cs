@@ -176,8 +176,6 @@ namespace FAL.Controllers
             int successCount = 0;
             int failureCount = 0;
 
-
-
             foreach (var imageFile in imageFiles)
             {
                 var fileName = Path.GetFileNameWithoutExtension(imageFile);
@@ -209,9 +207,6 @@ namespace FAL.Controllers
         }
 
         
-
-
-
 
         private string GetContentType(string path)
         {
@@ -255,7 +250,7 @@ namespace FAL.Controllers
             }
         }
 
-            [HttpPost("file")]
+        [HttpPost("file")]
         public async Task<IActionResult> TrainByImageAsync(IFormFile file, string userId)
         {
             try

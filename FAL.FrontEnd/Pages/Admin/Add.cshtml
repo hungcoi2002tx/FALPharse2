@@ -2,7 +2,7 @@
 @model FAL.FrontEnd.Pages.Admin.AddModel
 @{
 }
-<h2>Thêm Tài Khoản</h2>
+<h2>Add Account</h2>
 @{
     var successMessage = TempData["SuccessMessage"] as string;
     var errorMessage = TempData["ErrorMessage"] as string;
@@ -23,26 +23,26 @@
 }
 <form method="post">
     <div class="form-group">
-        <label for="username">Tên đăng nhập</label>
+        <label for="username">Username</label>
         <input type="text" class="form-control" id="username" name="Username" required />
     </div>
     <div class="form-group">
-        <label for="password">Mật khẩu</label>
+        <label for="password">Password</label>
         <input type="password" class="form-control" id="password" name="Password" required />
     </div>
     <div class="form-group">
         <label for="email">Email</label>
-        <input type="email" class="form-control" id="email" name="Email" required />
+        <input type="email" class="form-control" id="email" name="Email" />
     </div>
     <div class="form-group">
-        <label for="roleId">Vai trò</label>
+        <label for="roleId">Role</label>
         <select class="form-control" id="roleId" name="RoleId" required>
-            <option value="1">Quản trị viên</option>
-            <option value="2">Người dùng</option>
+            <option value="2">User</option>
+            <option value="1">Admin</option>
         </select>
     </div>
     <div class="form-group">
-        <label for="systemName">Tên hệ thống</label>
+        <label for="systemName">System Name</label>
         <input type="text" class="form-control" id="systemName" name="SystemName" required />
     </div>
     <div class="form-group">
@@ -54,12 +54,11 @@
         <input type="text" class="form-control" id="webhookSecretKey" name="WebhookSecretKey" />
     </div>
     <div class="form-group">
-        <label for="status">Trạng thái</label>
+        <label for="status">Status</label>
         <select class="form-control" id="status" name="Status" required>
-            <option value="Active">Kích hoạt</option>
-            <option value="Inactive">Không kích hoạt</option>
+            <option value="Active">Active</option>
+            <option value="Deactive">Deactive</option>
         </select>
     </div>
-    <button type="submit" class="btn btn-primary">Lưu</button>
+    <button type="submit" class="btn btn-primary">Save</button>
 </form>
-

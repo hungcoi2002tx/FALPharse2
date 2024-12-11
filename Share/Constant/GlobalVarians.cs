@@ -13,5 +13,13 @@ namespace Share.Constant
         public static readonly long MAXFILESIZE = 15L * 1024 * 1024 * 1024;
         public static readonly long PARTSIZE = 500 * 1024 * 1024;
         public static readonly long DIVIDESIZE = 500 * 1024 * 1024;
+
+        public const string FACEID_TABLE_DYNAMODB = "FaceInfo";
+        public const string RESULT_INFO_TABLE_DYNAMODB = "ResultInfo";
+        public const string CLIENT_REQUESTS_TABLE_DYNAMODB = "ClientRequests";
+        public const string SYSTEM_NAME_ATTRIBUTE_DYNAMODB = "SystemName";
+        public const string FACEID_INDEX_ATTRIBUTE_DYNAMODB = "SystemNameIndex";
+        public static string PrivateKey => ".gUju7KkmNPaF&vh+RmM_@yNyTx-LrwyA63_`yK4Wsp(}[AT@/Y9'T%^~;*su7/pevpZmA$d`K/<NPwa'Ns)EY<@95Tts`-yBJ>?9Eu=Sdn=JYEkQe<4J`&s-vV47";
+
     }
 }

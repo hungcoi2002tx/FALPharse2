@@ -15,5 +15,6 @@ namespace Share.DTO
         public int PageSize { get; set; }
 
         public List<TrainStatsOfUser> UserStats { get; set; }
+        public string NextToken { get; set; }
     }
 }

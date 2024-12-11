@@ -20,11 +20,80 @@ namespace FAL.Controllers
             _dbContext = dbContext;
         }
 
+        /// <summary>
+        /// API for users to update their information
+        /// </summary>
+        /// <param name="userUpdate"></param>
+        /// <returns></returns>
+        // PUT: api/users/{username}/update
+        [Authorize]
+        [HttpPut]
+        public async Task<IActionResult> UpdateUserInfo([FromBody] UserUpdateRequest userUpdate)
+        {
+            // Identify the current user from the token
+            var currentUsername = User.Identity?.Name;
+
+            if (currentUsername == null)
+                return Unauthorized("Unable to identify the current user!");
+
+            // Load user information from DynamoDB
+            var existingUser = await _dbContext.LoadAsync<Account>(currentUsername);
+            if (existingUser == null)
+                return NotFound("User does not exist!");
+
+            // Update user information
+            existingUser.Email = userUpdate.Email ?? existingUser.Email;
+            existingUser.SystemName = userUpdate.SystemName ?? existingUser.SystemName;
+            existingUser.WebhookUrl = userUpdate.WebhookUrl ?? existingUser.WebhookUrl;
+            existingUser.WebhookSecretKey = userUpdate.WebhookSecretKey ?? existingUser.WebhookSecretKey;
+
+            // Save changes
+            await _dbContext.SaveAsync(existingUser);
+
+            return Ok(new
+            {
+                Message = "User information updated successfully!",
+                existingUser.Username,
+                existingUser.Email,
+                existingUser.SystemName,
+                existingUser.WebhookUrl,
+                existingUser.WebhookSecretKey
+            });
+        }
 
         /// <summary>
-        /// Api cho user update thông tin webhook
+        /// API to retrieve the current user's information
         /// </summary>
-        /// <param name="username"></param>
+        /// <returns></returns>
+        // GET: api/users
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetUserInfo()
+        {
+            // Identify the current user from the token
+            var currentUsername = User.Identity?.Name;
+
+            if (currentUsername == null)
+                return Unauthorized("Unable to identify the current user!");
+
+            // Load user information from DynamoDB
+            var existingUser = await _dbContext.LoadAsync<Account>(currentUsername);
+            if (existingUser == null)
+                return NotFound("User does not exist!");
+
+            return Ok(new
+            {
+                existingUser.Username,
+                existingUser.Email,
+                existingUser.SystemName,
+                existingUser.WebhookUrl,
+                existingUser.WebhookSecretKey
+            });
+        }
+
+        /// <summary>
+        /// API for users to update webhook information
+        /// </summary>
         /// <param name="webhookUpdate"></param>
         /// <returns></returns>
         // PUT: api/users/{username}/webhook
@@ -32,35 +101,71 @@ namespace FAL.Controllers
         [HttpPut("webhook")]
         public async Task<IActionResult> UpdateWebhookInfo([FromBody] WebhookUpdateRequest webhookUpdate)
         {
-            // Xác định user hiện tại từ token (cần triển khai nếu chưa có)
+            // Identify the current user from the token
             var currentUsername = User.Identity?.Name;
 
             if (currentUsername == null)
-                return Unauthorized("Không xác định được người dùng hiện tại!");
+                return Unauthorized("Unable to identify the current user!");
 
-            // Load thông tin user từ DynamoDB
+            // Load user information from DynamoDB
             var existingUser = await _dbContext.LoadAsync<Account>(currentUsername);
             if (existingUser == null)
-                return NotFound("User không tồn tại!");
+                return NotFound("User does not exist!");
 
-            // Kiểm tra xem user hiện tại có quyền cập nhật không
-            //if (currentUsername != username)
-            //{
-            //    // Trả về 403 Forbidden với thông báo chi tiết
-            //    return StatusCode(StatusCodes.Status403Forbidden, "Không có quyền cập nhật thông tin webhook của user khác!");
-            //}
+            // Check if the current user has the right to update (optional)
+            // if (currentUsername != username)
+            // {
+            //     return StatusCode(StatusCodes.Status403Forbidden, "Permission denied to update another user's webhook information!");
+            // }
 
-            // Cập nhật WebhookUrl và WebhookSecretKey
+            // Update WebhookUrl and WebhookSecretKey
             existingUser.WebhookUrl = webhookUpdate.WebhookUrl;
             existingUser.WebhookSecretKey = webhookUpdate.WebhookSecretKey;
 
-            // Lưu thay đổi
+            // Save changes
             await _dbContext.SaveAsync(existingUser);
 
             return Ok(new
             {
-                Message = "Thông tin webhook đã được cập nhật thành công!",
+                Message = "Webhook information updated successfully!",
                 existingUser.WebhookUrl
+            });
+        }
+
+        /// <summary>
+        /// API for users to change their password
+        /// </summary>
+        /// <param name="changePasswordRequest"></param>
+        /// <returns></returns>
+        // PUT: api/users/change-password
+        [Authorize]
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest changePasswordRequest)
+        {
+            // Identify the current user from the token
+            var currentUsername = User.Identity?.Name;
+
+            if (currentUsername == null)
+                return Unauthorized("Unable to identify the current user!");
+
+            // Load user information from DynamoDB
+            var existingUser = await _dbContext.LoadAsync<Account>(currentUsername);
+            if (existingUser == null)
+                return NotFound("User does not exist!");
+
+            // Verify current password
+            if (existingUser.Password != changePasswordRequest.CurrentPassword)
+                return BadRequest("Current password is incorrect!");
+
+            // Update password
+            existingUser.Password = changePasswordRequest.NewPassword;
+
+            // Save changes
+            await _dbContext.SaveAsync(existingUser);
+
+            return Ok(new
+            {
+                Message = "Password has been changed successfully!"
             });
         }
     }

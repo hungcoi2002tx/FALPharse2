@@ -35,11 +35,11 @@ namespace Share.Utils
         // Ghi nội dung vào file log
         private void WriteLog(string message)
         {
-            using (StreamWriter writer = new StreamWriter(logFilePath, true))
-            {
-                writer.WriteLine(message);
-                Console.WriteLine(message);
-            }
+            //using (StreamWriter writer = new StreamWriter(logFilePath, true))
+            //{
+            //    writer.WriteLine(message);
+            //    Console.WriteLine(message);
+            //}
         }
     }
 }

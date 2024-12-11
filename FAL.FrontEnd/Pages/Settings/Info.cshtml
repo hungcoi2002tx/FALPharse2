@@ -1,0 +1,57 @@
+﻿@page
+@model FAL.FrontEnd.Pages.Settings.InfoModel
+@{
+    ViewData["Title"] = "User Information";
+}
+
+<h2>User Information</h2>
+
+@if (Model.SuccessMessage != null)
+{
+    <div class="alert alert-success mt-3">
+        @Model.SuccessMessage
+    </div>
+}
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger mt-3">
+        @Model.ErrorMessage
+    </div>
+}
+
+<div>
+    <strong>Email:</strong> @Model.Email <br />
+    <strong>System Name:</strong> @Model.SystemName <br />
+    <strong>Webhook URL:</strong> @Model.WebhookUrl <br />
+    <strong>Webhook Secret Key:</strong> @Model.WebhookSecretKey <br />
+</div>
+<hr />
+
+<form method="post">
+    <div class="form-group">
+        <label for="Email">Email</label>
+        <input type="email" asp-for="Email" class="form-control" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label for="SystemName">System Name</label>
+        <input type="text" asp-for="SystemName" class="form-control" />
+        <span asp-validation-for="SystemName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label for="WebhookUrl">Webhook URL</label>
+        <input type="text" asp-for="WebhookUrl" class="form-control" />
+        <span asp-validation-for="WebhookUrl" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label for="WebhookSecretKey">Webhook Secret Key</label>
+        <input type="text" asp-for="WebhookSecretKey" class="form-control" />
+        <span asp-validation-for="WebhookSecretKey" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Cập nhật</button>
+</form>

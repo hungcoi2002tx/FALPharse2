@@ -38,9 +38,11 @@
                 }
             </tbody>
         </table>
+        <a asp-page="./Main" class="btn btn-secondary">Back to Dashboard</a>
     }
     else
     {
         <div class="alert alert-danger">Failed to load Request Stats.</div>
+        <a asp-page="./Main" class="btn btn-secondary">Back to Dashboard</a>
     }
 </div>

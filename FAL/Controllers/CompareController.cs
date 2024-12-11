@@ -40,7 +40,7 @@ namespace FAL.Controllers
             _s3Client = s3Service;
             _dynamoDbService = dynamoDbService;
         }
-        [HttpPost("compare")]
+        [HttpPost("")]
         public async Task<IActionResult> CompareFaces([FromForm] CompareFaceRequest request)
         {
             if (request.SourceImage == null || request.TargetImage == null)
@@ -103,7 +103,7 @@ namespace FAL.Controllers
             }
         }
 
-        [HttpPost("compare/result")]
+        [HttpPost("result")]
         public async Task<IActionResult> CompareFacesReturnResult([FromForm] CompareFaceRequest request)
         {
             var response = new CompareResponseResult();

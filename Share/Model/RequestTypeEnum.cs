@@ -8,17 +8,17 @@ namespace Share.Model
 {
     public enum RequestTypeEnum
     {
-        TrainByImage = 0,
-        TrainByUrl = 1,
-        TrainByZip = 2,
-        TrainByFaceId = 3,
-        DisassociateFace = 4,
-        ResetUser = 5,
-        CheckIsTrained = 6,
-        GetWebhookResult,
-        Detect = 10,
-        DetectImage = 7,
-        DetectVideo = 8,
-        CompareFace = 9,
+        TrainByImage = 0, //Train
+        TrainByUrl = 1, //Train
+        TrainByZip = 2, //Train
+        TrainByFaceId = 3, //Train
+        DisassociateFace = 4, //Train
+        ResetUser = 5, //Train
+        CheckIsTrained = 6, //Train
+        GetWebhookResult, //Train
+        Detect = 10, //Detect
+        DetectImage = 7,//Detect
+        DetectVideo = 8,//Detect
+        CompareFace = 9,//Compare
     }
 }

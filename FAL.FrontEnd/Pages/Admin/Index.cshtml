@@ -1,45 +1,102 @@
 ﻿@page
 @model FAL.FrontEnd.Pages.Admin.IndexModel
 @{
-    ViewData["Title"] = "Quản lý tài khoản";
+    ViewData["Title"] = "Account Management";
+    string? currentUsername = HttpContext.Session.GetString("Username");
 }
-<h1>Quản lý tài khoản</h1>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Role ID</th>
-            <th>System Name</th>
-            <th>Webhook URL</th>
-            <th>Webhook Secret Key</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var account in Model.Accounts)
-        {
-            <tr>
-                <td>@account.Username</td>
-                <td>@account.Email</td>
-                <td>@account.RoleId</td>
-                <td>@account.SystemName</td>
-                <td>
-                    <a href="@account.WebhookUrl" target="_blank">@account.WebhookUrl</a>
-                </td>
-                <td>@account.WebhookSecretKey</td>
-                <td>@account.Status</td>
-                <td>
-                    <button class="btn btn-warning btn-sm" onclick="editUser('@account.Username')">Sửa</button>
-                    <form method="post" action="/Admin/Delete" style="display:inline;">
-                        <input type="hidden" name="Username" value="@account.Username" />
-                        <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
-                    </form>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<style>
+    .badge-status {
+        display: inline-block;
+        min-width: 80px;
+        text-align: center;
+    }
+</style>
+<h1 class="text-center my-4">Account Management</h1>
 
-<a href="/Admin/Add" class="btn btn-primary">Thêm tài khoản</a>
+<!-- Display success message -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success text-center">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<!-- Display error message -->
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger text-center">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover table-bordered text-center align-middle w-100">
+        <thead class="table-dark">
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>System Name</th>
+                <th>Webhook URL</th>
+                <th>Webhook Secret Key</th>
+                <th>Status</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var account in Model.Accounts)
+            {
+                var isCurrentUser = account.Username == currentUsername;
+                <tr class="@(isCurrentUser ? "table-primary fw-bold" : "")">
+                    <td>@account.Username</td>
+                    <td>@account.Email</td>
+                    <td>
+                        @(account.RoleId == 1 ? "Admin" : account.RoleId == 2 ? "User" : "Unknown")
+                    </td>
+                    <td>@account.SystemName</td>
+                    <td>
+                        <a href="@account.WebhookUrl" target="_blank" class="text-decoration-none">
+                            @account.WebhookUrl
+                        </a>
+                    </td>
+                    <td>@account.WebhookSecretKey</td>
+                    <td>
+                        <span class="badge badge-status @(account.Status == "Active" ? "bg-success" : "bg-danger")">
+                            @account.Status
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex justify-content-center">
+                            <!-- Edit button -->
+                            <a class="btn btn-warning btn-sm" href="/admin/update/?username=@account.Username">
+                                <i class="bi bi-pencil-fill"></i> Edit
+                            </a>
+                        </div>
+
+                    </td>
+                    <td>
+                        <div class="d-flex justify-content-center">
+                            @if (!isCurrentUser)
+                            {
+                                <!-- Activate/Deactivate button -->
+                                <form method="post" style="display:inline;">
+                                    <input type="hidden" name="username" value="@account.Username" />
+                                    <button type="submit" class="btn btn-secondary btn-sm">
+                                        <i class="bi bi-toggle-@(account.Status == "Active" ? "off" : "on")"></i>
+                                        @(account.Status == "Active" ? "Deactivate" : "Activate")
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<div class="mt-4">
+    <a href="/Admin/Add" class="btn btn-primary">
+        <i class="bi bi-person-plus-fill"></i> Add Account
+    </a>
+</div>

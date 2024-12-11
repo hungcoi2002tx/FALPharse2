@@ -1,4 +1,5 @@
 ﻿using Amazon.Rekognition.Model;
+using Share.DTO;
 
 namespace FAL.Services.IServices
 {
@@ -22,5 +23,6 @@ namespace FAL.Services.IServices
         Task<List<string>> GetCollectionAsync(string systermId);
         Task<bool> CreateCollectionByIdAsync(string collectionId);
         Task<bool> DeleteFromCollectionAsync(string userId, string systermId);
+        Task<CollectionChartStats> GetCollectionChartStats(string systermId, string year);
     }
 }

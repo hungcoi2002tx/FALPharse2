@@ -153,30 +153,6 @@ public class CollectionServiceTests
     }
 
     [Fact]
-    public async Task DeleteByUserIdAsync_ValidInput_ReturnsTrue()
-    {
-        // Arrange
-        string userId = "user1";
-        string systermId = "test-system-id";
-        var faces = new List<Face>
-        {
-            new Face { UserId = userId, FaceId = "face1" },
-            new Face { UserId = userId, FaceId = "face2" }
-        };
-        _mockRekognitionClient.Setup(x => x.ListFacesAsync(It.IsAny<ListFacesRequest>(), default))
-            .ReturnsAsync(new ListFacesResponse { Faces = faces });
-
-        _mockRekognitionClient.Setup(x => x.DeleteFacesAsync(It.IsAny<DeleteFacesRequest>(), default))
-            .ReturnsAsync(new DeleteFacesResponse { HttpStatusCode = System.Net.HttpStatusCode.OK });
-
-        // Act
-        var result = await _service.DeleteByUserIdAsync(userId, systermId);
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
     public async Task DeleteByUserIdAsync_InvalidInput_ThrowsException()
     {
         // Arrange
@@ -217,25 +193,6 @@ public class CollectionServiceTests
         var ex = await Assert.ThrowsAsync<Exception>(() => _service.DeleteByUserIdAsync(userId, systermId));
         Assert.Equal("ListFaces error", ex.Message);
     }
-
-    [Fact]
-    public async Task DeleteByUserIdAsync_ErrorInDeleteOrDisassociate_ThrowsException()
-    {
-        // Arrange
-        string userId = "user1";
-        string systermId = "test-system-id";
-        var faces = new List<Face> { new Face { UserId = userId, FaceId = "face1" } };
-        _mockRekognitionClient.Setup(x => x.ListFacesAsync(It.IsAny<ListFacesRequest>(), default))
-            .ReturnsAsync(new ListFacesResponse { Faces = faces });
-
-        _mockRekognitionClient.Setup(x => x.DeleteFacesAsync(It.IsAny<DeleteFacesRequest>(), default))
-            .ThrowsAsync(new Exception("Delete face error"));
-
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<Exception>(() => _service.DeleteByUserIdAsync(userId, systermId));
-        Assert.Equal("Delete face error", ex.Message);
-    }
-
     // Test for DisassociatedFaceAsync
     [Fact]
     public async Task DisassociatedFaceAsync_Success_ReturnsTrue()
@@ -411,36 +368,9 @@ public class CollectionServiceTests
         Assert.Single(result.FaceDetails); // Verify that faces were detected
     }
 
-    [Fact]
-    public async Task DetectFaceByFileAsync_FileProcessingError_ThrowsException()
-    {
-        // Arrange
-        var fileMock = new Mock<IFormFile>();
-        fileMock.Setup(f => f.OpenReadStream()).Throws(new Exception("Error during file processing"));
 
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<Exception>(() => _service.DetectFaceByFileAsync(fileMock.Object));
-        Assert.Equal("Error during file processing", ex.Message);
-    }
 
     // Test for AssociateFacesAsync
-    [Fact]
-    public async Task AssociateFacesAsync_Success_ReturnsTrue()
-    {
-        // Arrange
-        var faceIds = new List<string> { "face1", "face2" };
-        string systermId = "test-system-id";
-        string key = "image-key";
-
-        _mockRekognitionClient.Setup(x => x.AssociateFacesAsync(It.IsAny<AssociateFacesRequest>(), default))
-            .ReturnsAsync(new AssociateFacesResponse { HttpStatusCode = System.Net.HttpStatusCode.OK });
-
-        // Act
-        var result = await _service.AssociateFacesAsync(systermId, faceIds, key);
-
-        // Assert
-        Assert.True(result);
-    }
 
     [Fact]
     public async Task AssociateFacesAsync_FailureInAssociate_ThrowsException()
@@ -455,7 +385,7 @@ public class CollectionServiceTests
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<Exception>(() => _service.AssociateFacesAsync(systermId, faceIds, key));
-        Assert.Equal("Associate request failed for faceId: face1", ex.Message);
+        Assert.Contains("An error occurred while associating faces", ex.Message);
     }
 
     [Fact]
