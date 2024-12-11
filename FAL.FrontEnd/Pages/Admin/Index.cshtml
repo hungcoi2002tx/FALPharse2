@@ -28,6 +28,20 @@
             background-color: #6c757d;
             color: white;
         }
+
+    .btn-sm {
+        min-width: 110px; /* Đảm bảo nút có kích thước đồng đều */
+    }
+
+    .btn-success, .btn-danger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .btn-success i, .btn-danger i {
+            margin-right: 5px; /* Khoảng cách giữa biểu tượng và chữ */
+        }
 </style>
 
 <h1 class="text-center my-4">Account Management</h1>
@@ -119,10 +133,13 @@
                         <div class="d-flex justify-content-center">
                             @if (!isCurrentUser)
                             {
-                                <!-- Activate/Deactivate button -->
+                                <!-- Form xử lý trạng thái Active/Deactivate -->
                                 <form method="post" style="display:inline;">
                                     <input type="hidden" name="username" value="@account.Username" />
-                                    <button type="submit" class="btn btn-secondary btn-sm">
+                                    <input type="hidden" name="newStatus" value="@(account.Status == "Active" ? "Inactive" : "Active")" />
+
+                                    <button type="submit" class="btn btn-sm @(account.Status == "Active" ? "btn-danger" : "btn-success")"
+                                            onclick="return confirm('Are you sure you want to @(account.Status == "Active" ? "deactivate" : "activate") account @(account.Username)?');">
                                         <i class="bi bi-toggle-@(account.Status == "Active" ? "off" : "on")"></i>
                                         @(account.Status == "Active" ? "Deactivate" : "Activate")
                                     </button>
@@ -130,6 +147,7 @@
                             }
                         </div>
                     </td>
+
                 </tr>
             }
         </tbody>
