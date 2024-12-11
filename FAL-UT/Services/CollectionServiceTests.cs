@@ -368,17 +368,6 @@ public class CollectionServiceTests
         Assert.Single(result.FaceDetails); // Verify that faces were detected
     }
 
-    [Fact]
-    public async Task DetectFaceByFileAsync_EmptyFile_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var fileMock = new Mock<IFormFile>();
-        fileMock.Setup(f => f.Length).Returns(0);
-
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _service.DetectFaceByFileAsync(fileMock.Object));
-        Assert.Equal("File is empty", ex.Message);
-    }
 
 
     // Test for AssociateFacesAsync

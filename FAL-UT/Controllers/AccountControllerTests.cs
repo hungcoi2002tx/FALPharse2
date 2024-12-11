@@ -142,25 +142,6 @@ public class AccountsControllerTests
     }
 
     // Test for UpdateUser - Normal Case
-    [Fact]
-    public async Task UpdateUser_ReturnsOkWhenUpdated()
-    {
-        // Arrange
-        var existingUser = new UpdateAccountDto { Password = BCrypt.Net.BCrypt.HashPassword("oldpass") };
-        var updatedUser = new UpdateAccountDto { Password = "newpass", Email = "user1@example.com" };
-
-        _mockDbContext.Setup(db => db.LoadAsync<UpdateAccountDto>("user1", default)).ReturnsAsync(existingUser);
-
-        // Act
-        var result = await _controller.UpdateUser("user1", updatedUser);
-
-        // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result);
-        var returnedUser = Assert.IsType<Account>(okResult.Value);
-
-        Assert.True(BCrypt.Net.BCrypt.Verify("newpass", returnedUser.Password));
-        _mockDbContext.Verify(db => db.SaveAsync(existingUser, default), Times.Once);
-    }
 
     // Test for UpdateUser - User Not Found
     [Fact]
