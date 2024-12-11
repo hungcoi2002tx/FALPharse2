@@ -33,7 +33,7 @@ namespace FAL.FrontEnd.Pages.Admin
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
 
-            var response = await client.GetAsync("https://dev.demorecognition.click/api/Accounts");
+            var response = await client.GetAsync(FEGlobalVarians.ACCOUNTS_ENDPOINT);
             if (response.IsSuccessStatusCode)
             {
                 var json = await response.Content.ReadAsStringAsync();
@@ -92,7 +92,7 @@ namespace FAL.FrontEnd.Pages.Admin
                 }
 
                 // Gửi yêu cầu để lấy thông tin tài khoản
-                var response = await client.GetAsync($"https://dev.demorecognition.click/api/accounts/{username}");
+                var response = await client.GetAsync($"{FEGlobalVarians.ACCOUNTS_ENDPOINT}/{username}");
                 if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                 {
                     HttpContext.Session.Clear();
@@ -118,7 +118,7 @@ namespace FAL.FrontEnd.Pages.Admin
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
                 // Gửi yêu cầu cập nhật trạng thái
-                var updateResponse = await client.PutAsync($"https://dev.demorecognition.click/api/accounts/{username}", content);
+                var updateResponse = await client.PutAsync($"{FEGlobalVarians.ACCOUNTS_ENDPOINT}/{username}", content);
                 if (updateResponse.StatusCode == System.Net.HttpStatusCode.Forbidden)
                 {
                     TempData["Message"] = "You do not have permission to access this feature. Please log in again.";

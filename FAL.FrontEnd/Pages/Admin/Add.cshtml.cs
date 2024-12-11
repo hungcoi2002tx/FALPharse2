@@ -45,7 +45,7 @@ namespace FAL.FrontEnd.Pages.Admin
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
             // Send POST request to the API
-            var response = await client.PostAsync("https://dev.demorecognition.click/api/Accounts", content);
+            var response = await client.PostAsync(FEGlobalVarians.ACCOUNTS_ENDPOINT, content);
 
             if (response.IsSuccessStatusCode)
             {

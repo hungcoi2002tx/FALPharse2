@@ -55,7 +55,7 @@ namespace FAL.FrontEnd.Pages.Admin
             try
             {
                 var client = GetAuthenticatedClient();
-                var response = await client.GetAsync($"https://dev.demorecognition.click/api/accounts/{username}");
+                var response = await client.GetAsync($"{FEGlobalVarians.ACCOUNTS_ENDPOINT}/{username}");
                 if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                 {
                     TempData["ErrorMessage"] = "You do not have permission to access this feature. Please log in again.";
@@ -102,7 +102,7 @@ namespace FAL.FrontEnd.Pages.Admin
                 var jsonContent = JsonSerializer.Serialize(User);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                var response = await client.PutAsync($"https://dev.demorecognition.click/api/accounts/{User.Username}", content);
+                var response = await client.PutAsync($"{FEGlobalVarians.ACCOUNTS_ENDPOINT}/{User.Username}", content);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
