@@ -13,8 +13,7 @@
             {
                 { "/Admin/Add", 1 },
                 { "/Admin", 1 },
-                { "/Dashboard", 2 },
-                { "/Settings", 2 }
+                { "/Dashboard", 2 }
             };
         }
 

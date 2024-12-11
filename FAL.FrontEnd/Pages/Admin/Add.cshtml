@@ -2,89 +2,147 @@
 @model FAL.FrontEnd.Pages.Admin.AddModel
 @{
 }
-<h2 class="text-center mb-4">Add Account</h2>
+<div class="container py-5">
+    <div class="card shadow-lg p-4 rounded-lg" style="max-width: 600px; margin: auto;">
+        <h2 class="text-center mb-4">
+            <i class="bi bi-person-plus-fill text-primary"></i> Add Account
+        </h2>
 
-@if (!ModelState.IsValid)
-{
-    <div class="alert alert-danger">
-        <ul>
-            @foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
-            {
-                <li>@error.ErrorMessage</li>
-            }
-        </ul>
+        <!-- Validation Errors -->
+        @if (!ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li><i class="bi bi-exclamation-circle"></i> @error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <!-- Success and Error Messages -->
+        @{
+            var successMessage = TempData["SuccessMessage"] as string;
+            var errorMessage = TempData["ErrorMessage"] as string;
+        }
+
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle-fill"></i> @successMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">
+                <i class="bi bi-x-circle-fill"></i> @errorMessage
+            </div>
+        }
+
+        <!-- Form -->
+        <form method="post" class="mt-4">
+            <div class="form-group mb-3">
+                <label for="username" class="fw-bold">
+                    <i class="bi bi-person-fill"></i> Username
+                </label>
+                <input type="text" class="form-control" id="username" name="NewAccount.Username" value="@Model.NewAccount.Username" placeholder="Enter username" required />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="password" class="fw-bold">
+                    <i class="bi bi-lock-fill"></i> Password
+                </label>
+                <input type="password" class="form-control" id="password" name="NewAccount.Password" value="@Model.NewAccount.Password" placeholder="Enter password" required />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="email" class="fw-bold">
+                    <i class="bi bi-envelope-fill"></i> Email
+                </label>
+                <input type="email" class="form-control" id="email" name="NewAccount.Email" value="@Model.NewAccount.Email" placeholder="Enter email address" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="roleId" class="fw-bold">
+                    <i class="bi bi-people-fill"></i> Role
+                </label>
+                <select class="form-control" id="roleId" name="NewAccount.RoleId" required>
+                    <option value="2" selected="@((Model.NewAccount.RoleId == 2) ? "selected" : null)">User</option>
+                    <option value="1" selected="@((Model.NewAccount.RoleId == 1) ? "selected" : null)">Admin</option>
+                </select>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="systemName" class="fw-bold">
+                    <i class="bi bi-cpu-fill"></i> System Name
+                </label>
+                <input type="text" class="form-control" id="systemName" name="NewAccount.SystemName" value="@Model.NewAccount.SystemName" placeholder="Enter system name" required />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="webhookUrl" class="fw-bold">
+                    <i class="bi bi-link-45deg"></i> Webhook URL
+                </label>
+                <input type="url" class="form-control" id="webhookUrl" name="NewAccount.WebhookUrl" value="@Model.NewAccount.WebhookUrl" placeholder="Enter webhook URL" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="webhookSecretKey" class="fw-bold">
+                    <i class="bi bi-key-fill"></i> Webhook Secret Key
+                </label>
+                <input type="text" class="form-control" id="webhookSecretKey" name="NewAccount.WebhookSecretKey" value="@Model.NewAccount.WebhookSecretKey" placeholder="Enter webhook secret key" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="status" class="fw-bold">
+                    <i class="bi bi-check-circle-fill"></i> Status
+                </label>
+                <select class="form-control" id="status" name="NewAccount.Status" required>
+                    <option value="Active" selected="@(Model.NewAccount.Status == "Active")">Active</option>
+                    <option value="Deactive" selected="@(Model.NewAccount.Status == "Deactive")">Deactive</option>
+                </select>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-save-fill"></i> Save
+                </button>
+                <a asp-page="/Admin/Index" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-arrow-left-circle"></i> Go Back
+                </a>
+            </div>
+        </form>
     </div>
-}
-
-@{
-    var successMessage = TempData["SuccessMessage"] as string;
-    var errorMessage = TempData["ErrorMessage"] as string;
-}
-
-@if (!string.IsNullOrEmpty(successMessage))
-{
-    <div class="alert alert-success">
-        @successMessage
-    </div>
-}
-
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger">
-        @errorMessage
-    </div>
-}
-<div class="container mt-5">
-    <form method="post" class="card p-4 shadow-lg rounded-lg">
-        <div class="form-group mb-3">
-            <label for="username" class="font-weight-bold">Username</label>
-            <input type="text" class="form-control" id="username" name="NewAccount.Username" value="@Model.NewAccount.Username" required />
-        </div>
-
-        <div class="form-group mb-3">
-            <label for="password" class="font-weight-bold">Password</label>
-            <input type="password" class="form-control" id="password" name="NewAccount.Password" value="@Model.NewAccount.Password" required />
-        </div>
-
-        <div class="form-group mb-3">
-            <label for="email" class="font-weight-bold">Email</label>
-            <input type="email" class="form-control" id="email" name="NewAccount.Email" value="@Model.NewAccount.Email" />
-        </div>
-
-        <div class="form-group mb-3">
-            <label for="roleId" class="font-weight-bold">Role</label>
-            <select class="form-control" id="roleId" name="NewAccount.RoleId" required>
-                <option value="2" selected="@((Model.NewAccount.RoleId == 2) ? "selected" : null)">User</option>
-                <option value="1" selected="@((Model.NewAccount.RoleId == 1) ? "selected" : null)">Admin</option>
-            </select>
-        </div>
-
-        <div class="form-group mb-3">
-            <label for="systemName" class="font-weight-bold">System Name</label>
-            <input type="text" class="form-control" id="systemName" name="NewAccount.SystemName" value="@Model.NewAccount.SystemName" required />
-        </div>
-
-        <div class="form-group mb-3">
-            <label for="webhookUrl" class="font-weight-bold">Webhook URL</label>
-            <input type="url" class="form-control" id="webhookUrl" name="NewAccount.WebhookUrl" value="@Model.NewAccount.WebhookUrl" />
-        </div>
-
-        <div class="form-group mb-3">
-            <label for="webhookSecretKey" class="font-weight-bold">Webhook Secret Key</label>
-            <input type="text" class="form-control" id="webhookSecretKey" name="NewAccount.WebhookSecretKey" value="@Model.NewAccount.WebhookSecretKey" />
-        </div>
-
-        <div class="form-group mb-3">
-            <label for="status" class="font-weight-bold">Status</label>
-            <select class="form-control" id="status" name="NewAccount.Status" required>
-                <option value="Active" selected="@(Model.NewAccount.Status == "Active")">Active</option>
-                <option value="Deactive" selected="@(Model.NewAccount.Status == "Deactive")">Deactive</option>
-            </select>
-        </div>
-
-        <div class="d-grid gap-2 mt-4">
-            <button type="submit" class="btn btn-primary btn-lg">Save</button>
-            <a asp-page="/Admin/Index" class="btn btn-secondary btn-lg">Go Back</a>
-        </div>
-    </form>
 </div>
+
+<!-- Additional Styling -->
+<style>
+    .btn-primary {
+        border-radius: 30px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-secondary {
+        border-radius: 30px;
+        font-size: 16px;
+    }
+
+    .form-control {
+        border-radius: 30px;
+        font-size: 16px;
+        padding: 10px 15px;
+    }
+
+    .form-group label {
+        font-weight: bold;
+        font-size: 14px;
+    }
+</style>

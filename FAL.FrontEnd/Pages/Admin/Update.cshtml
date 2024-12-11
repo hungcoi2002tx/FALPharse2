@@ -4,61 +4,113 @@
     ViewData["Title"] = "Update User";
 }
 
-<div class="container mt-5">
-    <h2 class="text-center mb-4">Update User Information</h2>
+<div class="container py-5">
+    <div class="card shadow-lg p-4 rounded-lg" style="max-width: 600px; margin: auto;">
+        <h2 class="text-center mb-4">
+            <i class="bi bi-person-lines-fill text-primary"></i> Update User Information
+        </h2>
 
-    @if (!string.IsNullOrEmpty(TempData["Message"] as string))
-    {
-        <div class="alert alert-info">
-            @TempData["Message"]
-        </div>
+        @if (!string.IsNullOrEmpty(TempData["Message"] as string))
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill"></i> @TempData["Message"]
+            </div>
+        }
+
+        <form method="post" class="mt-4">
+            <div class="form-group mb-3">
+                <label for="username" class="fw-bold">
+                    <i class="bi bi-person-fill"></i> Username
+                </label>
+                <input type="text" class="form-control" id="username" name="User.Username" value="@Model.User.Username" readonly />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="email" class="fw-bold">
+                    <i class="bi bi-envelope-fill"></i> Email
+                </label>
+                <input type="email" class="form-control" id="email" name="User.Email" value="@Model.User.Email" placeholder="Enter email address" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="roleId" class="fw-bold">
+                    <i class="bi bi-people-fill"></i> Role
+                </label>
+                <select class="form-control" id="roleId" name="User.RoleId" required>
+                    <option value="2" selected="@((Model.User.RoleId == 2) ? "selected" : null)">User</option>
+                    <option value="1" selected="@((Model.User.RoleId == 1) ? "selected" : null)">Admin</option>
+                </select>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="systemName" class="fw-bold">
+                    <i class="bi bi-cpu-fill"></i> System Name
+                </label>
+                <input type="text" class="form-control" id="systemName" name="User.SystemName" value="@Model.User.SystemName" placeholder="Enter system name" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="webhookUrl" class="fw-bold">
+                    <i class="bi bi-link-45deg"></i> Webhook URL
+                </label>
+                <input type="url" class="form-control" id="webhookUrl" name="User.WebhookUrl" value="@Model.User.WebhookUrl" placeholder="Enter webhook URL" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="webhookSecretKey" class="fw-bold">
+                    <i class="bi bi-key-fill"></i> Webhook Secret Key
+                </label>
+                <input type="text" class="form-control" id="webhookSecretKey" name="User.WebhookSecretKey" value="@Model.User.WebhookSecretKey" placeholder="Enter webhook secret key" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="status" class="fw-bold">
+                    <i class="bi bi-check-circle-fill"></i> Status
+                </label>
+                <select class="form-control" id="status" name="User.Status">
+                    <option value="Active" selected="@(Model.User.Status == "Active")">Active</option>
+                    <option value="Deactive" selected="@(Model.User.Status == "Deactive")">Deactive</option>
+                </select>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-save-fill"></i> Update
+                </button>
+                <a asp-page="/Admin/Index" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-arrow-left-circle"></i> Go Back
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Additional Styling -->
+<style>
+    .btn-primary {
+        border-radius: 30px;
+        font-size: 16px;
+        transition: all 0.3s ease;
     }
 
-    <form method="post" class="card p-4 shadow-lg rounded-lg">
-        <div class="form-group mb-3">
-            <label for="username" class="font-weight-bold">Username</label>
-            <input type="text" class="form-control" id="username" name="User.Username" value="@Model.User.Username" readonly />
-        </div>
+    .btn-primary:hover {
+        background-color: #0056b3;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
 
-        <div class="form-group mb-3">
-            <label for="email" class="font-weight-bold">Email</label>
-            <input type="email" class="form-control" id="email" name="User.Email" value="@Model.User.Email" />
-        </div>
+    .btn-secondary {
+        border-radius: 30px;
+        font-size: 16px;
+    }
 
-        <div class="form-group mb-3">
-            <label for="roleId" class="font-weight-bold">Role</label>
-            <select class="form-control" id="roleId" name="User.RoleId" required>
-                <option value="2" selected="@((Model.User.RoleId == 2) ? "selected" : null)">User</option>
-                <option value="1" selected="@((Model.User.RoleId == 1) ? "selected" : null)">Admin</option>
-            </select>
-        </div>
+    .form-control {
+        border-radius: 30px;
+        font-size: 16px;
+        padding: 10px 15px;
+    }
 
-        <div class="form-group mb-3">
-            <label for="systemName" class="font-weight-bold">System Name</label>
-            <input type="text" class="form-control" id="systemName" name="User.SystemName" value="@Model.User.SystemName" />
-        </div>
-
-        <div class="form-group mb-3">
-            <label for="webhookUrl" class="font-weight-bold">Webhook URL</label>
-            <input type="url" class="form-control" id="webhookUrl" name="User.WebhookUrl" value="@Model.User.WebhookUrl" />
-        </div>
-
-        <div class="form-group mb-3">
-            <label for="webhookSecretKey" class="font-weight-bold">Webhook Secret Key</label>
-            <input type="text" class="form-control" id="webhookSecretKey" name="User.WebhookSecretKey" value="@Model.User.WebhookSecretKey" />
-        </div>
-
-        <div class="form-group mb-3">
-            <label for="status" class="font-weight-bold">Status</label>
-            <select class="form-control" id="status" name="User.Status">
-                <option value="Active" selected="@(Model.User.Status == "Active")">Active</option>
-                <option value="Deactive" selected="@(Model.User.Status == "Deactive")">Deactive</option>
-            </select>
-        </div>
-
-        <div class="d-grid gap-2 mt-4">
-            <button type="submit" class="btn btn-primary btn-lg">Update</button>
-            <a asp-page="/Admin/Index" class="btn btn-secondary btn-lg">Go Back</a>
-        </div>
-    </form>
-</div>
+    .form-group label {
+        font-weight: bold;
+        font-size: 14px;
+    }
+</style>
