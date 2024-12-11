@@ -17,6 +17,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using FAL.MiddleWare;
 using Share.Utils;
 using FAL.DataInitial;
+using Amazon.Extensions.NETCore.Setup;
+using Share.Model;
 
 namespace FAL
 {
@@ -25,7 +27,6 @@ namespace FAL
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
             // Add services to the container.
 
             builder.Services.AddControllers(options =>
@@ -65,14 +66,14 @@ namespace FAL
                     }
                 });
             });
-
+            string pathFileLog = builder.Configuration["PathFileLog"] ?? "";
             builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
             builder.Services.AddAWSService<IAmazonS3>();
             builder.Services.AddAWSService<IAmazonRekognition>();
             builder.Services.AddAWSService<IAmazonDynamoDB>();
             builder.Services.AddAWSService<IAmazonSQS>();
             builder.Services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
-            builder.Services.AddSingleton<CustomLog>(new CustomLog(Path.Combine(Directory.GetCurrentDirectory(), "bin", "ProgramLogs", "Log.txt")));
+            builder.Services.AddSingleton<CustomLog>(new CustomLog(pathFileLog));
             builder.Services.AddSingleton<ICollectionService, CollectionService>();
             builder.Services.AddSingleton<IS3Service, S3Service>();
             builder.Services.AddSingleton<IPermissionService, PermissionService>();
