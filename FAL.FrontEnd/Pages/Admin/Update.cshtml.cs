@@ -50,7 +50,7 @@ namespace FAL.FrontEnd.Pages.Admin
             // Kiểm tra nếu người dùng cố gắng edit chính mình
             if (string.Equals(username, currentUsername, StringComparison.OrdinalIgnoreCase))
             {
-                return RedirectToPage("/Admin/Setting");
+                return RedirectToPage("/Settings/Info");
             }
             try
             {

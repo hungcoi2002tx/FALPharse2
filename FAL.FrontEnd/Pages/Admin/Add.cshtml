@@ -2,7 +2,8 @@
 @model FAL.FrontEnd.Pages.Admin.AddModel
 @{
 }
-<h2>Add Account</h2>
+<h2 class="text-center mb-4">Add Account</h2>
+
 @if (!ModelState.IsValid)
 {
     <div class="alert alert-danger">
@@ -14,6 +15,7 @@
         </ul>
     </div>
 }
+
 @{
     var successMessage = TempData["SuccessMessage"] as string;
     var errorMessage = TempData["ErrorMessage"] as string;
@@ -32,46 +34,57 @@
         @errorMessage
     </div>
 }
-<form method="post">
-    <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" class="form-control" id="username" name="NewAccount.Username" value="@Model.NewAccount.Username" required />
-    </div>
-    <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" class="form-control" id="password" name="NewAccount.Password" value="@Model.NewAccount.Password" required />
-    </div>
-    <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" class="form-control" id="email" name="NewAccount.Email" value="@Model.NewAccount.Email" />
-    </div>
-    <div class="form-group">
-        <label for="roleId">Role</label>
-        <select class="form-control" id="roleId" name="NewAccount.RoleId" required>
-            <option value="2" selected="@((Model.NewAccount.RoleId == 2) ? "selected" : null)">User</option>
-            <option value="1" selected="@((Model.NewAccount.RoleId == 1) ? "selected" : null)">Admin</option>
-        </select>
+<div class="container mt-5">
+    <form method="post" class="card p-4 shadow-lg rounded-lg">
+        <div class="form-group mb-3">
+            <label for="username" class="font-weight-bold">Username</label>
+            <input type="text" class="form-control" id="username" name="NewAccount.Username" value="@Model.NewAccount.Username" required />
+        </div>
 
-    </div>
-    <div class="form-group">
-        <label for="systemName">System Name</label>
-        <input type="text" class="form-control" id="systemName" name="NewAccount.SystemName" value="@Model.NewAccount.SystemName" required />
-    </div>
-    <div class="form-group">
-        <label for="webhookUrl">Webhook URL</label>
-        <input type="url" class="form-control" id="webhookUrl" name="NewAccount.WebhookUrl" value="@Model.NewAccount.WebhookUrl" />
-    </div>
-    <div class="form-group">
-        <label for="webhookSecretKey">Webhook Secret Key</label>
-        <input type="text" class="form-control" id="webhookSecretKey" name="NewAccount.WebhookSecretKey" value="@Model.NewAccount.WebhookSecretKey" />
-    </div>
-    <div class="form-group">
-        <label for="status">Status</label>
-        <select class="form-control" id="status" name="NewAccount.Status" required>
-            <option value="Active" selected="@(Model.NewAccount.Status == "Active")">Active</option>
-            <option value="Deactive" selected="@(Model.NewAccount.Status == "Deactive")">Deactive</option>
-        </select>
+        <div class="form-group mb-3">
+            <label for="password" class="font-weight-bold">Password</label>
+            <input type="password" class="form-control" id="password" name="NewAccount.Password" value="@Model.NewAccount.Password" required />
+        </div>
 
-    </div>
-    <button type="submit" class="btn btn-primary">Save</button>
-</form>
+        <div class="form-group mb-3">
+            <label for="email" class="font-weight-bold">Email</label>
+            <input type="email" class="form-control" id="email" name="NewAccount.Email" value="@Model.NewAccount.Email" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="roleId" class="font-weight-bold">Role</label>
+            <select class="form-control" id="roleId" name="NewAccount.RoleId" required>
+                <option value="2" selected="@((Model.NewAccount.RoleId == 2) ? "selected" : null)">User</option>
+                <option value="1" selected="@((Model.NewAccount.RoleId == 1) ? "selected" : null)">Admin</option>
+            </select>
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="systemName" class="font-weight-bold">System Name</label>
+            <input type="text" class="form-control" id="systemName" name="NewAccount.SystemName" value="@Model.NewAccount.SystemName" required />
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="webhookUrl" class="font-weight-bold">Webhook URL</label>
+            <input type="url" class="form-control" id="webhookUrl" name="NewAccount.WebhookUrl" value="@Model.NewAccount.WebhookUrl" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="webhookSecretKey" class="font-weight-bold">Webhook Secret Key</label>
+            <input type="text" class="form-control" id="webhookSecretKey" name="NewAccount.WebhookSecretKey" value="@Model.NewAccount.WebhookSecretKey" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="status" class="font-weight-bold">Status</label>
+            <select class="form-control" id="status" name="NewAccount.Status" required>
+                <option value="Active" selected="@(Model.NewAccount.Status == "Active")">Active</option>
+                <option value="Deactive" selected="@(Model.NewAccount.Status == "Deactive")">Deactive</option>
+            </select>
+        </div>
+
+        <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">Save</button>
+            <a asp-page="/Admin/Index" class="btn btn-secondary btn-lg">Go Back</a>
+        </div>
+    </form>
+</div>

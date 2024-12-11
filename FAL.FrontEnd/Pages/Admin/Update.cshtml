@@ -5,7 +5,7 @@
 }
 
 <div class="container mt-5">
-    <h2 class="text-center mb-4">Update user information</h2>
+    <h2 class="text-center mb-4">Update User Information</h2>
 
     @if (!string.IsNullOrEmpty(TempData["Message"] as string))
     {
@@ -14,55 +14,51 @@
         </div>
     }
 
-    <form method="post" class="card p-4 shadow">
+    <form method="post" class="card p-4 shadow-lg rounded-lg">
         <div class="form-group mb-3">
-            <label for="username">Username</label>
+            <label for="username" class="font-weight-bold">Username</label>
             <input type="text" class="form-control" id="username" name="User.Username" value="@Model.User.Username" readonly />
         </div>
 
-    @*     <div class="form-group mb-3">
-            <label for="password">Password</label>
-            <input type="password" class="form-control" id="password" name="User.Password" />
-        </div> *@
-
         <div class="form-group mb-3">
-            <label for="email">Email</label>
+            <label for="email" class="font-weight-bold">Email</label>
             <input type="email" class="form-control" id="email" name="User.Email" value="@Model.User.Email" />
         </div>
 
         <div class="form-group mb-3">
-            <label for="roleId">Role</label>
+            <label for="roleId" class="font-weight-bold">Role</label>
             <select class="form-control" id="roleId" name="User.RoleId" required>
                 <option value="2" selected="@((Model.User.RoleId == 2) ? "selected" : null)">User</option>
                 <option value="1" selected="@((Model.User.RoleId == 1) ? "selected" : null)">Admin</option>
             </select>
         </div>
 
-
         <div class="form-group mb-3">
-            <label for="systemName">System Name</label>
+            <label for="systemName" class="font-weight-bold">System Name</label>
             <input type="text" class="form-control" id="systemName" name="User.SystemName" value="@Model.User.SystemName" />
         </div>
 
         <div class="form-group mb-3">
-            <label for="webhookUrl">Webhook URL</label>
+            <label for="webhookUrl" class="font-weight-bold">Webhook URL</label>
             <input type="url" class="form-control" id="webhookUrl" name="User.WebhookUrl" value="@Model.User.WebhookUrl" />
         </div>
 
         <div class="form-group mb-3">
-            <label for="webhookSecretKey">Webhook Secret Key</label>
+            <label for="webhookSecretKey" class="font-weight-bold">Webhook Secret Key</label>
             <input type="text" class="form-control" id="webhookSecretKey" name="User.WebhookSecretKey" value="@Model.User.WebhookSecretKey" />
         </div>
 
         <div class="form-group mb-3">
-            <label for="status">Status</label>
+            <label for="status" class="font-weight-bold">Status</label>
             <select class="form-control" id="status" name="User.Status">
                 <option value="Active" selected="@(Model.User.Status == "Active")">Active</option>
                 <option value="Deactive" selected="@(Model.User.Status == "Deactive")">Deactive</option>
             </select>
         </div>
 
-        <button type="submit" class="btn btn-primary w-100">Update</button>
-        <a asp-page="/Admin/Index" class="btn btn-secondary w-100 mt-2">Quay Lại</a>
+        <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">Update</button>
+            <a asp-page="/Admin/Index" class="btn btn-secondary btn-lg">Go Back</a>
+        </div>
     </form>
 </div>

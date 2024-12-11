@@ -10,14 +10,35 @@
         min-width: 80px;
         text-align: center;
     }
+        .badge-role {
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            border-radius: 12px;
+            }
+        .badge-admin {
+
+            background-color: #007bff;
+            color: white;
+        }
+        .badge-user {
+            background-color: #28a745;
+            color: white;
+        }
+        .badge-unknown {
+            background-color: #6c757d;
+            color: white;
+        }
 </style>
+
 <h1 class="text-center my-4">Account Management</h1>
+
 @if (!string.IsNullOrEmpty(TempData["Message"] as string))
 {
     <div class="alert alert-info">
         @TempData["Message"]
     </div>
 }
+
 <!-- Display success message -->
 @if (TempData["SuccessMessage"] != null)
 {
@@ -57,7 +78,22 @@
                     <td>@account.Username</td>
                     <td>@account.Email</td>
                     <td>
-                        @(account.RoleId == 1 ? "Admin" : account.RoleId == 2 ? "User" : "Unknown")
+                        @if (account.RoleId == 1)
+                        {
+                            <span class="badge badge-role badge-admin" data-bs-toggle="tooltip" data-bs-placement="top" title="Administrator">
+                                <i class="bi bi-shield-lock-fill"></i> Admin
+                            </span>
+                        }
+                        else if (account.RoleId == 2)
+                        {
+                            <span class="badge badge-role badge-user" data-bs-toggle="tooltip" data-bs-placement="top" title="Regular User">
+                                <i class="bi bi-person-fill"></i> User
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-role badge-unknown">Unknown</span>
+                        }
                     </td>
                     <td>@account.SystemName</td>
                     <td>
@@ -78,7 +114,6 @@
                                 <i class="bi bi-pencil-fill"></i> Edit
                             </a>
                         </div>
-
                     </td>
                     <td>
                         <div class="d-flex justify-content-center">
@@ -100,8 +135,17 @@
         </tbody>
     </table>
 </div>
+
 <div class="mt-4">
     <a href="/Admin/Add" class="btn btn-primary">
         <i class="bi bi-person-plus-fill"></i> Add Account
     </a>
 </div>
+
+<script>
+    // Enable tooltips for role badges
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
