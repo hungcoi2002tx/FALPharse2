@@ -103,7 +103,7 @@ namespace AuthenExamCompareFace
                 var sourceFile = Config.GetSetting();
                 var urlSource = sourceFile.DirectoryImageSource;
                 string[] files = Directory.GetFiles(folderPath);
-                Regex regex = new Regex(@"^[a-zA-Z]{2}\d*\.(jpg|png)$");
+                Regex regex = new Regex(@"^[a-zA-Z]{2}\d*\.(jpg)$");
                 List<ResultCompareFaceDto> listDataCompareGetData = new List<ResultCompareFaceDto>();
 
 
@@ -162,14 +162,6 @@ namespace AuthenExamCompareFace
             if (File.Exists(jpgPath))
             {
                 return jpgPath; // Trả về đường dẫn nếu file .jpg tồn tại
-            }
-
-            // Đường dẫn cho file .png
-            string pngPath = Path.Combine(urlSource, fileNameWithoutExtension + ".png");
-
-            if (File.Exists(pngPath))
-            {
-                return pngPath; // Trả về đường dẫn nếu file .png tồn tại
             }
 
             // Nếu cả hai file không tồn tại, trả về null hoặc xử lý khác
@@ -554,33 +546,6 @@ namespace AuthenExamCompareFace
             else
             {
                 return false;
-            }
-        }
-
-        private string ConvertImageToBase64(Image image)
-        {
-            try
-            {
-                // Tạo một MemoryStream để lưu ảnh tạm thời
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    // Lưu ảnh vào MemoryStream dưới định dạng PNG (hoặc định dạng khác tùy chọn)
-                    image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-
-                    // Chuyển nội dung MemoryStream sang mảng byte
-                    byte[] imageBytes = ms.ToArray();
-
-                    // Chuyển mảng byte thành chuỗi base64
-                    string base64String = Convert.ToBase64String(imageBytes);
-
-                    return base64String;
-                }
-            }
-            catch (Exception ex)
-            {
-                // Xử lý lỗi nếu cần
-                Console.WriteLine($"Lỗi chuyển đổi ảnh sang base64: {ex.Message}");
-                return string.Empty;
             }
         }
 
