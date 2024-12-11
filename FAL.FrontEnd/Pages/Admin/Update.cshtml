@@ -31,9 +31,13 @@
         </div>
 
         <div class="form-group mb-3">
-            <label for="roleId">Role ID</label>
-            <input type="number" class="form-control" id="roleId" name="User.RoleId" value="@Model.User.RoleId" />
+            <label for="roleId">Role</label>
+            <select class="form-control" id="roleId" name="User.RoleId" required>
+                <option value="2" selected="@((Model.User.RoleId == 2) ? "selected" : null)">User</option>
+                <option value="1" selected="@((Model.User.RoleId == 1) ? "selected" : null)">Admin</option>
+            </select>
         </div>
+
 
         <div class="form-group mb-3">
             <label for="systemName">System Name</label>

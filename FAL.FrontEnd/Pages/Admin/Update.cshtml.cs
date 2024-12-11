@@ -23,9 +23,6 @@ namespace FAL.FrontEnd.Pages.Admin
         [BindProperty]
         public AccountViewDto User { get; set; } = new AccountViewDto();
 
-        [TempData]
-        public string Message { get; set; }
-
         private HttpClient GetAuthenticatedClient()
         {
             var client = _httpClientFactory.CreateClient();
@@ -44,24 +41,36 @@ namespace FAL.FrontEnd.Pages.Admin
         {
             if (string.IsNullOrEmpty(username))
             {
-                Message = "Invalid username.";
+                TempData["ErrorMessage"] = "Invalid username.";
                 return RedirectToPage("/Admin/Index");
             }
+            // Lấy thông tin người dùng hiện tại từ session
+            var currentUsername = HttpContext.Session.GetString("Username");
 
+            // Kiểm tra nếu người dùng cố gắng edit chính mình
+            if (string.Equals(username, currentUsername, StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToPage("/Admin/Setting");
+            }
             try
             {
                 var client = GetAuthenticatedClient();
                 var response = await client.GetAsync($"https://dev.demorecognition.click/api/accounts/{username}");
-
+                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    TempData["ErrorMessage"] = "You do not have permission to access this feature. Please log in again.";
+                    HttpContext.Session.Clear();
+                    return RedirectToPage("/Auth/Login");
+                }
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    Message = "Session expired. Please log in again.";
+                    TempData["ErrorMessage"] = "Session expired. Please log in again.";
                     return RedirectToPage("/Auth/Login");
                 }
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    Message = "User not found.";
+                    TempData["ErrorMessage"] = "User not found.";
                     return RedirectToPage("/Admin/Index");
                 }
 
@@ -73,7 +82,12 @@ namespace FAL.FrontEnd.Pages.Admin
             }
             catch (UnauthorizedAccessException ex)
             {
-                Message = ex.Message;
+                TempData["ErrorMessage"] = ex.Message;
+                return RedirectToPage("/Auth/Login");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
                 return RedirectToPage("/Auth/Login");
             }
 
@@ -82,12 +96,6 @@ namespace FAL.FrontEnd.Pages.Admin
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (!ModelState.IsValid)
-            {
-                Message = "Invalid data.";
-                return Page();
-            }
-
             try
             {
                 var client = GetAuthenticatedClient();
@@ -98,22 +106,21 @@ namespace FAL.FrontEnd.Pages.Admin
 
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    Message = "Session expired. Please log in again.";
+                    TempData["ErrorMessage"] = "Session expired. Please log in again.";
                     return RedirectToPage("/Auth/Login");
                 }
 
                 if (response.IsSuccessStatusCode)
                 {
-                    Message = "Update successful!";
-                    return Page();
-                    //return RedirectToPage("/Admin/Index");
+                    TempData["SuccessMessage"] = "Update successful!";
+                    return RedirectToPage("/Admin/Index");
                 }
 
-                Message = "Update failed.";
+                TempData["ErrorMessage"] = "Update failed.";
             }
             catch (UnauthorizedAccessException ex)
             {
-                Message = ex.Message;
+                TempData["ErrorMessage"] = ex.Message;
                 return RedirectToPage("/Auth/Login");
             }
 

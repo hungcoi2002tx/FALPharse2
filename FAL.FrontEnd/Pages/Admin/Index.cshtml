@@ -12,7 +12,12 @@
     }
 </style>
 <h1 class="text-center my-4">Account Management</h1>
-
+@if (!string.IsNullOrEmpty(TempData["Message"] as string))
+{
+    <div class="alert alert-info">
+        @TempData["Message"]
+    </div>
+}
 <!-- Display success message -->
 @if (TempData["SuccessMessage"] != null)
 {

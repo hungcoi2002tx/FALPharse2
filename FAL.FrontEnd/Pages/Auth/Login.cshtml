@@ -3,8 +3,13 @@
 @{
     Layout = "_Layout";
 }
-
 <h2>Login</h2>
+@if (!string.IsNullOrEmpty(TempData["Message"] as string))
+{
+    <div class="alert alert-info">
+        @TempData["Message"]
+    </div>
+}
 <form method="post">
     <div class="form-group">
         <label for="username">Username</label>
