@@ -4,36 +4,116 @@
     Layout = "_Layout";
 }
 
-<h2>Register</h2>
-<form method="post">
-    <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" id="username" asp-for="Username" class="form-control" required />
-    </div>
-    <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" asp-for="Email" class="form-control" required />
-    </div>
-    <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" asp-for="Password" class="form-control" required />
-    </div>
-    <div class="form-group">
-        <label for="systemName">System Name</label>
-        <input type="text" id="systemName" asp-for="SystemName" class="form-control" />
-    </div>
-    <div class="form-group">
-        <label for="webhookUrl">Webhook URL</label>
-        <input type="url" id="webhookUrl" asp-for="WebhookUrl" class="form-control" />
-    </div>
-    <div class="form-group">
-        <label for="webhookSecretKey">Webhook Secret Key</label>
-        <input type="text" id="webhookSecretKey" asp-for="WebhookSecretKey" class="form-control" />
-    </div>
-    <button type="submit" class="btn btn-primary">Register</button>
-</form>
+<div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="card shadow-lg p-4" style="max-width: 500px; width: 100%; border-radius: 10px;">
+        <h2 class="text-center mb-4">
+            <i class="bi bi-person-plus-fill"></i> Register
+        </h2>
 
-@if (Model.ErrorMessage != null)
-{
-    <div class="alert alert-danger">@Model.ErrorMessage</div>
-}
+        @if (!string.IsNullOrEmpty(TempData["Message"] as string))
+        {
+            <div class="alert alert-info">
+                @TempData["Message"]
+            </div>
+        }
+
+        <form method="post">
+            <div class="form-group mb-3">
+                <label for="username">
+                    <i class="bi bi-person-circle"></i> Username
+                </label>
+                <input type="text" id="username" asp-for="Username" class="form-control" placeholder="Enter your username" required />
+            </div>
+            <div class="form-group mb-3">
+                <label for="email">
+                    <i class="bi bi-envelope-fill"></i> Email
+                </label>
+                <input type="email" id="email" asp-for="Email" class="form-control" placeholder="Enter your email" required />
+            </div>
+            <div class="form-group mb-3">
+                <label for="password">
+                    <i class="bi bi-lock"></i> Password
+                </label>
+                <input type="password" id="password" asp-for="Password" class="form-control" placeholder="Enter your password" required />
+            </div>
+            <div class="form-group mb-3">
+                <label for="systemName">
+                    <i class="bi bi-server"></i> System Name
+                </label>
+                <input type="text" id="systemName" asp-for="SystemName" class="form-control" placeholder="Enter system name" />
+            </div>
+            <div class="form-group mb-3">
+                <label for="webhookUrl">
+                    <i class="bi bi-link"></i> Webhook URL
+                </label>
+                <input type="url" id="webhookUrl" asp-for="WebhookUrl" class="form-control" placeholder="Enter webhook URL" />
+            </div>
+            <div class="form-group mb-3">
+                <label for="webhookSecretKey">
+                    <i class="bi bi-key"></i> Webhook Secret Key
+                </label>
+                <input type="text" id="webhookSecretKey" asp-for="WebhookSecretKey" class="form-control" placeholder="Enter webhook secret key" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-3 hover-shadow">
+                <i class="bi bi-person-check-fill"></i> Register
+            </button>
+        </form>
+
+        @if (Model.ErrorMessage != null)
+        {
+            <div class="alert alert-danger mt-3">@Model.ErrorMessage</div>
+        }
+
+        <div class="text-center mt-3">
+            <small>Already have an account? <a href="/Auth/Login" class="text-decoration-none">Login here</a></small>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Styling for Hover Effects -->
+<style>
+    .card {
+        border-radius: 10px;
+    }
+
+    .hover-shadow:hover {
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-control {
+        border-radius: 30px;
+        font-size: 16px;
+    }
+
+    .btn-primary {
+        border-radius: 30px;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .text-center small {
+        font-size: 14px;
+        color: #6c757d;
+    }
+
+    .text-center small a {
+        color: #007bff;
+    }
+
+    .text-center small a:hover {
+        text-decoration: underline;
+    }
+
+    /* Ensuring the form is centered vertically */
+    .vh-100 {
+        min-height: 100vh; /* Ensure full height */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+</style>

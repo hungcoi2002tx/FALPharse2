@@ -169,17 +169,17 @@ namespace FAL.Controllers
                 return false;
             }
 
-            if (string.IsNullOrEmpty(userDto.WebhookUrl))
-            {
-                errorMessage = "Webhook URL cannot be empty.";
-                return false;
-            }
+            //if (string.IsNullOrEmpty(userDto.WebhookUrl))
+            //{
+            //    errorMessage = "Webhook URL cannot be empty.";
+            //    return false;
+            //}
 
-            if (string.IsNullOrEmpty(userDto.WebhookSecretKey))
-            {
-                errorMessage = "Webhook Secret Key cannot be empty.";
-                return false;
-            }
+            //if (string.IsNullOrEmpty(userDto.WebhookSecretKey))
+            //{
+            //    errorMessage = "Webhook Secret Key cannot be empty.";
+            //    return false;
+            //}
 
             errorMessage = string.Empty;
             return true;

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using FAL.FrontEnd.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Text;
 using System.Text.Json;
@@ -53,7 +54,7 @@ namespace FAL.FrontEnd.Pages.Auth
             var content = new StringContent(JsonSerializer.Serialize(registerData), Encoding.UTF8, "application/json");
 
             // Gửi yêu cầu đăng ký đến API
-            var response = await client.PostAsync("api/Auth/register", content);
+            var response = await client.PostAsync(FEGlobalVarians.REGISTER_ENDPOINT, content);
 
             if (response.IsSuccessStatusCode)
             {
