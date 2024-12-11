@@ -344,7 +344,7 @@ namespace FAL.Services
                 var request = new CreateUserRequest()
                 {
                     CollectionId = systermId,
-                    UserId = userId
+                    UserId = userId.ToLower()
                 };
                 var response = await _rekognitionClient.CreateUserAsync(request);
                 if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
