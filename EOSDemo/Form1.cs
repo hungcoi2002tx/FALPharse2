@@ -33,10 +33,6 @@ namespace EOSDemo
 
                 // Tạo video capture device
                 videoCaptureDevice = new VideoCaptureDevice(videoDevices[cameraIndex].MonikerString);
-
-               
-
-
    
                 // Kiểm tra xem camera có đang được sử dụng bởi ứng dụng khác không
                 if (!cameraHandler.IsCameraInUse(videoCaptureDevice))

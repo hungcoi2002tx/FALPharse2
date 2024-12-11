@@ -433,12 +433,12 @@ namespace AuthenExamCompareFace
                 }
                 else
                 {
-                    MessageBox.Show($"Không tìm thấy file .jpg nào trong thư mục.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"No .jpg files found in the directory.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             catch (Exception)
             {
-                MessageBox.Show($"Không tìm thấy file .jpg nào trong thư mục.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"No .jpg files found in the directory.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

@@ -103,7 +103,7 @@ namespace AuthenExamCompareFace
                 var sourceFile = Config.GetSetting();
                 var urlSource = sourceFile.DirectoryImageSource;
                 string[] files = Directory.GetFiles(folderPath);
-                Regex regex = new Regex(@"^[a-zA-Z]{2}\d{6}\.(jpg|png)$");
+                Regex regex = new Regex(@"^[a-zA-Z]{2}\d*\.(jpg|png)$");
                 List<ResultCompareFaceDto> listDataCompareGetData = new List<ResultCompareFaceDto>();
 
 
@@ -141,7 +141,7 @@ namespace AuthenExamCompareFace
 
                 if (listDataCompare.Count == 0)
                 {
-                    MessageBox.Show("Không tìm thấy file nào đáp ứng định dạng trong thư mục!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("No files matching the format were found in the directory!", "Notification", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
 
             }
