@@ -15,6 +15,83 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .navbar {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .badge-role-admin {
+            background-color: #0d6efd;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 6px rgba(13, 110, 253, 0.3);
+            transition: all 0.3s ease-in-out;
+        }
+
+            .badge-role-admin:hover {
+                background-color: #0056b3;
+                transform: scale(1.05);
+            }
+
+        .badge-role-user {
+            background-color: #198754;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 6px rgba(25, 135, 84, 0.3);
+            transition: all 0.3s ease-in-out;
+        }
+
+            .badge-role-user:hover {
+                background-color: #145a32;
+                transform: scale(1.05);
+            }
+
+        .navbar-text {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .navbar-toggler {
+            border: none;
+        }
+
+        .navbar-nav .nav-link {
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease-in-out;
+        }
+
+            .navbar-nav .nav-link:hover {
+                color: #ffcc00;
+            }
+
+        .navbar-brand {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .navbar-text i {
+            margin-right: 8px;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .footer {
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .navbar-collapse {
+            justify-content: flex-end;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -34,9 +111,6 @@
                                 <li class="nav-item">
                                     <a class="nav-link text-white" asp-page="/Admin/Index">Accounts</a>
                                 </li>
-                                <!-- <li class="nav-item">
-                                     <a class="nav-link text-white" asp-page="Admin/Roles">Roles</a>
-                                </li> -->
                             }
                             else if (Helper.SessionExtensions.IsInRole(2))
                             {
@@ -57,24 +131,41 @@
                                 <a class="nav-link text-white" asp-area="" asp-page="/Auth/Login">Login</a>
                             </li>
                         }
+                    </ul>
 
-                        <!-- Thêm khu vực di chuyển username và logout sang phải -->
-                        <div class="d-flex align-items-center ms-auto">
-                            @if (Helper.SessionExtensions.IsAuthenticated())
-                            {
-                            <li class="navbar-text text-white me-3">
-                                <i class="bi bi-person-circle"></i> @Context.Session.GetUsername()
-                            </li>
-                            <li class="nav-item me-3">
+                    <!-- User info with role indicator -->
+                    <div class="d-flex align-items-center ms-auto">
+                        @if (Helper.SessionExtensions.IsAuthenticated())
+                        {
+                            <!-- User info -->
+                            <span class="navbar-text text-white me-3">
+                                <i class="bi bi-person-circle"></i>@Context.Session.GetUsername()
+                                @if (Helper.SessionExtensions.IsInRole(1))
+                                {
+                                    <span class="badge-role-admin" data-bs-toggle="tooltip" data-bs-placement="top" title="Admin">
+                                        <i class="bi bi-shield-lock-fill"></i> Admin
+                                    </span>
+                                }
+                                else if (Helper.SessionExtensions.IsInRole(2))
+                                {
+                                    <span class="badge-role-user" data-bs-toggle="tooltip" data-bs-placement="top" title="User">
+                                        <i class="bi bi-person-fill"></i> User
+                                    </span>
+                                }
+                            </span>
+
+                            <!-- Log out button -->
+                            <span class="nav-item me-3">
                                 <a class="nav-link text-white" asp-area="" asp-page="/Auth/Logout"> <i class="bi bi-box-arrow-right"></i> Log Out</a>
-                            </li>
-                            }
-                        </div>
-                </ul>
-            </div>
+                            </span>
+                        }
+                    </div>
+
+                </div>
             </div>
         </nav>
     </header>
+
     <div class="container-fluid">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -92,5 +183,13 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        // Enable tooltips for role badges
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
 </body>
 </html>

@@ -10,7 +10,7 @@ namespace FAL.FrontEnd.Models
         public string Password { get; set; }
 
         [JsonPropertyName("email")]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         [JsonPropertyName("roleId")]
         public int RoleId { get; set; }
@@ -19,10 +19,10 @@ namespace FAL.FrontEnd.Models
         public string SystemName { get; set; }
 
         [JsonPropertyName("webhookUrl")]
-        public string WebhookUrl { get; set; }
+        public string? WebhookUrl { get; set; }
 
         [JsonPropertyName("webhookSecretKey")]
-        public string WebhookSecretKey { get; set; }
+        public string? WebhookSecretKey { get; set; }
 
         [JsonPropertyName("status")]
         public string Status { get; set; }

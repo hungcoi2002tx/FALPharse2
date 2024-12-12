@@ -41,30 +41,58 @@ namespace FAL.FrontEnd.Pages.Auth
             try
             {
                 var client = _httpClientFactory.CreateClient("FaceDetectionAPI");
-                if(Username != null && Password != null)
+                if (Username != null && Password != null)
                 {
-                    var token = await _authService.GetTokenAsync(Username, Password);
-                    if (!token.IsNullOrEmpty())
+                    string token;
+                    try
                     {
-                        // Lưu token vào session hoặc cookie
+                        token = await _authService.GetTokenAsync(Username, Password);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        // Handle bad request (invalid login info) error
+                        ErrorMessage = ex.Message;
+                        return Page();
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        // Handle unauthorized access (e.g., incorrect password or account issues)
+                        ErrorMessage = ex.Message;
+                        return Page();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Generic error handling
+                        ErrorMessage = "An error occurred while attempting to log in. Please try again.";
+                        Console.WriteLine(ex);
+                        return Page();
+
+                    }
+
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        // Decode JWT token and save user info
                         Account userInfo = JwtHelper.DecodeJwt(token);
 
-                        // Lưu JWT token vào session
+                        // Save JWT token in session
                         HttpContext.Session.SetString("JwtToken", token);
 
-                        // Lưu thông tin người dùng vào session
+                        // Save user info in session
                         HttpContext.Session.SetString("Username", userInfo.Username ?? string.Empty);
                         HttpContext.Session.SetInt32("RoleId", userInfo.RoleId);
+
                         if (userInfo != null)
                         {
-                            // Lưu token trong cookie
+                            // Save token in cookie
                             Response.Cookies.Append("AccessToken", token, new CookieOptions
                             {
-                                HttpOnly = false,          // FE có thể truy cập
-                                Secure = true,             // Chỉ gửi qua HTTPS
+                                HttpOnly = false,          // FE can access
+                                Secure = true,             // Only sent over HTTPS
                                 SameSite = SameSiteMode.Strict,
-                                Expires = DateTime.UtcNow.AddMinutes(30) // JWT hết hạn sau 30 phút
+                                Expires = DateTime.UtcNow.AddMinutes(30) // JWT expires after 30 minutes
                             });
+
+                            // Redirect based on user role
                             if (userInfo.RoleId == 1)
                             {
                                 return Redirect("/Admin/Index");
@@ -74,7 +102,7 @@ namespace FAL.FrontEnd.Pages.Auth
                                 return Redirect("/Dashboard/Main");
                             }
                         }
-                        return Redirect("/Error");
+                        return Page();
                     }
                 }
                 ErrorMessage = "Invalid login";
@@ -82,10 +110,12 @@ namespace FAL.FrontEnd.Pages.Auth
             }
             catch (Exception ex)
             {
+                // Catch all other exceptions
                 Console.WriteLine(ex);
                 return Redirect("/Error");
             }
         }
+
 
         public IActionResult OnGet()
         {

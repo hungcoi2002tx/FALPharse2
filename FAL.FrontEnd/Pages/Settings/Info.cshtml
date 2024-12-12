@@ -4,54 +4,112 @@
     ViewData["Title"] = "User Information";
 }
 
-<h2>User Information</h2>
+<div class="main py-5">
+    <div class="card shadow-lg p-4" style="border-radius: 10px;">
+        <h2 class="text-center mb-4">
+            <i class="bi bi-person-badge-fill"></i> User Information
+        </h2>
 
-@if (Model.SuccessMessage != null)
-{
-    <div class="alert alert-success mt-3">
-        @Model.SuccessMessage
+        <!-- Success and Error Messages -->
+        @if (Model.SuccessMessage != null)
+        {
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle-fill"></i> @Model.SuccessMessage
+            </div>
+        }
+
+        @if (Model.ErrorMessage != null)
+        {
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill"></i> @Model.ErrorMessage
+            </div>
+        }
+
+        <!-- Display User Information -->
+        <div class="bg-light p-3 rounded mb-4">
+            <h5 class="mb-3"><i class="bi bi-info-circle-fill text-primary"></i> Current Information</h5>
+            <p><strong>Email:</strong> @Model.Email</p>
+            <p><strong>System Name:</strong> @Model.SystemName</p>
+            <p><strong>Webhook URL:</strong> @Model.WebhookUrl</p>
+            <p><strong>Webhook Secret Key:</strong> @Model.WebhookSecretKey</p>
+        </div>
+
+        <!-- Form to Update User Information -->
+        <h5 class="text-primary mb-3"><i class="bi bi-pencil-fill"></i> Update Information</h5>
+        <form method="post">
+            <div class="form-group mb-3">
+                <label for="Email">
+                    <i class="bi bi-envelope-fill"></i> Email
+                </label>
+                <input type="email" asp-for="Email" class="form-control" placeholder="Enter new email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="SystemName">
+                    <i class="bi bi-server"></i> System Name
+                </label>
+                <input type="text" asp-for="SystemName" class="form-control" placeholder="Enter new system name" />
+                <span asp-validation-for="SystemName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="WebhookUrl">
+                    <i class="bi bi-link-45deg"></i> Webhook URL
+                </label>
+                <input type="text" asp-for="WebhookUrl" class="form-control" placeholder="Enter new webhook URL" />
+                <span asp-validation-for="WebhookUrl" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="WebhookSecretKey">
+                    <i class="bi bi-key-fill"></i> Webhook Secret Key
+                </label>
+                <input type="text" asp-for="WebhookSecretKey" class="form-control" placeholder="Enter new webhook secret key" />
+                <span asp-validation-for="WebhookSecretKey" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-3">
+                <i class="bi bi-save-fill"></i> Update Information
+            </button>
+        </form>
     </div>
-}
-
-@if (Model.ErrorMessage != null)
-{
-    <div class="alert alert-danger mt-3">
-        @Model.ErrorMessage
-    </div>
-}
-
-<div>
-    <strong>Email:</strong> @Model.Email <br />
-    <strong>System Name:</strong> @Model.SystemName <br />
-    <strong>Webhook URL:</strong> @Model.WebhookUrl <br />
-    <strong>Webhook Secret Key:</strong> @Model.WebhookSecretKey <br />
 </div>
-<hr />
 
-<form method="post">
-    <div class="form-group">
-        <label for="Email">Email</label>
-        <input type="email" asp-for="Email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
+<!-- Additional Styling -->
+<style>
+    .main {
+        max-width: 600px;
+        margin: auto;
+    }
 
-    <div class="form-group">
-        <label for="SystemName">System Name</label>
-        <input type="text" asp-for="SystemName" class="form-control" />
-        <span asp-validation-for="SystemName" class="text-danger"></span>
-    </div>
+    .btn-primary {
+        border-radius: 30px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
 
-    <div class="form-group">
-        <label for="WebhookUrl">Webhook URL</label>
-        <input type="text" asp-for="WebhookUrl" class="form-control" />
-        <span asp-validation-for="WebhookUrl" class="text-danger"></span>
-    </div>
+    .btn-primary:hover {
+        background-color: #0056b3;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
 
-    <div class="form-group">
-        <label for="WebhookSecretKey">Webhook Secret Key</label>
-        <input type="text" asp-for="WebhookSecretKey" class="form-control" />
-        <span asp-validation-for="WebhookSecretKey" class="text-danger"></span>
-    </div>
+    .form-control {
+        border-radius: 30px;
+        font-size: 16px;
+        padding: 10px 15px;
+    }
 
-    <button type="submit" class="btn btn-primary">Cập nhật</button>
-</form>
+    .form-group label {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .bg-light {
+        background-color: #f8f9fa !important;
+    }
+
+    .rounded {
+        border-radius: 10px !important;
+    }
+</style>

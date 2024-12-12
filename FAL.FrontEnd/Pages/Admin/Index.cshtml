@@ -4,16 +4,83 @@
     ViewData["Title"] = "Account Management";
     string? currentUsername = HttpContext.Session.GetString("Username");
 }
+
 <style>
     .badge-status {
         display: inline-block;
         min-width: 80px;
         text-align: center;
+        padding: 5px 10px;
+        font-size: 0.9rem;
+        border-radius: 12px;
+        transition: transform 0.2s ease;
     }
+
+        .badge-status:hover {
+            transform: scale(1.1);
+        }
+
+    .badge-role {
+        padding: 5px 10px;
+        font-size: 0.9rem;
+        border-radius: 12px;
+        color: white;
+    }
+
+    .badge-admin {
+        background-color: #007bff;
+    }
+
+    .badge-user {
+        background-color: #28a745;
+    }
+
+    .badge-unknown {
+        background-color: #6c757d;
+    }
+
+    .btn-sm {
+        min-width: 110px;
+        border-radius: 20px;
+    }
+
+    .btn-success, .btn-danger, .btn-warning {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+        .btn-success i, .btn-danger i, .btn-warning i {
+            margin-right: 5px;
+        }
+
+    .btn:hover {
+        transform: translateY(-3px);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    a {
+        transition: color 0.2s ease;
+    }
+
+        a:hover {
+            color: #0056b3;
+        }
 </style>
+
 <h1 class="text-center my-4">Account Management</h1>
 
-<!-- Display success message -->
+@if (!string.IsNullOrEmpty(TempData["Message"] as string))
+{
+    <div class="alert alert-info">
+        @TempData["Message"]
+    </div>
+}
+
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success text-center">
@@ -21,7 +88,6 @@
     </div>
 }
 
-<!-- Display error message -->
 @if (TempData["ErrorMessage"] != null)
 {
     <div class="alert alert-danger text-center">
@@ -52,7 +118,22 @@
                     <td>@account.Username</td>
                     <td>@account.Email</td>
                     <td>
-                        @(account.RoleId == 1 ? "Admin" : account.RoleId == 2 ? "User" : "Unknown")
+                        @if (account.RoleId == 1)
+                        {
+                            <span class="badge badge-role badge-admin" data-bs-toggle="tooltip" data-bs-placement="top" title="Administrator">
+                                <i class="bi bi-shield-lock-fill"></i> Admin
+                            </span>
+                        }
+                        else if (account.RoleId == 2)
+                        {
+                            <span class="badge badge-role badge-user" data-bs-toggle="tooltip" data-bs-placement="top" title="Regular User">
+                                <i class="bi bi-person-fill"></i> User
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-role badge-unknown">Unknown</span>
+                        }
                     </td>
                     <td>@account.SystemName</td>
                     <td>
@@ -68,21 +149,20 @@
                     </td>
                     <td>
                         <div class="d-flex justify-content-center">
-                            <!-- Edit button -->
                             <a class="btn btn-warning btn-sm" href="/admin/update/?username=@account.Username">
                                 <i class="bi bi-pencil-fill"></i> Edit
                             </a>
                         </div>
-
                     </td>
                     <td>
                         <div class="d-flex justify-content-center">
                             @if (!isCurrentUser)
                             {
-                                <!-- Activate/Deactivate button -->
                                 <form method="post" style="display:inline;">
                                     <input type="hidden" name="username" value="@account.Username" />
-                                    <button type="submit" class="btn btn-secondary btn-sm">
+
+                                    <button type="submit" class="btn btn-sm @(account.Status == "Active" ? "btn-danger" : "btn-success")"
+                                            onclick="return confirm('Are you sure you want to @(account.Status == "Active" ? "DEACTIVATE" : "ACTIVATE") account @(account.Username)?');">
                                         <i class="bi bi-toggle-@(account.Status == "Active" ? "off" : "on")"></i>
                                         @(account.Status == "Active" ? "Deactivate" : "Activate")
                                     </button>
@@ -95,8 +175,16 @@
         </tbody>
     </table>
 </div>
-<div class="mt-4">
-    <a href="/Admin/Add" class="btn btn-primary">
+
+<div class="mt-4 text-center">
+    <a href="/Admin/Add" class="btn btn-primary btn-lg rounded-pill">
         <i class="bi bi-person-plus-fill"></i> Add Account
     </a>
 </div>
+
+<script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+</script>
