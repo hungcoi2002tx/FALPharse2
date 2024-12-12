@@ -3,10 +3,16 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using Newtonsoft.Json;
 using Share.Model;
+
 namespace FAL.DataInitial
 {
     public class DefaultDataInitializer
     {
+        private const string CLIENT_REQUEST_TABLE = "ClientRequests";
+        private const string RESULT_INFO_TABLE = "ResultInfo";
+        private const string FACE_INFO_TABLE = "FaceInfo";
+        private const string ACCOUNTS_TABLE = "Accounts";
+        private const string ROLES_TABLE = "Roles";
         private readonly IDynamoDBContext _dynamoDbContext;
         private readonly IAmazonDynamoDB _dynamoDbClient;
 
@@ -18,9 +24,8 @@ namespace FAL.DataInitial
 
         public async Task SeedDefaultDataAsync()
         {
-            // Kiểm tra và tạo bảng nếu chưa có
-            await CreateTableIfNotExistsAsync("Accounts");
-            await CreateTableIfNotExistsAsync("Roles");
+            // Check and create the table if it does not exist
+            await EnsureTablesExistAsync();
 
             var defaultData = LoadDefaultData("DataInitial/defaultData.json");
 
@@ -36,86 +41,148 @@ namespace FAL.DataInitial
                 await AddRoleIfNotExistsAsync(role);
             }
         }
+        private async Task EnsureTablesExistAsync()
+        {
+            var tableTasks = new List<Task>
+            {
+                CreateTableIfNotExistsAsync(CLIENT_REQUEST_TABLE),
+                CreateTableIfNotExistsAsync(FACE_INFO_TABLE),
+                CreateTableIfNotExistsAsync(RESULT_INFO_TABLE),
+                CreateTableIfNotExistsAsync(ACCOUNTS_TABLE),
+                CreateTableIfNotExistsAsync(ROLES_TABLE)
+            };
 
+            await Task.WhenAll(tableTasks);
+        }
         private async Task CreateTableIfNotExistsAsync(string tableName)
         {
             try
             {
-                // Kiểm tra xem bảng đã tồn tại hay chưa
+                // Check if the table already exists
                 var response = await _dynamoDbClient.DescribeTableAsync(new DescribeTableRequest
                 {
                     TableName = tableName
                 });
-                Console.WriteLine($"Bảng '{tableName}' đã tồn tại.");
+                Console.WriteLine($"The table '{tableName}' already exists.");
             }
             catch (ResourceNotFoundException)
             {
-                // Nếu bảng không tồn tại, tạo mới
-                Console.WriteLine($"Bảng '{tableName}' chưa tồn tại. Đang tạo bảng...");
+                // If the table does not exist, create a new one
+                Console.WriteLine($"The table '{tableName}' does not exist. Creating the table...");
 
                 var createTableRequest = new CreateTableRequest
                 {
                     TableName = tableName,
-                    KeySchema = new List<KeySchemaElement>(),
-                    AttributeDefinitions = new List<AttributeDefinition>(),
-                    ProvisionedThroughput = new ProvisionedThroughput(5, 5)
+                    KeySchema = [],
+                    AttributeDefinitions = [],
+                    BillingMode = BillingMode.PAY_PER_REQUEST
                 };
 
-                // Cấu hình schema và định nghĩa theo tên bảng
-                if (tableName == "Accounts")
+                // Configure schema and definitions based on the table name
+                switch (tableName)
                 {
-                    createTableRequest.KeySchema.Add(new KeySchemaElement("Username", KeyType.HASH));
-                    createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("Username", ScalarAttributeType.S));
-                }
-                else if (tableName == "Roles")
-                {
-                    createTableRequest.KeySchema.Add(new KeySchemaElement("RoleId", KeyType.HASH));
-                    createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("RoleId", ScalarAttributeType.N));
+                    case ACCOUNTS_TABLE:
+                        createTableRequest.KeySchema.Add(new KeySchemaElement("Username", KeyType.HASH));
+                        createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("Username", ScalarAttributeType.S));
+                        break;
+
+                    case ROLES_TABLE:
+                        createTableRequest.KeySchema.Add(new KeySchemaElement("RoleId", KeyType.HASH));
+                        createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("RoleId", ScalarAttributeType.N));
+                        break;
+
+                    case CLIENT_REQUEST_TABLE:
+                        createTableRequest.KeySchema.Add(new KeySchemaElement("SystemName", KeyType.HASH));
+                        createTableRequest.KeySchema.Add(new KeySchemaElement("CreateDate", KeyType.RANGE));
+                        createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("SystemName", ScalarAttributeType.S));
+                        createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("CreateDate", ScalarAttributeType.S));
+                        break;
+
+                    case RESULT_INFO_TABLE:
+                        createTableRequest.KeySchema.Add(new KeySchemaElement("FileName", KeyType.HASH));
+                        createTableRequest.KeySchema.Add(new KeySchemaElement("SystemName", KeyType.RANGE));
+                        createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("FileName", ScalarAttributeType.S));
+                        createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("SystemName", ScalarAttributeType.S));
+                        break;
+
+                    case FACE_INFO_TABLE:
+                        createTableRequest.KeySchema.Add(new KeySchemaElement("UserId", KeyType.HASH));
+                        createTableRequest.KeySchema.Add(new KeySchemaElement("FaceId", KeyType.RANGE));
+                        createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("UserId", ScalarAttributeType.S));
+                        createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("FaceId", ScalarAttributeType.S));
+                        createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("SystemName", ScalarAttributeType.S));
+
+                        createTableRequest.GlobalSecondaryIndexes =
+                [
+                    new() {
+                        IndexName = "SystemNameIndex",
+                        KeySchema =
+                        [
+                            new KeySchemaElement("SystemName", KeyType.HASH),
+                            new KeySchemaElement("UserId", KeyType.RANGE)
+                        ],
+                        Projection = new Projection
+                        {
+                            ProjectionType = ProjectionType.ALL
+                        }
+                    }
+                ];
+                        break;
+
+                    default:
+                        throw new ArgumentException($"Unsupported table name: {tableName}");
                 }
 
                 await _dynamoDbClient.CreateTableAsync(createTableRequest);
-                Console.WriteLine($"Bảng '{tableName}' đã được tạo.");
+                Console.WriteLine($"The table '{tableName}' has been created.");
 
-                // Chờ cho đến khi bảng chuyển sang trạng thái ACTIVE
+                // Wait until the table becomes ACTIVE
                 await WaitForTableToBecomeActiveAsync(tableName);
             }
         }
 
-
         private DefaultData LoadDefaultData(string filePath)
         {
+            // Kiểm tra nếu file dữ liệu không tồn tại thì báo lỗi
             if (!File.Exists(filePath))
             {
-                throw new FileNotFoundException($"Không tìm thấy file dữ liệu: {filePath}");
+                throw new FileNotFoundException($"Data file not found: {filePath}");
             }
 
+            // Đọc dữ liệu từ file JSON và deserialize thành object DefaultData
             var jsonData = File.ReadAllText(filePath);
             return JsonConvert.DeserializeObject<DefaultData>(jsonData);
         }
 
         private async Task AddAccountIfNotExistsAsync(Account account)
         {
+            // Kiểm tra xem tài khoản đã tồn tại trong bảng chưa
             var existingAccount = await _dynamoDbContext.LoadAsync<Account>(account.Username);
             if (existingAccount == null)
             {
+                // Nếu chưa tồn tại thì thêm tài khoản mới vào bảng
                 await _dynamoDbContext.SaveAsync(account);
-                Console.WriteLine($"Đã thêm tài khoản: {account.Username}");
+                Console.WriteLine($"Added account: {account.Username}");
             }
         }
 
         private async Task AddRoleIfNotExistsAsync(Role role)
         {
+            // Kiểm tra xem vai trò đã tồn tại trong bảng chưa
             var existingRole = await _dynamoDbContext.LoadAsync<Role>(role.RoleId);
             if (existingRole == null)
             {
+                // Nếu chưa tồn tại thì thêm vai trò mới vào bảng
                 await _dynamoDbContext.SaveAsync(role);
-                Console.WriteLine($"Đã thêm vai trò: {role.RoleId}");
+                Console.WriteLine($"Added role: {role.RoleId}");
             }
         }
+
         private async Task WaitForTableToBecomeActiveAsync(string tableName)
         {
-            Console.WriteLine($"Đang chờ bảng '{tableName}' chuyển sang trạng thái ACTIVE...");
+            Console.WriteLine($"Waiting for the table '{tableName}' to become ACTIVE...");
 
+            // Vòng lặp kiểm tra trạng thái bảng đến khi nó chuyển sang trạng thái ACTIVE
             while (true)
             {
                 var response = await _dynamoDbClient.DescribeTableAsync(new DescribeTableRequest
@@ -125,14 +192,13 @@ namespace FAL.DataInitial
 
                 if (response.Table.TableStatus == TableStatus.ACTIVE)
                 {
-                    Console.WriteLine($"Bảng '{tableName}' đã sẵn sàng.");
+                    Console.WriteLine($"The table '{tableName}' is ready.");
                     break;
                 }
 
-                await Task.Delay(1000); // Chờ 5 giây trước khi kiểm tra lại
+                // Đợi 1 giây trước khi kiểm tra lại
+                await Task.Delay(2000);
             }
         }
     }
-
-
 }
