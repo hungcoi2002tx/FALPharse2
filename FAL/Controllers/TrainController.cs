@@ -600,7 +600,6 @@ namespace FAL.Controllers
                 {
                     await _collectionService.CreateCollectionAsync(systermId);
                 }
-
                 #region index face
                 var indexResponse = await _collectionService.IndexFaceByFileAsync(file, systermId, userId);
                 #endregion
@@ -618,10 +617,20 @@ namespace FAL.Controllers
             {
                 #region check exit UserId
                 var isExitUser = await _dynamoService.IsExistUserAsync(systermId, userId);
-                var isExistUserInCollection = await _collectionService.IsUserExistByCollection(systermId, userId);
+                //var isExistUserInCollection = await _collectionService.IsUserExistByCollection(systermId, userId);
+
+               
                 #endregion
-                if (!isExitUser && !isExistUserInCollection)
+                if (!isExitUser)
                 {
+                    try
+                    {
+                        await _collectionService.DeleteUserFromRekognitionCollectionAsync(systermId, userId);
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
                     await _collectionService.CreateNewUserAsync(systermId, userId);
                 }
                 #region Add user 

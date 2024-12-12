@@ -62,10 +62,11 @@ public class Function
             var imageWidth = metadataResponse.Metadata["ImageWidth"];
             var imageHeight = metadataResponse.Metadata["ImageHeight"];
             var systemId = metadataResponse.Metadata["SystemId"];
+            await logger.LogMessageAsync($"systemId la {systemId}");
             switch (contentType)
             {
                 case (false):
-                    result = await DetectImageProcess(systemId, key, fileName);
+                    result = await DetectImageProcess(bucket,systemId, key, fileName);
                     result.Width = int.Parse(imageWidth);
                     result.Height = int.Parse(imageHeight);
                     result.Key = key;
@@ -107,7 +108,7 @@ public class Function
             var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
             // Thêm header "X-Signature" với chữ ký HMAC
             content.Headers.Add("X-Signature", signature);
-
+            await logger.LogMessageAsync(signature);
             var resultJson = ConvertToJson(result);
             var response = await _httpClient.PostAsync(webhookUrl, content);
             await logger.LogMessageAsync(webhookUrl);
@@ -252,7 +253,7 @@ public class Function
         await logger.LogMessageAsync($"JobId la {jobId}");
         return await GetFaceSearchResults(jobId, systemId, fileName);
     }
-    private async Task<FaceDetectionResult> DetectImageProcess(string systemId, string key, string fileName)
+    private async Task<FaceDetectionResult> DetectImageProcess(string bucket,string systemId, string key, string fileName)
     {
         var logger = new CloudWatchLogger();
         try
@@ -264,7 +265,7 @@ public class Function
 
             var collectionName = systemId;
 
-            var indexFacesResponse = await IndexFaces(systemId, key, collectionName);
+            var indexFacesResponse = await IndexFaces(bucket, key, collectionName);
             var faceRecords = indexFacesResponse.FaceRecords;
             await logger.LogMessageAsync($"facerecord:{faceRecords.Count}");
 
