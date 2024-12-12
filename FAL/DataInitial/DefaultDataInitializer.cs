@@ -53,47 +53,34 @@ namespace FAL.DataInitial
                 // Nếu bảng không tồn tại, tạo mới
                 Console.WriteLine($"Bảng '{tableName}' chưa tồn tại. Đang tạo bảng...");
 
-                // Tạo bảng cho Accounts
+                var createTableRequest = new CreateTableRequest
+                {
+                    TableName = tableName,
+                    KeySchema = new List<KeySchemaElement>(),
+                    AttributeDefinitions = new List<AttributeDefinition>(),
+                    ProvisionedThroughput = new ProvisionedThroughput(5, 5)
+                };
+
+                // Cấu hình schema và định nghĩa theo tên bảng
                 if (tableName == "Accounts")
                 {
-                    var createTableRequest = new CreateTableRequest
-                    {
-                        TableName = "Accounts",
-                        KeySchema = new List<KeySchemaElement>
-                    {
-                        new KeySchemaElement("Username", KeyType.HASH) // Primary Key
-                    },
-                        AttributeDefinitions = new List<AttributeDefinition>
-                    {
-                        new AttributeDefinition("Username", ScalarAttributeType.S)
-                    },
-                        ProvisionedThroughput = new ProvisionedThroughput(5, 5)
-                    };
-                    await _dynamoDbClient.CreateTableAsync(createTableRequest);
-                    Console.WriteLine("Bảng 'Accounts' đã được tạo.");
+                    createTableRequest.KeySchema.Add(new KeySchemaElement("Username", KeyType.HASH));
+                    createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("Username", ScalarAttributeType.S));
+                }
+                else if (tableName == "Roles")
+                {
+                    createTableRequest.KeySchema.Add(new KeySchemaElement("RoleId", KeyType.HASH));
+                    createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("RoleId", ScalarAttributeType.N));
                 }
 
-                // Tạo bảng cho Roles
-                if (tableName == "Roles")
-                {
-                    var createTableRequest = new CreateTableRequest
-                    {
-                        TableName = "Roles",
-                        KeySchema = new List<KeySchemaElement>
-                    {
-                        new KeySchemaElement("RoleId", KeyType.HASH) // Primary Key
-                    },
-                        AttributeDefinitions = new List<AttributeDefinition>
-                    {
-                        new AttributeDefinition("RoleId", ScalarAttributeType.N)
-                    },
-                        ProvisionedThroughput = new ProvisionedThroughput(5, 5)
-                    };
-                    await _dynamoDbClient.CreateTableAsync(createTableRequest);
-                    Console.WriteLine("Bảng 'Roles' đã được tạo.");
-                }
+                await _dynamoDbClient.CreateTableAsync(createTableRequest);
+                Console.WriteLine($"Bảng '{tableName}' đã được tạo.");
+
+                // Chờ cho đến khi bảng chuyển sang trạng thái ACTIVE
+                await WaitForTableToBecomeActiveAsync(tableName);
             }
         }
+
 
         private DefaultData LoadDefaultData(string filePath)
         {
@@ -123,6 +110,26 @@ namespace FAL.DataInitial
             {
                 await _dynamoDbContext.SaveAsync(role);
                 Console.WriteLine($"Đã thêm vai trò: {role.RoleId}");
+            }
+        }
+        private async Task WaitForTableToBecomeActiveAsync(string tableName)
+        {
+            Console.WriteLine($"Đang chờ bảng '{tableName}' chuyển sang trạng thái ACTIVE...");
+
+            while (true)
+            {
+                var response = await _dynamoDbClient.DescribeTableAsync(new DescribeTableRequest
+                {
+                    TableName = tableName
+                });
+
+                if (response.Table.TableStatus == TableStatus.ACTIVE)
+                {
+                    Console.WriteLine($"Bảng '{tableName}' đã sẵn sàng.");
+                    break;
+                }
+
+                await Task.Delay(1000); // Chờ 5 giây trước khi kiểm tra lại
             }
         }
     }

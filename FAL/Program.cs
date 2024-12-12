@@ -139,8 +139,6 @@ namespace FAL
                 }
             }
             app.Run();
-
-
         }
     }
 }
