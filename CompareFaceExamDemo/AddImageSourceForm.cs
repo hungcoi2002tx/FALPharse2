@@ -34,7 +34,7 @@ namespace AuthenExamCompareFace
             using (var openFileDialog = new OpenFileDialog())
             {
                 // Chỉ cho phép chọn các file có định dạng ảnh
-                openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp;*.gif";
+                openFileDialog.Filter = "Image Files|*.jpg";
                 openFileDialog.Title = "Select an Image File";
 
                 // Hiển thị hộp thoại chọn file
