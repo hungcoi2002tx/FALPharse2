@@ -23,8 +23,7 @@ namespace AuthenExamTakePicture
 
         public string ExamCode { get; set; }
         public string StudentCode { get; set; }
-        public string CroppedFilePath { get; set; }
-        public string Base64Image { get; set; }
+        public Image ImageCapture { get; set; }
 
         public ImageForm()
         {
@@ -41,7 +40,7 @@ namespace AuthenExamTakePicture
 
         private void ImageForm_Load(object sender, EventArgs e)
         {
-            croppedPictureBox.Image = new Bitmap(CroppedFilePath);
+            croppedPictureBox.Image = ImageCapture;
         }
 
         private void CreateRetryButton()
@@ -94,7 +93,6 @@ namespace AuthenExamTakePicture
             }
         }
 
-
         private void CreateSendButton()
         {
             sendButton = new System.Windows.Forms.Button
@@ -141,7 +139,6 @@ namespace AuthenExamTakePicture
         {
             var saveImageDTO = new SaveImageDto
             {
-                ImageBase = Base64Image, // Biến toàn cục chứa ảnh Base64
                 ExamCode = ExamCode,
                 StudentCode = StudentCode
             };

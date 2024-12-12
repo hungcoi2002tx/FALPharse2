@@ -38,7 +38,7 @@ namespace AuthenExamCameraLibrary
         /// <param name="cameraIndex">Chỉ số của camera (mặc định là 0).</param>
         /// <param name="rectWidth">Chiều rộng khung hình chữ nhật.</param>
         /// <param name="rectHeight">Chiều cao khung hình chữ nhật.</param>
-        public void StartCamera(VideoCaptureDevice videoCaptureDevice, PictureBox pictureBox, int rectWidth = 350, int rectHeight = 500, int camWidth = 1097, int camHeight = 624)
+        public void StartCamera(VideoCaptureDevice videoCaptureDevice, PictureBox pictureBox, int rectWidth = 350, int rectHeight = 450, int camWidth = 1397, int camHeight = 700)
         {
             if (videoCaptureDevice == null)
             {
@@ -62,7 +62,7 @@ namespace AuthenExamCameraLibrary
             videoCaptureDevice.Start();
         }
 
-        public void StartCamera(PictureBox pictureBox, int rectWidth = 350, int rectHeight = 500, int cameraIndex = 0, int camWidth = 1097, int camHeight = 624)
+        public void StartCamera(PictureBox pictureBox, int rectWidth = 350, int rectHeight = 450, int cameraIndex = 0, int camWidth = 1097, int camHeight = 624)
         {
             if (cameraIndex < 0 || cameraIndex >= filterInfoCollection.Count)
             {
@@ -107,7 +107,7 @@ namespace AuthenExamCameraLibrary
         /// </summary>
         /// <param name="videoCaptureDevice">Thiết bị camera cần kiểm tra.</param>
         /// <returns>True nếu camera đang được sử dụng; ngược lại False.</returns>
-        public bool IsCameraInUse(VideoCaptureDevice videoCaptureDevice)
+        public bool IsCameraInUse(VideoCaptureDevice videoCaptureDevice, int checkTime)
         {
             if (videoCaptureDevice == null)
                 throw new ArgumentNullException(nameof(videoCaptureDevice));
@@ -132,7 +132,7 @@ namespace AuthenExamCameraLibrary
                 // Chờ trong 3 giây để nhận khung hình
                 int elapsedTime = 0;
                 const int waitInterval = 100; // Kiểm tra mỗi 100ms
-                while (!frameReceived && elapsedTime < 3000)
+                while (!frameReceived && elapsedTime < checkTime)
                 {
                     System.Threading.Thread.Sleep(waitInterval);
                     elapsedTime += waitInterval;
