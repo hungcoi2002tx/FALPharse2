@@ -11,12 +11,13 @@ using System.Net;
 using System.Text;
 using System.Windows.Forms;
 using Newtonsoft.Json;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using AuthenExamCameraLibrary;
 
 namespace AuthenExamTakePicture
 {
     public partial class CameraForm : Form
     {
+        private CameraHandler cameraHandler;
         private FilterInfoCollection filterInfoCollection;
         private VideoCaptureDevice videoCaptureDevice;
         private System.Windows.Forms.Button captureButton;
@@ -31,6 +32,7 @@ namespace AuthenExamTakePicture
         public CameraForm()
         {
             InitializeComponent();
+            cameraHandler = new CameraHandler();
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             pictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
@@ -69,10 +71,8 @@ namespace AuthenExamTakePicture
         {
             this.WindowState = FormWindowState.Maximized;
 
-            // Lấy danh sách các thiết bị camera
-            filterInfoCollection = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+            filterInfoCollection = cameraHandler.GetListCamera();
 
-            // Kiểm tra nếu không tìm thấy thiết bị camera nào
             if (filterInfoCollection.Count == 0)
             {
                 DialogResult result = MessageBox.Show(
@@ -107,27 +107,35 @@ namespace AuthenExamTakePicture
             try
             {
                 videoCaptureDevice = new VideoCaptureDevice(filterInfoCollection[comboBoxCamera.SelectedIndex].MonikerString);
-                videoCaptureDevice.NewFrame += VideoCaptureDevice_NewFrame;
 
-                // Bắt đầu luồng video
-                videoCaptureDevice.Start();
-
-                // Kiểm tra nếu không nhận được khung hình trong vòng 3 giây đầu tiên
-                if (!CheckCameraAvailability(videoCaptureDevice))
+                if (!cameraHandler.IsCameraInUse(videoCaptureDevice, 5000))
                 {
-                    MessageBox.Show(
-                        "Camera is currently in use by another application or unavailable. Please try again.",
+                    DialogResult result = MessageBox.Show(
+                        "Camera is currently in use by another application or unavailable. Do you want to retry?",
                         "Camera Error",
-                        MessageBoxButtons.OK,
+                        MessageBoxButtons.RetryCancel,
                         MessageBoxIcon.Warning
                     );
 
-                    videoCaptureDevice.SignalToStop();
-                    videoCaptureDevice.WaitForStop();
-                    videoCaptureDevice = null;
+                    if (result == DialogResult.Retry)
+                    {
+                        this.Hide();
+                        Form newForm = new CameraForm();
+                        newForm.ShowDialog();
+                        this.Close();
+                    }
+                    else
+                    {
+                        // Người dùng Cancel, đóng form
+                        videoCaptureDevice.SignalToStop();
+                        videoCaptureDevice.WaitForStop();
+                        videoCaptureDevice = null;
 
-                    this.Close();
+                        this.Close();
+                    }
                 }
+
+                cameraHandler.StartCamera(videoCaptureDevice, pictureBox);
             }
             catch (Exception ex)
             {
@@ -141,122 +149,9 @@ namespace AuthenExamTakePicture
             }
         }
 
-        private bool CheckCameraAvailability(VideoCaptureDevice device)
-        {
-            bool frameReceived = false;
-
-            void OnNewFrame(object sender, NewFrameEventArgs eventArgs)
-            {
-                frameReceived = true;
-                device.NewFrame -= OnNewFrame; // Ngừng lắng nghe sự kiện sau khi nhận được khung hình
-            }
-
-            device.NewFrame += OnNewFrame;
-
-            // Chờ tối đa 3 giây
-            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            while (!frameReceived && stopwatch.ElapsedMilliseconds < 3000)
-            {
-                Application.DoEvents();
-            }
-
-            device.NewFrame -= OnNewFrame; // Bảo đảm gỡ sự kiện nếu timeout
-            return frameReceived;
-        }
-
-
-        private void VideoCaptureDevice_NewFrame(object sender, NewFrameEventArgs eventArgs)
-        {
-            frameReceived = true;
-
-            Bitmap frame = (Bitmap)eventArgs.Frame.Clone();
-
-            Bitmap resizedFrame = new Bitmap(pictureBox.Width, pictureBox.Height);
-            using (Graphics g = Graphics.FromImage(resizedFrame))
-            {
-                g.DrawImage(frame, 0, 0, pictureBox.Width, pictureBox.Height);
-
-                // Thiết lập màu và độ dày nét vẽ
-                Pen orangePen = new Pen(Color.Orange, 2);
-
-                // Tính toán tọa độ và kích thước khung hình chữ nhật ở giữa
-                int rectWidth = 350; // Chiều rộng của khung
-                int rectHeight = 500; // Chiều cao của khung
-                int rectX = (resizedFrame.Width - rectWidth) / 2; // Tọa độ X
-                int rectY = (resizedFrame.Height - rectHeight) / 2; // Tọa độ Y
-
-                g.DrawRectangle(orangePen, rectX, rectY, rectWidth, rectHeight);
-            }
-
-            pictureBox.Image = resizedFrame;
-
-            frame.Dispose();
-        }
-
-        private string ConvertImageToBase64(string filePath)
-        {
-            try
-            {
-                // Đọc ảnh từ đường dẫn và chuyển đổi sang Base64
-                byte[] imageBytes = System.IO.File.ReadAllBytes(filePath);
-                return Convert.ToBase64String(imageBytes);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Lỗi khi chuyển đổi ảnh sang Base64: {ex.Message}");
-                return string.Empty;
-            }
-        }
-
-        private void FrameCheckTimer_Tick(object sender, EventArgs e)
-        {
-            if (!frameReceived)
-            {
-                // Nếu không nhận được khung hình trong 3 giây, hiển thị thông báo
-                frameCheckTimer.Stop();
-                DialogResult result = MessageBox.Show(
-                    "Camera có thể đang được sử dụng bởi ứng dụng khác. Vui lòng đóng ứng dụng đó và thử lại.",
-                    "Thông báo",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
-
-                // Dừng video và đóng form
-                if (videoCaptureDevice != null && videoCaptureDevice.IsRunning)
-                {
-                    videoCaptureDevice.SignalToStop();
-                    videoCaptureDevice.WaitForStop();
-                }
-
-                if (result == DialogResult.OK)
-                {
-                    // Show an alternate form and close this one
-                    this.Hide();
-                    InfoForm infoForm = new InfoForm();
-                    if (infoForm.ShowDialog() == DialogResult.OK)
-                    {
-                        // Additional logic if needed
-                    }
-                    this.Close();
-                }
-                return;
-            }
-
-            // Reset cờ để kiểm tra lần tiếp theo
-            frameReceived = false;
-        }
-
-
         private void CameraForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (videoCaptureDevice != null && videoCaptureDevice.IsRunning)
-            {
-                videoCaptureDevice.SignalToStop();
-                videoCaptureDevice.WaitForStop();
-                videoCaptureDevice = null;
-            }
-
-            // Thoát toàn bộ ứng dụng
+            cameraHandler.StopCamera(videoCaptureDevice);
             Application.Exit();
         }
 
@@ -341,56 +236,25 @@ namespace AuthenExamTakePicture
 
         private void CaptureAndSaveAndCropImage()
         {
-            if (pictureBox.Image == null)
-            {
-                MessageBox.Show("Không có hình ảnh để lưu và cắt.");
-                return;
-            }
-
             try
             {
-                EnsureFolderExists(folderPath);
+                var imageBinary = cameraHandler.CaptureAndCropImageToBinaryString(pictureBox, folderPath, true);
+                var imageCapture = ConvertBinaryStringToImage(imageBinary);
 
-                // Lưu ảnh gốc
-                Bitmap originalImage = new Bitmap(pictureBox.Image);
-                string originalFilePath = SaveOriginalImage(originalImage);
-
-                // Cắt ảnh
-                using (Bitmap croppedImage = CropImage(originalImage, 350, 500))
+                // Mở form khác với dữ liệu
+                using (ImageForm imageForm = new ImageForm())
                 {
-                    string croppedFilePath = SaveCroppedImage(croppedImage);
+                    imageForm.ExamCode = ExamCode;
+                    imageForm.StudentCode = StudentCode;
+                    imageForm.ImageCapture = imageCapture;
 
-                    // Hiển thị ảnh đã cắt trong PictureBox
-                    pictureBox.Image = new Bitmap(croppedFilePath);
-
-                    // Chuyển ảnh đã cắt sang Base64
-                    base64Image = ConvertImageToBase64(croppedFilePath);
-
-                    if (videoCaptureDevice != null && videoCaptureDevice.IsRunning)
+                    this.Hide();
+                    if (imageForm.ShowDialog() == DialogResult.OK)
                     {
-                        videoCaptureDevice.SignalToStop();
-                        videoCaptureDevice.WaitForStop();
-                        videoCaptureDevice = null;
+                        // Xử lý nếu cần khi form con trả về DialogResult.OK
                     }
-
-                    // Mở form khác với dữ liệu
-                    using (ImageForm imageForm = new ImageForm())
-                    {
-                        imageForm.ExamCode = ExamCode;
-                        imageForm.StudentCode = StudentCode;
-                        imageForm.CroppedFilePath = croppedFilePath;
-                        imageForm.Base64Image = base64Image;
-
-                        this.Hide();
-                        if (imageForm.ShowDialog() == DialogResult.OK)
-                        {
-                            // Xử lý nếu cần khi form con trả về DialogResult.OK
-                        }
-                        this.Close();
-                    }
+                    this.Close();
                 }
-
-                originalImage.Dispose();
             }
             catch (Exception ex)
             {
@@ -398,36 +262,28 @@ namespace AuthenExamTakePicture
             }
         }
 
-
-        private void EnsureFolderExists(string folderPath)
+        private Image ConvertBinaryStringToImage(string binaryString)
         {
-            if (!System.IO.Directory.Exists(folderPath))
+            if (string.IsNullOrEmpty(binaryString))
+                throw new ArgumentException("Chuỗi nhị phân rỗng hoặc null.", nameof(binaryString));
+
+            // Chuỗi nhị phân phải có độ dài chia hết cho 8
+            if (binaryString.Length % 8 != 0)
+                throw new FormatException("Chuỗi nhị phân không hợp lệ (không chia hết cho 8).");
+
+            int byteCount = binaryString.Length / 8;
+            byte[] imageBytes = new byte[byteCount];
+
+            for (int i = 0; i < byteCount; i++)
             {
-                System.IO.Directory.CreateDirectory(folderPath);
+                string byteString = binaryString.Substring(i * 8, 8);
+                imageBytes[i] = Convert.ToByte(byteString, 2);
             }
-        }
-        private string SaveOriginalImage(Image image)
-        {
-            string fileName = $"original_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
-            string filePath = System.IO.Path.Combine(folderPath, fileName);
-            image.Save(filePath, System.Drawing.Imaging.ImageFormat.Jpeg);
-            return filePath;
-        }
 
-        private Bitmap CropImage(Bitmap originalImage, int width, int height)
-        {
-            int rectX = (originalImage.Width - width) / 2;
-            int rectY = (originalImage.Height - height) / 2;
-            Rectangle cropRect = new Rectangle(rectX, rectY, width, height);
-            return originalImage.Clone(cropRect, originalImage.PixelFormat);
-        }
-
-        private string SaveCroppedImage(Bitmap croppedImage)
-        {
-            string fileName = $"cropped_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
-            string filePath = System.IO.Path.Combine(folderPath, fileName);
-            croppedImage.Save(filePath, System.Drawing.Imaging.ImageFormat.Jpeg);
-            return filePath;
+            using (MemoryStream ms = new MemoryStream(imageBytes))
+            {
+                return Image.FromStream(ms);
+            }
         }
     }
 }
