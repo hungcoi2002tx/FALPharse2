@@ -103,13 +103,14 @@ public class Function
         try
         {
             string jsonPayload = ConvertToJson(result);
-
+            await logger.LogMessageAsync(jsonPayload);
             // Tính chữ ký HMAC cho payload
             string signature = GenerateHMAC(jsonPayload, webhookSecretkey);
             // Tạo HttpContent để gửi yêu cầu POST
             var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
             // Thêm header "X-Signature" với chữ ký HMAC
             content.Headers.Add("X-Signature", signature);
+            await logger.LogMessageAsync(signature);
             var resultJson = ConvertToJson(result);
             var response = await _httpClient.PostAsync(webhookUrl, content);
             response.EnsureSuccessStatusCode();
