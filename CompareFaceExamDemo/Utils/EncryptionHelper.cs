@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AuthenExamCompareFaceExam.Utils
+namespace AuthenExamCompareFace.Utils
 {
     public class EncryptionHelper
     {

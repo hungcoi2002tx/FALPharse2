@@ -1,4 +1,4 @@
-﻿using AuthenExamCompareFaceExam.Utils;
+﻿using AuthenExamCompareFace.Utils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,16 +9,16 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace AuthenExamCompareFaceExam
+namespace AuthenExamCompareFace
 {
     public partial class MainContainer : Form
     {
-        private ImageCaptureForm imageCaptureForm;
+        private CompareImageForm compareImageForm;
         private SourceImageForm imageSourceForm;
         private SettingForm settingForm;
         private ResultForm mainForm;
 
-        public MainContainer(ImageCaptureForm imageCaptureForm,
+        public MainContainer(CompareImageForm compareImageForm,
             SourceImageForm imageSourceForm,
             SettingForm settingForm,
             ResultForm mainForm)
@@ -39,11 +39,11 @@ namespace AuthenExamCompareFaceExam
             // Tắt khả năng thay đổi kích thước
             //this.MaximumSize = this.Size;
             //this.MinimumSize = this.Size;
-            this.imageCaptureForm = imageCaptureForm;
+            this.compareImageForm = compareImageForm;
             this.imageSourceForm = imageSourceForm;
             this.settingForm = settingForm;
             this.mainForm = mainForm;
-            imageCaptureForm.BringToFront();
+            compareImageForm.BringToFront();
         }
 
         private void ImageSourceButtonClick(object sender, EventArgs e)
@@ -62,7 +62,7 @@ namespace AuthenExamCompareFaceExam
         {
             try
             {
-                OpenChildForm(imageCaptureForm);
+                OpenChildForm(compareImageForm);
             }
             catch (Exception ex)
             {
@@ -147,7 +147,7 @@ namespace AuthenExamCompareFaceExam
             try
             {
                 await CheckAndHandleLicenseKeyAsync();
-                OpenChildForm(imageCaptureForm); // Mở form con nếu giấy phép hợp lệ
+                OpenChildForm(compareImageForm); // Mở form con nếu giấy phép hợp lệ
             }
             catch (Exception ex)
             {

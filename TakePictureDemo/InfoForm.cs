@@ -17,23 +17,23 @@ namespace AuthenExamTakePicture
 
         private void OnImageCaptured(string imagePath)
         {
-            if (InvokeRequired)
-            {
-                // Gọi Invoke để chuyển sang UI thread
-                Invoke(new Action(() => OnImageCaptured(imagePath)));
-            }
-            else
-            {
-                // Cập nhật giao diện trên UI thread
-                MessageBox.Show($"Đã chụp ảnh và lưu vào {imagePath}");
-                //textBox1.Text = imagePath;
-            }
+            //if (InvokeRequired)
+            //{
+            //    // Gọi Invoke để chuyển sang UI thread
+            //    Invoke(new Action(() => OnImageCaptured(imagePath)));
+            //}
+            //else
+            //{
+            //    // Cập nhật giao diện trên UI thread
+            //    MessageBox.Show($"Đã chụp ảnh và lưu vào {imagePath}");
+            //    //textBox1.Text = imagePath;
+            //}
         }
 
 
         private void sendBtn_Click(object sender, EventArgs e)
         {
-            string studentNo = textBox2.Text;
+            //string studentNo = textBox2.Text;
             //string response = apiClient.RegisterCompare(textBox1.Text, studentNo);
             //MessageBox.Show(response);
         }

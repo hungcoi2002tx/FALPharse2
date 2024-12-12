@@ -344,7 +344,7 @@ namespace FAL.Services
                 var request = new CreateUserRequest()
                 {
                     CollectionId = systermId,
-                    UserId = userId
+                    UserId = userId.ToLower()
                 };
                 var response = await _rekognitionClient.CreateUserAsync(request);
                 if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
@@ -638,5 +638,67 @@ namespace FAL.Services
             }
         }
 
+        public async Task<bool> IsUserExistByCollection(string collectionId, string userId)
+        {
+            try
+            {
+                var request = new ListFacesRequest
+                {
+                    CollectionId = collectionId,
+                    MaxResults = 1000  // Adjust as needed
+                };
+
+                ListFacesResponse response;
+                do
+                {
+                    response = await _rekognitionClient.ListFacesAsync(request);
+
+                    // Check if userId exists in the collection
+                    if (response.Faces.Any(face => face.ExternalImageId == userId))
+                    {
+                        return true;
+                    }
+
+                    // Update pagination token
+                    request.NextToken = response.NextToken;
+                }
+                while (!string.IsNullOrEmpty(response.NextToken));
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteCollectionAsync(string systemName)
+        {
+            try
+            {
+                // Create the DeleteCollectionRequest
+                var request = new DeleteCollectionRequest
+                {
+                    CollectionId = systemName
+                };
+
+                // Send the request to delete the collection
+                var response = await _rekognitionClient.DeleteCollectionAsync(request);
+
+                // Check if the delete operation was successful
+                if (response.StatusCode == (int)System.Net.HttpStatusCode.OK)
+                {
+                    return true;
+                }
+
+                throw new Exception($"Failed to delete collection '{systemName}'");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting collection {systemName}: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

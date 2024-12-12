@@ -1,4 +1,4 @@
-﻿namespace AuthenExamCompareFaceExam
+﻿namespace AuthenExamCompareFace
 {
     partial class ResultForm
     {
@@ -285,7 +285,7 @@
             // label7
             // 
             label7.AutoSize = true;
-            label7.Location = new Point(1311, 66);
+            label7.Location = new Point(1292, 68);
             label7.Name = "label7";
             label7.Size = new Size(46, 30);
             label7.TabIndex = 18;
@@ -294,7 +294,7 @@
             // label10
             // 
             label10.AutoSize = true;
-            label10.Location = new Point(1064, 62);
+            label10.Location = new Point(1040, 66);
             label10.Name = "label10";
             label10.Size = new Size(40, 30);
             label10.TabIndex = 19;

@@ -9,9 +9,9 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Windows.Forms;
-using AuthenExamTakePicture.Models.DTOs;
 using System.Drawing.Drawing2D;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using AuthenExamTakePicture.DTOs;
 
 namespace AuthenExamTakePicture
 {
@@ -139,7 +139,7 @@ namespace AuthenExamTakePicture
 
         private void SendDataToServer()
         {
-            var saveImageDTO = new SaveImageDTO
+            var saveImageDTO = new SaveImageDto
             {
                 ImageBase = Base64Image, // Biến toàn cục chứa ảnh Base64
                 ExamCode = ExamCode,

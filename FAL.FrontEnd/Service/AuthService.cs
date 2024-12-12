@@ -5,12 +5,13 @@ using System.Text;
 using Share.Constant;
 using FAL.FrontEnd.Models;
 using FAL.Utils;
+using System.Net;
 
 namespace FAL.FrontEnd.Service
 {
     public class AuthService : IAuthService
     {
-		private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public AuthService(IHttpClientFactory httpClientFactory)
         {
@@ -19,29 +20,53 @@ namespace FAL.FrontEnd.Service
 
         public async Task<string> GetTokenAsync(string username, string password)
         {
-			try
-			{
-                var client = _httpClientFactory.CreateClient("FaceDetectionAPI");
-                var loginData = new { username, password };
-                var content = new StringContent(JsonSerializer.Serialize(loginData), Encoding.UTF8, "application/json");
 
-                var response = await client.PostAsync(FEGlobalVarians.LOGIN_ENDPOINT, content);
-                if (response.IsSuccessStatusCode)
+            var client = _httpClientFactory.CreateClient("FaceDetectionAPI");
+            var loginData = new { username, password };
+            var content = new StringContent(JsonSerializer.Serialize(loginData), Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync(FEGlobalVarians.LOGIN_ENDPOINT, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                using JsonDocument document = JsonDocument.Parse(responseContent);
+
+                if (document.RootElement.TryGetProperty("token", out JsonElement tokenElement) && tokenElement.ValueKind == JsonValueKind.String)
                 {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    using JsonDocument document = JsonDocument.Parse(responseContent);
+                    return tokenElement.GetString();
+                }
+            }
+            else
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                using JsonDocument document = JsonDocument.Parse(responseContent);
 
-                    if (document.RootElement.TryGetProperty("token", out JsonElement tokenElement) && tokenElement.ValueKind == JsonValueKind.String)
+                // Handle different error cases based on the API response
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    // Invalid login information
+                    if (document.RootElement.TryGetProperty("message", out JsonElement messageElement))
                     {
-                        return tokenElement.GetString();
+                        throw new InvalidOperationException($"Bad Request: {messageElement.GetString()}");
                     }
                 }
-                return string.Empty;
+                else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    // Username does not exist or password incorrect
+                    if (document.RootElement.TryGetProperty("message", out JsonElement messageElement))
+                    {
+                        throw new UnauthorizedAccessException($"Unauthorized: {messageElement.GetString()}");
+                    }
+                }
+                else
+                {
+                    // Handle other potential statuses (e.g., internal server errors)
+                    throw new Exception($"Unexpected error: {response.StatusCode}");
+                }
             }
-			catch (Exception)
-			{
-				throw;
-			}
+
+            return string.Empty;
         }
     }
 }

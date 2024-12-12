@@ -48,7 +48,7 @@ namespace FAL.FrontEnd.Pages.Settings
             try
             {
                 // Send GET request to fetch user information
-                var response = await client.GetAsync("https://dev.demorecognition.click/api/users/me");
+                var response = await client.GetAsync(FEGlobalVarians.USERS_ME_ENDPOINT);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -107,7 +107,7 @@ namespace FAL.FrontEnd.Pages.Settings
                 };
 
                 // Send PUT request to update user information
-                var response = await client.PutAsJsonAsync("https://dev.demorecognition.click/api/users", userUpdateRequest);
+                var response = await client.PutAsJsonAsync(FEGlobalVarians.USERS_ENDPOINT, userUpdateRequest);
 
                 if (response.IsSuccessStatusCode)
                 {

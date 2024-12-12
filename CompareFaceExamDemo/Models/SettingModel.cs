@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AuthenExamCompareFaceExam.Models
+namespace AuthenExamCompareFace.Models
 {
     public class SettingModel
     {

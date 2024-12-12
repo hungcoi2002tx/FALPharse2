@@ -1,8 +1,8 @@
-﻿using AuthenExamCompareFaceExam.Entity.Interface;
+﻿using AuthenExamCompareFace.Entity.Interface;
 using System;
 using System.Collections.Generic;
 
-namespace AuthenExamCompareFaceExam.Entities;
+namespace AuthenExamCompareFace.Entities;
 public partial class EOSComparisonResult : IEntity
 {
     public int Id { get; set; }

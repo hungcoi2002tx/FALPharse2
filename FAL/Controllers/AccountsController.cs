@@ -69,13 +69,43 @@ namespace FAL.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] Account user)
         {
+            if (user == null)
+                return BadRequest("Invalid user data.");
+
+            // Validate model state
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Check if the user already exists
             var existingUser = await _dbContext.LoadAsync<Account>(user.Username);
             if (existingUser != null)
-                return BadRequest("User already exists!");
+                return Conflict("A user with this username already exists.");
 
-            await _dbContext.SaveAsync(user);
-            return Ok(user); // Create a new user
+            // Hash the password using BCrypt
+            try
+            {
+                user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password); // Ensure BCrypt library is installed
+            }
+            catch (Exception)
+            {
+                // Log the error (using your logging framework)
+                return StatusCode(500, "An error occurred while processing the password.");
+            }
+
+            // Save the user to the database
+            try
+            {
+                await _dbContext.SaveAsync(user);
+            }
+            catch (Exception)
+            {
+                // Log the error (using your logging framework)
+                return StatusCode(500, "An error occurred while saving the user.");
+            }
+
+            return Ok("User created successfully."); // Do not return user object for security reasons
         }
+
 
         // PUT: api/accounts/{username}
         [Authorize]

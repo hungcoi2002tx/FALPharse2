@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AuthenExamCompareFaceExam.Utils
+namespace AuthenExamCompareFace.Utils
 {
     public class ExcelExporter
     {
@@ -20,8 +20,7 @@ namespace AuthenExamCompareFaceExam.Utils
         {
             if (data == null || data.Count == 0)
             {
-                MessageBox.Show("Danh sách dữ liệu rỗng!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return; // Thoát khỏi hàm để tránh lỗi tiếp theo
+                throw new Exception("Danh sách dữ liệu rỗng!");
             }
              
             using (var package = new ExcelPackage())

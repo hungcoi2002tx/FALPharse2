@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace AuthenExamCompareFaceExam
+namespace AuthenExamCompareFace
 {
     partial class SettingForm
     {
@@ -97,7 +97,6 @@ namespace AuthenExamCompareFaceExam
             // numberThread
             // 
             numberThread.Location = new Point(175, 84);
-            numberThread.Maximum = new decimal(new int[] { 24, 0, 0, 0 });
             numberThread.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             numberThread.Name = "numberThread";
             numberThread.Size = new Size(164, 23);

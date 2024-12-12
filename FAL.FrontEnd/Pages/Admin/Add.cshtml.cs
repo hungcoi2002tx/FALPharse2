@@ -11,7 +11,7 @@ namespace FAL.FrontEnd.Pages.Admin
         private readonly IHttpClientFactory _httpClientFactory;
 
         [BindProperty]
-        public AccountAddDto NewAccount { get; set; }
+        public AccountAddDto NewAccount { get; set; } = new AccountAddDto();
 
         public AddModel(IHttpClientFactory httpClientFactory)
         {
@@ -27,7 +27,7 @@ namespace FAL.FrontEnd.Pages.Admin
         {
             if (!ModelState.IsValid)
             {
-                return Page();
+                return Page(); // Nếu có lỗi, trả lại trang với thông tin đã nhập
             }
 
             var jwtToken = HttpContext.Session.GetString("JwtToken");
@@ -45,7 +45,7 @@ namespace FAL.FrontEnd.Pages.Admin
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
             // Send POST request to the API
-            var response = await client.PostAsync("https://dev.demorecognition.click/api/Accounts", content);
+            var response = await client.PostAsync(FEGlobalVarians.ACCOUNTS_ENDPOINT, content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -55,8 +55,8 @@ namespace FAL.FrontEnd.Pages.Admin
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                TempData["ErrorMessage"] = $"Unable to create account: {errorContent}";
-                return Page();
+                ModelState.AddModelError(string.Empty, $"Unable to create account: {errorContent}");
+                return Page(); // Trả về trang cùng với lỗi và dữ liệu đã nhập
             }
         }
     }

@@ -1,9 +1,9 @@
-﻿using AuthenExamCompareFaceExam.ExternalService;
-using AuthenExamCompareFaceExam.ExternalService.Recognition;
+﻿using AuthenExamCompareFace.ExternalService;
+using AuthenExamCompareFace.ExternalService.Recognition;
 using Microsoft.Extensions.DependencyInjection;
 using RestSharp;
 
-namespace AuthenExamCompareFaceExam
+namespace AuthenExamCompareFace
 {
     internal static class Program
     {
@@ -34,9 +34,8 @@ namespace AuthenExamCompareFaceExam
                 services.AddSingleton<ResultForm>();
                 services.AddSingleton<SourceImageForm>();
                 services.AddSingleton<MainContainer>();
-                services.AddSingleton<ImageCaptureForm>();
+                services.AddSingleton<CompareImageForm>();
                 services.AddSingleton<SettingForm>();
-                services.AddSingleton<Test>();
                 services.AddSingleton<AuthService>(provider =>
                     new AuthService(
                         "https://dev.demorecognition.click/api/Auth/login", 
@@ -48,7 +47,7 @@ namespace AuthenExamCompareFaceExam
                     var authService = provider.GetRequiredService<AuthService>();
                     return new FaceCompareService(
                         authService,
-                        "https://dev.demorecognition.click/api/Compare/compare/result" 
+                        "https://dev.demorecognition.click/api/compare/result" 
                     );
                 });
 

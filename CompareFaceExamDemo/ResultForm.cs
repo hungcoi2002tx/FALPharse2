@@ -1,10 +1,10 @@
-﻿using AuthenExamCompareFaceExam.DAO;
-using AuthenExamCompareFaceExam.Entities;
-using AuthenExamCompareFaceExam.Models;
-using AuthenExamCompareFaceExam.Utils;
+﻿using AuthenExamCompareFace.DAO;
+using AuthenExamCompareFace.Entities;
+using AuthenExamCompareFace.Models;
+using AuthenExamCompareFace.Utils;
 using System.Data.Common;
 
-namespace AuthenExamCompareFaceExam
+namespace AuthenExamCompareFace
 {
 
     public partial class ResultForm : Form
@@ -239,6 +239,9 @@ namespace AuthenExamCompareFaceExam
                     "Time" => sortDescending
                         ? results.OrderByDescending(r => r.Time).ToList()
                         : results.OrderBy(r => r.Time).ToList(),
+                    "Status" => sortDescending
+                        ? results.OrderByDescending(r => r.Status).ToList()
+                        : results.OrderBy(r => r.Status).ToList(),
                     _ => results // Mặc định không sắp xếp nếu trường không hợp lệ
                 };
             }
@@ -438,6 +441,19 @@ namespace AuthenExamCompareFaceExam
 
         private void btnExport_Click(object sender, EventArgs e)
         {
+            var selectedFile = cmbFileList.SelectedItem as string;
+
+            if (string.IsNullOrEmpty(selectedFile))
+            {
+                MessageBox.Show("Please select a file from the list.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!results.Any())
+            {
+                MessageBox.Show($"Danh sách dữ liệu rỗng, không thể xuất file excel!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             // Tạo SaveFileDialog để cho người dùng chọn file lưu
             using (var saveFileDialog = new SaveFileDialog())
             {
@@ -460,7 +476,7 @@ namespace AuthenExamCompareFaceExam
                         ExcelExporter.ExportListToExcel(results, filePath);
 
                         // Thông báo thành công
-                        MessageBox.Show("Dữ liệu đã được xuất thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show($"Dữ liệu đã được xuất thành công, vui lòng check kết quả ở \n\n{filePath}!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
                     {
