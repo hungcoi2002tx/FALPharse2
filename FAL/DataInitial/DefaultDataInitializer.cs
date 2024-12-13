@@ -86,7 +86,7 @@ namespace FAL.DataInitial
                         createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("Username", ScalarAttributeType.S));
                         createTableRequest.GlobalSecondaryIndexes =
                         [
-    new() {
+                            new() {
                                 IndexName = "SystemNameIndex",
                                 KeySchema =
                                 [
