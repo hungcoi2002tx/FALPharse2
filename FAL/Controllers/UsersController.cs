@@ -43,8 +43,6 @@ namespace FAL.Controllers
 
             // Update user information
             existingUser.Email = userUpdate.Email ?? existingUser.Email;
-            existingUser.SystemName = userUpdate.SystemName ?? existingUser.SystemName;
-            existingUser.WebhookUrl = userUpdate.WebhookUrl ?? existingUser.WebhookUrl;
             existingUser.WebhookSecretKey = userUpdate.WebhookSecretKey ?? existingUser.WebhookSecretKey;
 
             // Save changes

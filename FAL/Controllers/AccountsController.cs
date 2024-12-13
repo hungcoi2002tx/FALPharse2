@@ -172,8 +172,8 @@ namespace FAL.Controllers
             if (updatedUser.RoleId.HasValue) // Check if RoleId is not null
                 existingUser.RoleId = updatedUser.RoleId.Value;
 
-            if (!string.IsNullOrEmpty(updatedUser.SystemName))
-                existingUser.SystemName = updatedUser.SystemName;
+            //if (!string.IsNullOrEmpty(updatedUser.SystemName))
+            //    existingUser.SystemName = updatedUser.SystemName;
 
             if (!string.IsNullOrEmpty(updatedUser.WebhookUrl))
                 existingUser.WebhookUrl = updatedUser.WebhookUrl;
