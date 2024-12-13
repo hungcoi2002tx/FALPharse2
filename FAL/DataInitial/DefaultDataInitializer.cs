@@ -84,6 +84,20 @@ namespace FAL.DataInitial
                     case ACCOUNTS_TABLE:
                         createTableRequest.KeySchema.Add(new KeySchemaElement("Username", KeyType.HASH));
                         createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("Username", ScalarAttributeType.S));
+                        createTableRequest.GlobalSecondaryIndexes =
+                        [
+    new() {
+                                IndexName = "SystemNameIndex",
+                                KeySchema =
+                                [
+                                    new KeySchemaElement("SystemName", KeyType.HASH),
+                                ],
+                                Projection = new Projection
+                                {
+                                    ProjectionType = ProjectionType.ALL
+                                }
+                            }
+                        ];
                         break;
 
                     case ROLES_TABLE:
@@ -113,20 +127,20 @@ namespace FAL.DataInitial
                         createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("SystemName", ScalarAttributeType.S));
 
                         createTableRequest.GlobalSecondaryIndexes =
-                [
-                    new() {
-                        IndexName = "SystemNameIndex",
-                        KeySchema =
                         [
-                            new KeySchemaElement("SystemName", KeyType.HASH),
-                            new KeySchemaElement("UserId", KeyType.RANGE)
-                        ],
-                        Projection = new Projection
-                        {
-                            ProjectionType = ProjectionType.ALL
-                        }
-                    }
-                ];
+                            new() {
+                                IndexName = "SystemNameIndex",
+                                KeySchema =
+                                [
+                                    new KeySchemaElement("SystemName", KeyType.HASH),
+                                    new KeySchemaElement("UserId", KeyType.RANGE)
+                                ],
+                                Projection = new Projection
+                                {
+                                    ProjectionType = ProjectionType.ALL
+                                }
+                            }
+                        ];
                         break;
 
                     default:
