@@ -91,7 +91,62 @@
         .navbar-collapse {
             justify-content: flex-end;
         }
-    </style>
+
+<!-- Additional Styles Dropdown-->
+    .dropdown-menu {
+        border-radius: 10px; /* Rounded corners */
+        min-width: 200px; /* Adjust width of dropdown */
+        transition: all 0.3s ease; /* Smooth transition */
+        opacity: 0; /* Initially hidden */
+        pointer-events: none; /* Prevent interaction until fully visible */
+    }
+
+    .dropdown-menu.show {
+        opacity: 1; /* Make dropdown visible */
+        pointer-events: auto; /* Allow interaction */
+    }
+
+    .dropdown-item {
+        font-size: 14px; /* Adjust font size */
+        padding: 10px 15px; /* Add padding for better spacing */
+        transition: background-color 0.3s ease; /* Smooth background change */
+    }
+
+    .dropdown-item:hover {
+        background-color: #f1f1f1; /* Change background color on hover */
+        color: #007bff; /* Change text color on hover */
+        cursor: pointer; /* Pointer cursor */
+    }
+
+    /* User info hover effect */
+    .navbar-text:hover {
+        color: #007bff; /* Highlight username when hovered */
+        cursor: pointer; /* Pointer cursor */
+    }
+
+    .navbar-text {
+        display: inline-flex;
+        align-items: center;
+        font-size: 16px;
+        transition: color 0.3s ease;
+    }
+
+    .dropdown-menu {
+        display: none;
+        transition: all 0.5s ease; /* Smooth transition for dropdown */
+    }
+
+    .dropdown:hover .dropdown-menu {
+        display: block; /* Show menu on hover */
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .dropdown-item i {
+        margin-right: 10px; /* Space between icon and text */
+    }
+</style>
+
 </head>
 <body>
     <header>
@@ -137,30 +192,40 @@
                     <div class="d-flex align-items-center ms-auto">
                         @if (Helper.SessionExtensions.IsAuthenticated())
                         {
-                            <!-- User info -->
-                            <span class="navbar-text text-white me-3">
-                                <i class="bi bi-person-circle"></i>@Context.Session.GetUsername()
-                                @if (Helper.SessionExtensions.IsInRole(1))
-                                {
-                                    <span class="badge-role-admin" data-bs-toggle="tooltip" data-bs-placement="top" title="Admin">
-                                        <i class="bi bi-shield-lock-fill"></i> Admin
-                                    </span>
-                                }
-                                else if (Helper.SessionExtensions.IsInRole(2))
-                                {
-                                    <span class="badge-role-user" data-bs-toggle="tooltip" data-bs-placement="top" title="User">
-                                        <i class="bi bi-person-fill"></i> User
-                                    </span>
-                                }
-                            </span>
+                            <!-- User info with dropdown -->
+                            <div class="dropdown">
+                                <span class="text-white me-3" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle"></i><span class="navbar-text mx-1">@Context.Session.GetUsername()</span>
+
+                                    @if (Helper.SessionExtensions.IsInRole(1))
+                                    {
+                                        <span class="badge-role-admin" data-bs-toggle="tooltip" data-bs-placement="top" title="Admin">
+                                            <i class="bi bi-shield-lock-fill"></i> Admin
+                                        </span>
+                                    }
+                                    else if (Helper.SessionExtensions.IsInRole(2))
+                                    {
+                                        <span class="badge-role-user" data-bs-toggle="tooltip" data-bs-placement="top" title="User">
+                                            <i class="bi bi-person-fill"></i> User
+                                        </span>
+                                    }
+                                </span>
+
+                                <!-- Dropdown menu -->
+                                <ul class="dropdown-menu" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" asp-page="/Settings/Info"><i class="bi bi-info-circle"></i>My Information</a></li>
+                                    <li><a class="dropdown-item" asp-page="/Settings/ChangePassword"><i class="bi bi-key-fill"></i> Change Password</a></li>
+                                </ul>
+                            </div>
 
                             <!-- Log out button -->
                             <span class="nav-item me-3">
-                                <a class="nav-link text-white" asp-area="" asp-page="/Auth/Logout"> <i class="bi bi-box-arrow-right"></i> Log Out</a>
+                                <a class="nav-link text-white" asp-area="" asp-page="/Auth/Logout">
+                                    <i class="bi bi-box-arrow-right"></i> Log Out
+                                </a>
                             </span>
                         }
                     </div>
-
                 </div>
             </div>
         </nav>

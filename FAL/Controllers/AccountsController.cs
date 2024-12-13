@@ -201,5 +201,48 @@ namespace FAL.Controllers
             await _dbContext.DeleteAsync(user);
             return Ok("User deleted!");
         }
+
+        /// <summary>
+        /// API for admin to reset password for user
+        /// </summary>
+        /// <param name="resetPassword"></param>
+        /// <returns></returns>
+        // PUT: api/users/change-password
+        [Authorize]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] string username)
+        {
+            var currentUsername = username;
+
+            if (currentUsername == null)
+                return BadRequest("Username are required!");
+
+            // Load user information from DynamoDB
+            var existingUser = await _dbContext.LoadAsync<Account>(currentUsername);
+            if (existingUser == null)
+                return NotFound("User does not exist!");
+
+            var newPassword = GenerateRandomPassword(12);
+            // Update password
+            existingUser.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+            // Save changes
+            await _dbContext.SaveAsync(existingUser);
+
+            return Ok(new
+            {
+                Message = "Password has been reset successfully!",
+                NewPassword = newPassword
+            });
+        }
+
+        static string GenerateRandomPassword(int length)
+        {
+            const string allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
+            var random = new Random();
+            return new string(Enumerable.Repeat(allowedChars, length)
+                                        .Select(s => s[random.Next(s.Length)])
+                                        .ToArray());
+        }
     }
 }

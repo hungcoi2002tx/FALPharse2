@@ -152,11 +152,11 @@ namespace FAL.Controllers
                 return NotFound("User does not exist!");
 
             // Verify current password
-            if (existingUser.Password != changePasswordRequest.CurrentPassword)
+            if (!BCrypt.Net.BCrypt.Verify(changePasswordRequest.CurrentPassword, existingUser.Password))
                 return BadRequest("Current password is incorrect!");
 
             // Update password
-            existingUser.Password = changePasswordRequest.NewPassword;
+            existingUser.Password = BCrypt.Net.BCrypt.HashPassword(changePasswordRequest.NewPassword);
 
             // Save changes
             await _dbContext.SaveAsync(existingUser);
