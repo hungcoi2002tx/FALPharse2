@@ -28,7 +28,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IBaseApiService, BaseApiService>();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30); // Thời gian hết hạn session
+    options.IdleTimeout = TimeSpan.FromMinutes(60); // Thời gian hết hạn session
     options.Cookie.HttpOnly = true; // Chỉ cho phép truy cập cookie qua HTTP
     options.Cookie.IsEssential = true; // Bắt buộc cookie dù bật chế độ GDPR
 });

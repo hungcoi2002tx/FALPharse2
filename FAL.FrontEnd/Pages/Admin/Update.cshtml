@@ -46,7 +46,7 @@
                 <label for="systemName" class="fw-bold">
                     <i class="bi bi-cpu-fill"></i> System Name
                 </label>
-                <input type="text" class="form-control" id="systemName" name="User.SystemName" value="@Model.User.SystemName" placeholder="Enter system name" />
+                <input type="text" class="form-control" id="systemName" name="User.SystemName" value="@Model.User.SystemName" placeholder="Enter system name" readonly/>
             </div>
 
             <div class="form-group mb-3">
@@ -72,7 +72,11 @@
                     <option value="Deactive" selected="@(Model.User.Status == "Deactive")">Deactive</option>
                 </select>
             </div>
-
+            <div class="form-group mb-3">
+                <a href="/Admin/ResetPassword?username=@Model.User.Username" class="btn btn-warning btn-lg w-100">
+                    <i class="bi bi-lock-fill"></i> Reset Password
+                </a>
+            </div>
             <div class="d-grid gap-2 mt-4">
                 <button type="submit" class="btn btn-primary btn-lg">
                     <i class="bi bi-save-fill"></i> Update
