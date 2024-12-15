@@ -4,6 +4,7 @@ using Amazon.Rekognition.Model;
 using Amazon.Runtime.Internal.Util;
 using FAL.Services.IServices;
 using Share.DTO;
+using Share.Model;
 using Share.Utils;
 using System.Reflection;
 
@@ -242,30 +243,40 @@ namespace FAL.Services
         }
 
 
-        public async Task<bool> AssociateFacesAsync(string systemId, List<string> faceIds, string key)
+        public async Task<TrainResult> AssociateFacesAsync(string systemId, List<string> faceIds, string key)
         {
             try
             {
+                bool hasSuccessfulAssociations = false;
+
                 // Iterate through each faceId
                 foreach (var faceId in faceIds)
                 {
+                    var response = await AssociateUserAsync(key, faceId, systemId);
 
-                    var response = await AssociateUserAsync(key,faceId,systemId);
-
-                    // Check the response status code
-                    if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+                    // Check if any face was successfully associated
+                    if (response.AssociatedFaces != null && response.AssociatedFaces.Count > 0)
                     {
-                        throw new Exception($"Associate request failed for faceId: {faceId}");
+                        hasSuccessfulAssociations = true;
+                    }
+                    else
+                    {
+                        // Optionally log the failed association
+                        Console.WriteLine($"Associate request failed for faceId: {faceId}");
                     }
                 }
 
-                // Return true if all associations are successful
-                return true;
+                if (hasSuccessfulAssociations)
+                {
+                    return TrainResult.Success;
+                }
+                return TrainResult.Fail;
             }
             catch (Exception ex)
             {
-                // Log the exception (optional) and rethrow it
-                throw new Exception("An error occurred while associating faces.", ex);
+                return TrainResult.Error;
+                //// Log the exception and rethrow it
+                //throw new Exception("An error occurred while associating faces.", ex);
             }
         }
 
