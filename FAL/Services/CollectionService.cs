@@ -479,7 +479,6 @@ namespace FAL.Services
                 {
                     CollectionId = systermId,
                     Image = file,
-                    ExternalImageId = key,
                 };
                 var response = await _rekognitionClient.IndexFacesAsync(request);
                 if(response.HttpStatusCode == System.Net.HttpStatusCode.BadRequest)
