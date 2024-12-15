@@ -316,10 +316,10 @@ namespace FAL.Services
         private async Task DisassociateAndDeleteOldestFaceAsync(string userId, string faceId, string collectionName)
         {
             // Disassociate the oldest face from Rekognition
-            await DisassociatedFaceAsync(collectionName,faceId, userId);
+            await DisassociatedFaceAsync(collectionName, faceId, userId);
 
             // Delete the oldest face record from DynamoDB
-            await _dynamoDBService.DeleteItemAsync(userId,faceId,collectionName);
+            await _dynamoDBService.DeleteItemAsync(userId, faceId, collectionName);
         }
 
         public async Task<bool> IsUserExistByUserIdAsync(string systermId, string userId)
@@ -481,7 +481,7 @@ namespace FAL.Services
                     Image = file,
                 };
                 var response = await _rekognitionClient.IndexFacesAsync(request);
-                if(response.HttpStatusCode == System.Net.HttpStatusCode.BadRequest)
+                if (response.HttpStatusCode == System.Net.HttpStatusCode.BadRequest)
                 {
                     throw new Exception(message: "Error went request to Rekognition Server");
                 }
@@ -507,37 +507,37 @@ namespace FAL.Services
             {
 
                 // Step 1: Query DynamoDB to get face IDs associated with the userId
-                var faceIds = await _dynamoDBService.GetFaceIdsByUserIdAsync(userId,systemId);
+                var faceIds = await _dynamoDBService.GetFaceIdsByUserIdAsync(userId, systemId);
 
                 // If there are no face IDs, delete the user record and return true
                 if (faceIds == null || !faceIds.Any())
                 {
-                    await _dynamoDBService.DeleteUserFromDynamoDbAsync(userId,systemId);
+                    await _dynamoDBService.DeleteUserFromDynamoDbAsync(userId, systemId);
                     await DeleteUserFromRekognitionCollectionAsync(systemId, userId);
                     return true;
                 }
-                foreach(var face in faceIds)
+                foreach (var face in faceIds)
                 {
                     await DisassociatedFaceAsync(systemId, face, userId);
                 }
                 // Step 2: Delete faces from the Rekognition collection
-                var deleteFacesRequest = new DeleteFacesRequest
-                {
-                    CollectionId = systemId,
-                    FaceIds = faceIds
-                };
+                //var deleteFacesRequest = new DeleteFacesRequest
+                //{
+                //    CollectionId = systemId,
+                //    FaceIds = faceIds
+                //};
 
-                var deleteFacesResponse = await _rekognitionClient.DeleteFacesAsync(deleteFacesRequest);
+                //var deleteFacesResponse = await _rekognitionClient.DeleteFacesAsync(deleteFacesRequest);
 
                 // Step 3: Check if any faces were deleted
-                if (deleteFacesResponse.DeletedFaces.Any())
-                {
+                //if (deleteFacesResponse.DeletedFaces.Any())
+                //{
                     // Step 4: Delete the user from DynamoDB
                     await _dynamoDBService.DeleteUserFromDynamoDbAsync(userId, systemId);
 
                     await DeleteUserFromRekognitionCollectionAsync(systemId, userId);
                     return true;
-                }
+                //}
 
                 // If no faces were deleted, return false
                 return false;
@@ -558,12 +558,12 @@ namespace FAL.Services
                 {
                     CollectionId = systemId,
                     UserId = userId
-                    
+
                 };
 
                 var deleteCollectionResponse = await _rekognitionClient.DeleteUserAsync(deleteUserRequest);
 
-                
+
             }
             catch (Exception ex)
             {
@@ -631,7 +631,7 @@ namespace FAL.Services
                 int faceCount = faceIds.Count;
 
                 // Assuming _dynamoDBService.GetDetectStats returns a result with a TotalMediaDetected property
-                var mediaCount = await _dynamoDBService.GetDetectStatsByYear(systemId,year);
+                var mediaCount = await _dynamoDBService.GetDetectStatsByYear(systemId, year);
 
                 // Step 4: Return the result as a strongly typed object
                 return new CollectionChartStats
