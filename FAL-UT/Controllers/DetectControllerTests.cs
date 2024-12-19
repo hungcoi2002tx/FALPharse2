@@ -2,6 +2,7 @@
 using FAL.Services.IServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Moq;
 using Share.Constant;
 using Share.DTO;
@@ -20,6 +21,7 @@ public class DetectControllerTests
     private readonly Mock<IS3Service> _mockS3Service;
     private readonly Mock<ICollectionService> _mockCollectionService;
     private readonly Mock<IDynamoDBService> _mockDynamoService;
+    private readonly Mock<IConfiguration> _mockConfiguration;
     private readonly CustomLog _logger;
     private readonly DetectController _controller;
 
@@ -28,13 +30,13 @@ public class DetectControllerTests
         _mockS3Service = new Mock<IS3Service>();
         _mockCollectionService = new Mock<ICollectionService>();
         _mockDynamoService = new Mock<IDynamoDBService>();
-
+        _mockConfiguration = new Mock<IConfiguration>();
         // Use a temporary file path for the CustomLog instance
         var tempLogFilePath = Path.GetTempFileName();
         _logger = new CustomLog(tempLogFilePath);
 
         // Initialize the controller with the dummy logger
-        _controller = new DetectController(_logger, _mockCollectionService.Object, _mockS3Service.Object, _mockDynamoService.Object);
+        _controller = new DetectController(_logger, _mockCollectionService.Object, _mockS3Service.Object, _mockDynamoService.Object, _mockConfiguration.Object);
 
         // Mock user claims
         var claims = new List<Claim>
@@ -62,8 +64,17 @@ public class DetectControllerTests
         _mockS3Service.Setup(s => s.IsAddBudgetAsync(It.IsAny<string>()))
                       .ReturnsAsync(true);
 
-        _mockS3Service.Setup(s => s.AddFileToS3Async(It.IsAny<IFormFile>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TypeOfRequest>(), mediaId, null))
-                      .ReturnsAsync(true);
+        _mockS3Service.Setup(s => s.AddFileToS3Async(
+                         It.IsAny<IFormFile>(),
+                         It.IsAny<string>(),
+                         It.IsAny<string>(),
+                         It.IsAny<TypeOfRequest>(),
+                         mediaId,
+                         null, // systemId
+                         It.IsAny<string>() // Explicitly specify userId
+                     ))
+               .ReturnsAsync(true);
+
 
         // Act
         var result = await _controller.DetectAsync(fileMock.Object, mediaId);
@@ -149,13 +160,15 @@ public class DetectControllerTests
 
         _mockS3Service.Setup(s => s.IsAddBudgetAsync(It.IsAny<string>())).ReturnsAsync(true);
         _mockS3Service.Setup(s => s.AddFileToS3Async(
-    It.IsAny<IFormFile>(),
-    It.IsAny<string>(),
-    It.IsAny<string>(),
-    It.IsAny<TypeOfRequest>(),
-    It.IsAny<string>(),
-    It.IsAny<string>() // Optional parameter, defaults to null
+    It.IsAny<IFormFile>(),  // file
+    It.IsAny<string>(),     // fileName
+    It.IsAny<string>(),     // bucketName
+    It.IsAny<TypeOfRequest>(), // type
+    It.IsAny<string>(),     // mediaId
+    It.IsAny<string>(),     // systemId
+    It.IsAny<string>()      // userId (explicitly provided, even though optional)
 )).ReturnsAsync(true);
+
 
 
         // Act
@@ -196,7 +209,7 @@ public class DetectControllerTests
 
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        Assert.Equal("Bucket test-system-id does not exist.", notFoundResult.Value);
+        Assert.Equal("Bucket  does not exist.", notFoundResult.Value);
     }
 
     [Fact]

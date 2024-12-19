@@ -6,6 +6,8 @@ using System.Net.WebSockets;
 using FAL.Dtos;
 using Share.Model;
 using Share.DTO;
+using Amazon.DynamoDBv2.DocumentModel;
+using FAL.Services.IServices;
 
 namespace FAL.Controllers
 {
@@ -14,10 +16,12 @@ namespace FAL.Controllers
     public class AccountsController : ControllerBase
     {
         private readonly IDynamoDBContext _dbContext;
+        private readonly ICollectionService _collectionService;
 
-        public AccountsController(IDynamoDBContext dbContext)
+        public AccountsController(IDynamoDBContext dbContext, ICollectionService collectionService)
         {
             _dbContext = dbContext;
+            _collectionService = collectionService;
         }
 
         [Authorize]
@@ -67,43 +71,81 @@ namespace FAL.Controllers
         // POST: api/accounts
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] Account user)
+        public async Task<IActionResult> CreateUser([FromBody] Account newUser)
         {
-            if (user == null)
+            if (newUser == null)
                 return BadRequest("Invalid user data.");
 
             // Validate model state
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Check if the user already exists
-            var existingUser = await _dbContext.LoadAsync<Account>(user.Username);
+            // Check if the user already exists by username
+            var existingUser = await _dbContext.LoadAsync<Account>(newUser.Username);
             if (existingUser != null)
-                return Conflict("A user with this username already exists.");
-
-            // Hash the password using BCrypt
-            try
             {
-                user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password); // Ensure BCrypt library is installed
-            }
-            catch (Exception)
-            {
-                // Log the error (using your logging framework)
-                return StatusCode(500, "An error occurred while processing the password.");
+                return Conflict("Username already exists.");
             }
 
-            // Save the user to the database
+            // Check if the SystemName already exists (using ScanAsync)
+            var scanResult = await _dbContext.ScanAsync<Account>(
+                           [
+                               new("SystemName", ScanOperator.Equal, newUser.SystemName)
+                           ]).GetRemainingAsync();
+
+            if (scanResult.Count != 0)
+            {
+                return Conflict("SystemName already exists.");
+            }
+
+            // Check if collection already exists with the same SystemName
+            var collectionExists = await _collectionService.IsCollectionExistAsync(newUser.SystemName);
+            if (collectionExists)
+            {
+                return Conflict("Collection already exists for this SystemName.");
+            }
+
+            // Create a new collection for the user
+            bool collectionCreated = await _collectionService.CreateCollectionAsync(newUser.SystemName);
+            if (!collectionCreated)
+            {
+                return StatusCode(500, "Failed to create collection.");
+            }
+
             try
             {
+                // Hash the password
+                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(newUser.Password);
+
+                // Create a new User object
+                var user = new Account
+                {
+                    Username = newUser.Username,
+                    Password = hashedPassword,
+                    Email = newUser.Email,
+                    RoleId = newUser.RoleId > 0 ? newUser.RoleId : 2, // Default RoleId is 2 for staff
+                    SystemName = newUser.SystemName,
+                    WebhookUrl = newUser.WebhookUrl,
+                    WebhookSecretKey = newUser.WebhookSecretKey,
+                    Status = newUser.Status ?? "Deactive" // Default status
+                };
+
+                // Save the user to DynamoDB
                 await _dbContext.SaveAsync(user);
-            }
-            catch (Exception)
-            {
-                // Log the error (using your logging framework)
-                return StatusCode(500, "An error occurred while saving the user.");
-            }
 
-            return Ok("User created successfully."); // Do not return user object for security reasons
+                return Ok("User creation and collection setup successful!");
+            }
+            catch (Exception ex)
+            {
+                // Rollback the collection creation in case of user creation failure
+                bool collectionDeleted = await _collectionService.DeleteCollectionAsync(newUser.SystemName);
+                if (!collectionDeleted)
+                {
+                    return StatusCode(500, "User creation failed, and collection rollback unsuccessful.");
+                }
+
+                return StatusCode(500, $"User creation failed: {ex.Message}");
+            }
         }
 
 
@@ -130,8 +172,8 @@ namespace FAL.Controllers
             if (updatedUser.RoleId.HasValue) // Check if RoleId is not null
                 existingUser.RoleId = updatedUser.RoleId.Value;
 
-            if (!string.IsNullOrEmpty(updatedUser.SystemName))
-                existingUser.SystemName = updatedUser.SystemName;
+            //if (!string.IsNullOrEmpty(updatedUser.SystemName))
+            //    existingUser.SystemName = updatedUser.SystemName;
 
             if (!string.IsNullOrEmpty(updatedUser.WebhookUrl))
                 existingUser.WebhookUrl = updatedUser.WebhookUrl;
@@ -158,6 +200,49 @@ namespace FAL.Controllers
 
             await _dbContext.DeleteAsync(user);
             return Ok("User deleted!");
+        }
+
+        /// <summary>
+        /// API for admin to reset password for user
+        /// </summary>
+        /// <param name="resetPassword"></param>
+        /// <returns></returns>
+        // PUT: api/users/change-password
+        [Authorize]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] string username)
+        {
+            var currentUsername = username;
+
+            if (currentUsername == null)
+                return BadRequest("Username are required!");
+
+            // Load user information from DynamoDB
+            var existingUser = await _dbContext.LoadAsync<Account>(currentUsername);
+            if (existingUser == null)
+                return NotFound("User does not exist!");
+
+            var newPassword = GenerateRandomPassword(12);
+            // Update password
+            existingUser.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+            // Save changes
+            await _dbContext.SaveAsync(existingUser);
+
+            return Ok(new
+            {
+                Message = "Password has been reset successfully!",
+                NewPassword = newPassword
+            });
+        }
+
+        static string GenerateRandomPassword(int length)
+        {
+            const string allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
+            var random = new Random();
+            return new string(Enumerable.Repeat(allowedChars, length)
+                                        .Select(s => s[random.Next(s.Length)])
+                                        .ToArray());
         }
     }
 }

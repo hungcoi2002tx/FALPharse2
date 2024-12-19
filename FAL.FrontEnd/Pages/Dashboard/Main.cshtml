@@ -60,6 +60,13 @@
 </style>
 </head>
 <div class="container">
+        @if (!string.IsNullOrEmpty(TempData["Message"] as string)) 
+        { 
+            <div class="alert alert-info"> 
+                <i class="bi bi-info-circle-fill"></i> @TempData["Message"] 
+            </div> 
+        }
+
     <h1 class="text-center mb-5">Detection Dashboard</h1>
 
     <form asp-controller="YourController" asp-action="YourAction" method="get" class="mb-4">

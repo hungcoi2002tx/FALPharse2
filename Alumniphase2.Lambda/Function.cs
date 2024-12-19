@@ -62,11 +62,14 @@ public class Function
             var imageWidth = metadataResponse.Metadata["ImageWidth"];
             var imageHeight = metadataResponse.Metadata["ImageHeight"];
             var systemId = metadataResponse.Metadata["SystemId"];
-            await logger.LogMessageAsync($"systemId la {systemId}");
             switch (contentType)
             {
                 case (false):
                     result = await DetectImageProcess(bucket,systemId, key, fileName);
+                    if(result == null)
+                    {
+                        await logger.LogMessageAsync($"result null");
+                    }
                     result.Width = int.Parse(imageWidth);
                     result.Height = int.Parse(imageHeight);
                     result.Key = key;
@@ -101,7 +104,6 @@ public class Function
         {
             string jsonPayload = ConvertToJson(result);
             await logger.LogMessageAsync(jsonPayload);
-
             // Tính chữ ký HMAC cho payload
             string signature = GenerateHMAC(jsonPayload, webhookSecretkey);
             // Tạo HttpContent để gửi yêu cầu POST
@@ -111,15 +113,13 @@ public class Function
             await logger.LogMessageAsync(signature);
             var resultJson = ConvertToJson(result);
             var response = await _httpClient.PostAsync(webhookUrl, content);
-            await logger.LogMessageAsync(webhookUrl);
             response.EnsureSuccessStatusCode();
             var responseContent = await response.Content.ReadAsStringAsync();
-            await logger.LogMessageAsync("Response from API: " + responseContent);
             return resultJson;
         }
         catch(Exception e)
         {
-            await logger.LogMessageAsync(e.Message);
+            await logger.LogMessageAsync($"SendResult error {e.Message} -kq can tra la {result.RegisteredFaces.Count()} va {result.UnregisteredFaces.Count()}");
         }
 
 
@@ -250,7 +250,6 @@ public class Function
     {
         var logger = new CloudWatchLogger();
         string jobId = await StartFaceSearch(bucket, key, systemId);
-        await logger.LogMessageAsync($"JobId la {jobId}");
         return await GetFaceSearchResults(jobId, systemId, fileName);
     }
     private async Task<FaceDetectionResult> DetectImageProcess(string bucket,string systemId, string key, string fileName)
@@ -258,8 +257,6 @@ public class Function
         var logger = new CloudWatchLogger();
         try
         {
-            
-
             var resultRegisteredUsers = new List<FaceRecognitionResponse>();
             var resultUnregisteredUsers = new List<FaceRecognitionResponse>();
 

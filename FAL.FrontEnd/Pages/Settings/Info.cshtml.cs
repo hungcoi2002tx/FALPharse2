@@ -101,7 +101,6 @@ namespace FAL.FrontEnd.Pages.Settings
                 var userUpdateRequest = new
                 {
                     Email = this.Email,
-                    SystemName = this.SystemName,
                     WebhookUrl = this.WebhookUrl,
                     WebhookSecretKey = this.WebhookSecretKey
                 };

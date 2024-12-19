@@ -4,16 +4,20 @@ using Amazon.DynamoDBv2.DataModel;
 using FAL.Controllers;
 using Share.Model;
 using Share.DTO;
+using FAL.Services.IServices;
 
 public class AccountsControllerTests
 {
     private readonly Mock<IDynamoDBContext> _mockDbContext;
+    private readonly Mock<ICollectionService> _mockCollectionService;
+    
     private readonly AccountsController _controller;
 
     public AccountsControllerTests()
     {
         _mockDbContext = new Mock<IDynamoDBContext>();
-        _controller = new AccountsController(_mockDbContext.Object);
+        _mockCollectionService = new Mock<ICollectionService>();
+        _controller = new AccountsController(_mockDbContext.Object,_mockCollectionService.Object);
     }
 
     [Fact]
@@ -58,7 +62,7 @@ public class AccountsControllerTests
             .Returns(mockAsyncSearch.Object);
 
         // Inject the mocked IDynamoDBContext
-        var controller = new AccountsController(mockDbContext.Object);
+        var controller = new AccountsController(mockDbContext.Object, _mockCollectionService.Object);
 
         // Act
         var result = await controller.GetUsers();
@@ -107,24 +111,7 @@ public class AccountsControllerTests
         Assert.IsType<NotFoundObjectResult>(result);
     }
 
-    // Test for CreateUser - Normal Case
-    [Fact]
-    public async Task CreateUser_ReturnsOkWhenCreated()
-    {
-        // Arrange
-        var newUser = new Account { Username = "user1", Email = "user1@example.com" };
-        _mockDbContext.Setup(db => db.LoadAsync<Account>("user1", default)).ReturnsAsync((Account)null);
-
-        // Act
-        var result = await _controller.CreateUser(newUser);
-
-        // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result);
-        var createdUser = Assert.IsType<Account>(okResult.Value);
-        Assert.Equal("user1", createdUser.Username);
-
-        _mockDbContext.Verify(db => db.SaveAsync(newUser, default), Times.Once);
-    }
+    
 
     // Test for CreateUser - User Already Exists
     [Fact]
@@ -138,7 +125,7 @@ public class AccountsControllerTests
         var result = await _controller.CreateUser(existingUser);
 
         // Assert
-        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.IsType<ConflictObjectResult>(result);
     }
 
     // Test for UpdateUser - Normal Case

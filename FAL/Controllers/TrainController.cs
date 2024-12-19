@@ -256,20 +256,49 @@ namespace FAL.Controllers
             try
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
+                var logger = new CloudWatchLogger();
+
+                // Ghi log ra CloudWatch
+                await logger.LogMessageAsync($"User Id in TrainByImageAsync {userId} tu system {systermId} vao luc {DateTimeUtils.GetDateTimeVietNamNow()}");
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
-                await TrainAsync(image, userId, systermId);
+                var result = await TrainAsync(image, userId, systermId);
                 await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.TrainByImage, RequestResultEnum.Success, JsonSerializer.Serialize(new
                 {
                     file =file,
                     userId = userId
                 }));
                 //return 
-                return Ok(new ResultResponse
+                switch (result)
                 {
-                    Status = true,
-                    Message = "The system training was successful."
-                });
+                    case TrainResult.Success:
+                        return Ok(new ResultResponse
+                        {
+                            Status = true,
+                            Message = "The system training was successful."
+                        });
+
+                    case TrainResult.Fail:
+                        return StatusCode(StatusCodes.Status409Conflict, new ResultResponse
+                        {
+                            Status = false,
+                            Message = "The face has low confidence or does not match the previously trained face."
+                        });
+
+                    case TrainResult.Error:
+                        return StatusCode(StatusCodes.Status500InternalServerError, new ResultResponse
+                        {
+                            Status = false,
+                            Message = "An error occurred during system training."
+                        });
+
+                    default:
+                        return StatusCode(StatusCodes.Status500InternalServerError, new ResultResponse
+                        {
+                            Status = false,
+                            Message = "Unexpected result."
+                        });
+                }
             }
             catch (ArgumentException ex)
             {
@@ -486,8 +515,13 @@ namespace FAL.Controllers
         {
             try
             {
+                
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
                 //check faceId in dynamodb
+                var logger = new CloudWatchLogger();
+
+                // Ghi log ra CloudWatch
+                await logger.LogMessageAsync($"User Id in TrainByFaceIdAsync {info.UserId} tu system {systermId} vao luc {DateTimeUtils.GetDateTimeVietNamNow()}");
                 var result = await _dynamoService.IsExistFaceIdAsync(systermId, info.FaceId);
                 if (result)
                 {
@@ -499,15 +533,39 @@ namespace FAL.Controllers
                 }
 
                 //train
-                await TrainFaceIdAsync(info.UserId, info.FaceId, systermId);
+                var trainResult = await TrainFaceIdAsync(info.UserId, info.FaceId, systermId);
                 await _dynamoService.LogRequestAsync(systermId, RequestTypeEnum.TrainByFaceId, RequestResultEnum.Success, JsonSerializer.Serialize(info));
 
-                //return 
-                return Ok(new ResultResponse
+                switch (trainResult)
                 {
-                    Status = true,
-                    Message = "The system training was successful."
-                });
+                    case TrainResult.Success:
+                        return Ok(new ResultResponse
+                        {
+                            Status = true,
+                            Message = "The system training was successful."
+                        });
+
+                    case TrainResult.Fail:
+                        return StatusCode(StatusCodes.Status409Conflict, new ResultResponse
+                        {
+                            Status = false,
+                            Message = "The face has low confidence or does not match the previously trained face."
+                        });
+
+                    case TrainResult.Error:
+                        return StatusCode(StatusCodes.Status500InternalServerError, new ResultResponse
+                        {
+                            Status = false,
+                            Message = "An error occurred during system training."
+                        });
+
+                    default:
+                        return StatusCode(StatusCodes.Status500InternalServerError, new ResultResponse
+                        {
+                            Status = false,
+                            Message = "Unexpected result."
+                        });
+                }
             }
             catch (Exception ex)
             {
@@ -591,7 +649,7 @@ namespace FAL.Controllers
             }
         }
 
-        private async Task TrainAsync(Image file, string userId, string systermId)
+        private async Task<TrainResult> TrainAsync(Image file, string userId, string systermId)
         {
             try
             {
@@ -603,7 +661,8 @@ namespace FAL.Controllers
                 #region index face
                 var indexResponse = await _collectionService.IndexFaceByFileAsync(file, systermId, userId);
                 #endregion
-                await TrainFaceIdAsync(userId, indexResponse.FaceRecords[0].Face.FaceId, systermId);
+                var result = await TrainFaceIdAsync(userId, indexResponse.FaceRecords[0].Face.FaceId, systermId);
+                return result;
             }
             catch (Exception ex)
             {
@@ -611,7 +670,7 @@ namespace FAL.Controllers
             }
         }
 
-        private async Task TrainFaceIdAsync(string userId, string faceId, string systermId)
+        private async Task<TrainResult> TrainFaceIdAsync(string userId, string faceId, string systermId)
         {
             try
             {
@@ -634,8 +693,12 @@ namespace FAL.Controllers
                     await _collectionService.CreateNewUserAsync(systermId, userId);
                 }
                 #region Add user 
-                await _collectionService.AssociateFacesAsync(systermId, new List<string>() { faceId }, userId);
-                await _dynamoService.CreateUserInformationAsync(systermId, userId, faceId);
+                var result = await _collectionService.AssociateFacesAsync(systermId, new List<string>() { faceId }, userId);
+                if(result == TrainResult.Success)
+                {
+                    await _dynamoService.CreateUserInformationAsync(systermId, userId, faceId);
+                }
+                return result;
                 #endregion
             }
             catch (Exception ex)

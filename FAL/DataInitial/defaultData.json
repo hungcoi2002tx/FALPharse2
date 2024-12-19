@@ -1,7 +1,18 @@
 {
   "accounts": [
     {
+      "username": "eos",
+      "password": "$2a$11$nKbzLObjB4FOKdwPq5PVb.PNfE3XgGMohWShwzYaD2Wih6Igz3g22",
+      "email": "eos@fu.edu.vn",
+      "roleId": 2,
+      "systemName": "EOS",
+      "webhookUrl": "https://test",
+      "webhookSecretKey": "N/A",
+      "status": "Active"
+    },
+    {
       "username": "khanm",
+      "password": "$2a$11$JsVZzIQ5YlxHHiJi0qAJr.cqX1r6TtGHbPz2da1Q7pla3iAZKty4S",
       "email": "kha@g.com",
       "roleId": 1,
       "systemName": "fualumni",
@@ -11,19 +22,31 @@
     },
     {
       "username": "hung",
+      "password": "$2a$11$E9KeAWcAfO3LWhU83.MGVuutHqXb5M1U849lGvtT3aoOVZTwOLRFC",
       "email": "hungnmhe161789@fpt.edu.vn",
-      "roleId": 2,
+      "roleId": 1,
       "systemName": "hung",
-      "webhookUrl": "string",
+      "webhookUrl": "https://test",
       "webhookSecretKey": "string",
       "status": "Active"
     },
     {
-      "username": "string",
-      "email": "string@string",
-      "roleId": 1,
+      "username": "alumni",
+      "password": "$2a$11$JsVZzIQ5YlxHHiJi0qAJr.cqX1r6TtGHbPz2da1Q7pla3iAZKty4S",
+      "email": "dbt031510@gmail.com",
+      "roleId": 2,
       "systemName": "fptualumni",
-      "webhookUrl": "https://fpt-alumniapi20241109161321.azurewebsites.net/api/WebhookReceiver",
+      "webhookUrl": "https://dev.ptudev.net/alumni-be/api/WebhookReceiver1",
+      "webhookSecretKey": "your-secret-key",
+      "status": "Active"
+    },
+    {
+      "username": "string",
+      "password": "$2a$11$JsVZzIQ5YlxHHiJi0qAJr.cqX1r6TtGHbPz2da1Q7pla3iAZKty4S",
+      "email": "stringq222@string.string.vn",
+      "roleId": 2,
+      "systemName": "fptfralumni",
+      "webhookUrl": "https://dev.ptudev.net/alumni-be/api/WebhookReceiver",
       "webhookSecretKey": "your-secret-key",
       "status": "Active"
     }
@@ -35,15 +58,52 @@
       "permissions": [
         {
           "resource": "Detect",
-          "actions": [ "POST" ]
+          "actions": [
+            "POST"
+          ]
         },
         {
           "resource": "Train",
-          "actions": [ "POST" ]
+          "actions": [
+            "DELETE",
+            "GET",
+            "POST",
+            "PUT"
+          ]
         },
         {
           "resource": "Users",
-          "actions": [ "PUT" ]
+          "actions": [
+            "GET",
+            "PUT"
+          ]
+        },
+        {
+          "resource": "Result",
+          "actions": [
+            "DELETE",
+            "GET",
+            "POST",
+            "PUT"
+          ]
+        },
+        {
+          "resource": "Compare",
+          "actions": [
+            "DELETE",
+            "GET",
+            "POST",
+            "PUT"
+          ]
+        },
+        {
+          "resource": "Collection",
+          "actions": [
+            "DELETE",
+            "GET",
+            "POST",
+            "PUT"
+          ]
         }
       ]
     },
@@ -53,35 +113,68 @@
       "permissions": [
         {
           "resource": "Accounts",
-          "actions": [ "DELETE", "GET", "POST", "PUT" ]
+          "actions": [
+            "DELETE",
+            "GET",
+            "POST",
+            "PUT"
+          ]
         },
         {
           "resource": "Compare",
-          "actions": [ "POST" ]
+          "actions": [
+            "POST"
+          ]
         },
         {
           "resource": "Auth",
-          "actions": [ "POST" ]
+          "actions": [
+            "POST"
+          ]
         },
         {
           "resource": "Collection",
-          "actions": [ "DELETE", "GET", "POST" ]
+          "actions": [
+            "DELETE",
+            "GET",
+            "POST"
+          ]
         },
         {
           "resource": "Detect",
-          "actions": [ "POST" ]
+          "actions": [
+            "POST"
+          ]
         },
         {
           "resource": "Roles",
-          "actions": [ "DELETE", "GET", "POST", "PUT" ]
+          "actions": [
+            "DELETE",
+            "GET",
+            "POST",
+            "PUT"
+          ]
         },
         {
           "resource": "Train",
-          "actions": [ "DELETE", "POST" ]
+          "actions": [
+            "DELETE",
+            "POST"
+          ]
         },
         {
           "resource": "Result",
-          "actions": [ "DELETE", "GET" ]
+          "actions": [
+            "DELETE",
+            "GET"
+          ]
+        },
+        {
+          "resource": "Users",
+          "actions": [
+            "GET",
+            "PUT"
+          ]
         }
       ]
     }

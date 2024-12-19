@@ -46,6 +46,10 @@ namespace FAL.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateRole([FromBody] Role role)
         {
+            if (role == null)
+            {
+                return BadRequest("Role cannot be null.");
+            }
             var existingRole = await _dbContext.LoadAsync<Role>(role.RoleId);
             if (existingRole != null)
                 return BadRequest("Role already exists!");

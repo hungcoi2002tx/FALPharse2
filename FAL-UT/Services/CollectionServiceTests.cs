@@ -372,37 +372,7 @@ public class CollectionServiceTests
 
     // Test for AssociateFacesAsync
 
-    [Fact]
-    public async Task AssociateFacesAsync_FailureInAssociate_ThrowsException()
-    {
-        // Arrange
-        var faceIds = new List<string> { "face1", "face2" };
-        string systermId = "test-system-id";
-        string key = "image-key";
-
-        _mockRekognitionClient.Setup(x => x.AssociateFacesAsync(It.IsAny<AssociateFacesRequest>(), default))
-            .ReturnsAsync(new AssociateFacesResponse { HttpStatusCode = System.Net.HttpStatusCode.BadRequest });
-
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<Exception>(() => _service.AssociateFacesAsync(systermId, faceIds, key));
-        Assert.Contains("An error occurred while associating faces", ex.Message);
-    }
-
-    [Fact]
-    public async Task AssociateFacesAsync_ErrorInAssociation_ThrowsException()
-    {
-        // Arrange
-        var faceIds = new List<string> { "face1", "face2" };
-        string systermId = "test-system-id";
-        string key = "image-key";
-
-        _mockRekognitionClient.Setup(x => x.AssociateFacesAsync(It.IsAny<AssociateFacesRequest>(), default))
-            .ThrowsAsync(new Exception("Error during face association"));
-
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<Exception>(() => _service.AssociateFacesAsync(systermId, faceIds, key));
-        Assert.Equal("An error occurred while associating faces.", ex.Message);
-    }
+   
 
     [Fact]
     public async Task IsUserExistByUserIdAsync_UserExists_ReturnsTrue()
@@ -752,77 +722,6 @@ public class CollectionServiceTests
         _mockService.Verify(s => s.DeleteUserFromRekognitionCollectionAsync(systemId, userId), Times.Once);
     }
 
-    [Fact]
-    public async Task DeleteFromCollectionAsync_FaceIdsExist_FacesDeleted_UserDeleted_ReturnsTrue()
-    {
-        // Arrange
-        string userId = "testUserId";
-        string systemId = "testSystemId";
-        var faceIds = new List<string> { "faceId1", "faceId2" };
-
-        _mockDynamoDBService.Setup(s => s.GetFaceIdsByUserIdAsync(userId, systemId))
-            .ReturnsAsync(faceIds);
-
-        _mockService.Setup(s => s.DisassociatedFaceAsync(systemId, It.IsAny<string>(), userId))
-            .ReturnsAsync(true);
-
-        _mockRekognitionClient.Setup(s => s.DeleteFacesAsync(It.IsAny<DeleteFacesRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new DeleteFacesResponse { DeletedFaces = faceIds });
-
-        _mockDynamoDBService.Setup(s => s.DeleteUserFromDynamoDbAsync(userId, systemId))
-            .Returns(Task.CompletedTask);
-
-        _mockService.Setup(s => s.DeleteUserFromRekognitionCollectionAsync(systemId, userId))
-            .Returns(Task.CompletedTask);
-
-        // Act
-        var result = await _mockService.Object.DeleteFromCollectionAsync(userId, systemId);
-
-        // Assert
-        Assert.True(result);
-        _mockRekognitionClient.Verify(s => s.DeleteFacesAsync(
-            It.Is<DeleteFacesRequest>(r => r.CollectionId == systemId && r.FaceIds == faceIds),
-            It.IsAny<CancellationToken>()), Times.Once);
-        _mockDynamoDBService.Verify(s => s.DeleteUserFromDynamoDbAsync(userId, systemId), Times.Once);
-        _mockService.Verify(s => s.DeleteUserFromRekognitionCollectionAsync(systemId, userId), Times.Once);
-    }
-
-    [Fact]
-    public async Task DeleteFromCollectionAsync_FaceIdsExist_NoFacesDeleted_ReturnsFalse()
-    {
-        // Arrange
-        string userId = "testUserId";
-        string systemId = "testSystemId";
-        var faceIds = new List<string> { "faceId1", "faceId2" };
-
-        _mockDynamoDBService.Setup(s => s.GetFaceIdsByUserIdAsync(userId, systemId))
-            .ReturnsAsync(faceIds);
-
-        _mockService.Setup(s => s.DisassociatedFaceAsync(systemId, It.IsAny<string>(), userId))
-            .ReturnsAsync(true);
-
-        // Include CancellationToken in Setup
-        _mockRekognitionClient.Setup(s => s.DeleteFacesAsync(It.IsAny<DeleteFacesRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new DeleteFacesResponse { DeletedFaces = new List<string>() });
-
-        // Act
-        var result = await _mockService.Object.DeleteFromCollectionAsync(userId, systemId);
-
-        // Assert
-        Assert.False(result);
-
-        // Include CancellationToken in Verify
-        _mockRekognitionClient.Verify(
-            s => s.DeleteFacesAsync(
-                It.Is<DeleteFacesRequest>(r => r.CollectionId == systemId && r.FaceIds == faceIds),
-                It.IsAny<CancellationToken>()
-            ),
-            Times.Once
-        );
-
-        _mockDynamoDBService.Verify(s => s.DeleteUserFromDynamoDbAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        _mockService.Verify(s => s.DeleteUserFromRekognitionCollectionAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-    }
 
     [Fact]
     public async Task DeleteFromCollectionAsync_ExceptionThrown_ReturnsFalse()

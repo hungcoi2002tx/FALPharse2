@@ -1,5 +1,6 @@
 ﻿using Amazon.Rekognition.Model;
 using Share.DTO;
+using Share.Model;
 
 namespace FAL.Services.IServices
 {
@@ -15,7 +16,7 @@ namespace FAL.Services.IServices
         Task<IndexFacesResponse> IndexFaceByFileAsync(Image file, string systermId, string key = null);
         Task<DetectFacesResponse> DetectFaceByFileAsync(IFormFile file);
         Task<DetectFacesResponse> DetectFaceByFileAsync(Image file);
-        Task<bool> AssociateFacesAsync(string systermId, List<string> faceIds, string key);
+        Task<TrainResult> AssociateFacesAsync(string systermId, List<string> faceIds, string key);
         Task<bool> IsUserExistByUserIdAsync(string systermId, string userId);
         Task<bool> CreateNewUserAsync(string systermId, string userId);
         Task<SearchUsersResponse> SearchUserByFaceIdsAsync(string systermId, string faceId);

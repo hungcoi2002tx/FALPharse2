@@ -17,4 +17,11 @@ namespace Share.Model
         Image = 0,
         Video = 1,
     }
+
+    public enum TrainResult
+    {
+        Success = 0,
+        Fail= 1,
+        Error = 2,
+    }
 }

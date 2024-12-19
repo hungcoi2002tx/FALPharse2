@@ -131,16 +131,14 @@ namespace FAL
                 try
                 {
                     await dataInitializer.SeedDefaultDataAsync();
-                    Console.WriteLine("Dữ liệu mặc định đã được khởi tạo thành công.");
+                    Console.WriteLine("Default data has been initialized successfully.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Lỗi khi khởi tạo dữ liệu mặc định: {ex.Message}");
+                    Console.WriteLine($"Error initializing default data: {ex.Message}");
                 }
             }
             app.Run();
-
-
         }
     }
 }
