@@ -84,6 +84,7 @@ namespace FAL.DataInitial
                     case ACCOUNTS_TABLE:
                         createTableRequest.KeySchema.Add(new KeySchemaElement("Username", KeyType.HASH));
                         createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("Username", ScalarAttributeType.S));
+                        createTableRequest.AttributeDefinitions.Add(new AttributeDefinition("SystemName", ScalarAttributeType.S));
                         createTableRequest.GlobalSecondaryIndexes =
                         [
                             new() {

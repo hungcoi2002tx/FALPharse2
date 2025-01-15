@@ -65,8 +65,8 @@ public class Function
             switch (contentType)
             {
                 case (false):
-                    result = await DetectImageProcess(bucket,systemId, key, fileName);
-                    if(result == null)
+                    result = await DetectImageProcess(bucket, systemId, key, fileName);
+                    if (result == null)
                     {
                         await logger.LogMessageAsync($"result null");
                     }
@@ -78,7 +78,7 @@ public class Function
                     await SendResult(result, logger, webhookSecretkeyImage, webhookUrlImage);
                     break;
                 case (true):
-                    result = await DetectVideoProcess(bucket, key, fileName, systemId);   
+                    result = await DetectVideoProcess(bucket, key, fileName, systemId);
                     result.Width = int.Parse(imageWidth);
                     result.Height = int.Parse(imageHeight);
                     result.Key = key;
@@ -90,6 +90,7 @@ public class Function
                     await logger.LogMessageAsync($"Add vao db {result.RegisteredFaces.Count}");
                     break;
             }
+            await DeleteFileInS3(bucket, key, logger);
         }
         catch (Exception ex)
         {
@@ -97,9 +98,31 @@ public class Function
         }
     }
 
+    private async Task DeleteFileInS3(string bucketName, string keyName, CloudWatchLogger logger)
+    {
+        try
+        {
+            var deleteObjectRequest = new DeleteObjectRequest
+            {
+                BucketName = bucketName,
+                Key = keyName
+            };
+
+            DeleteObjectResponse response = await _s3Client.DeleteObjectAsync(deleteObjectRequest);
+        }
+        catch (AmazonS3Exception e)
+        {
+            await logger.LogMessageAsync($"Lỗi xảy ra khi xóa tệp: {e.Message} \\n Mã lỗi HTTP: {e.StatusCode}");
+        }
+        catch (Exception e)
+        {
+            await logger.LogMessageAsync($"Lỗi chung xảy ra: {e.Message}");
+        }
+    }
+
     private async Task<string> SendResult(FaceDetectionResult result, CloudWatchLogger logger, string webhookSecretkey, string webhookUrl)
     {
-        
+
         try
         {
             string jsonPayload = ConvertToJson(result);
@@ -117,14 +140,14 @@ public class Function
             var responseContent = await response.Content.ReadAsStringAsync();
             return resultJson;
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             await logger.LogMessageAsync($"SendResult error {e.Message} -kq can tra la {result.RegisteredFaces.Count()} va {result.UnregisteredFaces.Count()}");
         }
 
 
         return "";
-       
+
     }
 
     private static string GenerateHMAC(string payload, string secret)
@@ -196,7 +219,7 @@ public class Function
     {
         return JsonConvert.SerializeObject(obj);
     }
-    private async Task StoreResponseResult(FaceDetectionResult result, string fileName,string systemName)
+    private async Task StoreResponseResult(FaceDetectionResult result, string fileName, string systemName)
     {
         string jsonResult = ConvertToJson(result);
         var dictionaryResponseResult = CreateDictionaryFualumniResponeResult(fileName, jsonResult, systemName);
@@ -216,7 +239,7 @@ public class Function
         }
     }
 
-    private Dictionary<string, AttributeValue> CreateDictionaryFualumniResponeResult(string fileName, string data,string systemName)
+    private Dictionary<string, AttributeValue> CreateDictionaryFualumniResponeResult(string fileName, string data, string systemName)
     {
         return new Dictionary<string, AttributeValue>
                {
@@ -246,13 +269,13 @@ public class Function
                    }
                };
     }
-    private async Task<FaceDetectionResult> DetectVideoProcess(string bucket, string key, string fileName,string systemId)
+    private async Task<FaceDetectionResult> DetectVideoProcess(string bucket, string key, string fileName, string systemId)
     {
         var logger = new CloudWatchLogger();
         string jobId = await StartFaceSearch(bucket, key, systemId);
         return await GetFaceSearchResults(jobId, systemId, fileName);
     }
-    private async Task<FaceDetectionResult> DetectImageProcess(string bucket,string systemId, string key, string fileName)
+    private async Task<FaceDetectionResult> DetectImageProcess(string bucket, string systemId, string key, string fileName)
     {
         var logger = new CloudWatchLogger();
         try
@@ -310,7 +333,9 @@ public class Function
             {
                 throw new Exception("Index face: Cannot detect anyone");
             }
-        }catch(Exception ex) {
+        }
+        catch (Exception ex)
+        {
             await logger.LogMessageAsync($"image process:{ex.Message}");
         }
         return null;
@@ -528,7 +553,7 @@ public class Function
     private async Task<AssociateFacesResponse> AssociateUser(string userId, string faceId, string collectionName)
     {
         var logger = new CloudWatchLogger(); // Initialize your custom CloudWatchLogger
-        
+
         var listFaceIDs = await GetFaceIdsByUserIdAsync(userId, collectionName);
         var existingFaceId = await GetFaceIdForUserAndFaceAsync(userId, faceId, collectionName);
         await logger.LogMessageAsync($"Existing face id : {existingFaceId}");
@@ -541,7 +566,7 @@ public class Function
             // Disassociate and delete the oldest face
             await DisassociateAndDeleteOldestFaceAsync(userId, oldestFaceId, collectionName);
         }
-        else if(faceId.CompareTo(existingFaceId) == 0)
+        else if (faceId.CompareTo(existingFaceId) == 0)
         {
             await logger.LogMessageAsync($"Trung mat : {faceId}");
             return new AssociateFacesResponse
@@ -596,7 +621,7 @@ public class Function
 
         foreach (var (userId, faceId, imageId) in userFaceIds)
         {
-            
+
             var response = await _rekognitionClient.AssociateFacesAsync(new AssociateFacesRequest
             {
                 CollectionId = collectionName,

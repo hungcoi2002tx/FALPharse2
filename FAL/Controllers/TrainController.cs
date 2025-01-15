@@ -256,10 +256,6 @@ namespace FAL.Controllers
             try
             {
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
-                var logger = new CloudWatchLogger();
-
-                // Ghi log ra CloudWatch
-                await logger.LogMessageAsync($"User Id in TrainByImageAsync {userId} tu system {systermId} vao luc {DateTimeUtils.GetDateTimeVietNamNow()}");
                 await ValidateFileWithRekognitionAsync(file);
                 var image = await GetImageAsync(file);
                 var result = await TrainAsync(image, userId, systermId);
@@ -517,11 +513,7 @@ namespace FAL.Controllers
             {
                 
                 var systermId = User.Claims.FirstOrDefault(c => c.Type == SystermId).Value;
-                //check faceId in dynamodb
-                var logger = new CloudWatchLogger();
 
-                // Ghi log ra CloudWatch
-                await logger.LogMessageAsync($"User Id in TrainByFaceIdAsync {info.UserId} tu system {systermId} vao luc {DateTimeUtils.GetDateTimeVietNamNow()}");
                 var result = await _dynamoService.IsExistFaceIdAsync(systermId, info.FaceId);
                 if (result)
                 {
